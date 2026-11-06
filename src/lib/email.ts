@@ -18,31 +18,47 @@ interface OrderEmail {
 
 export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey">): string {
   const until = new Date(o.expiresAt * 1000).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  const font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
   const buttons = o.links
     .map(
-      (l) => `<tr><td style="padding:6px 0">
-        <a href="${esc(l.url)}" style="display:inline-block;background:#4E7AC7;color:#fff;text-decoration:none;font-weight:700;padding:14px 22px;border-radius:999px;font-family:Arial,sans-serif">
-          Télécharger · ${esc(l.label)}</a></td></tr>`,
+      (l) => `<tr><td style="padding:0 0 10px">
+        <a href="${esc(l.url)}" style="display:block;background:#4E7AC7;color:#ffffff;text-decoration:none;font-weight:700;font-size:17px;line-height:22px;text-align:center;padding:16px 20px;border-radius:14px;font-family:${font}">
+          Télécharger mon PDF</a></td></tr>`,
     )
     .join("");
-  return `<!doctype html><html lang="fr"><body style="margin:0;background:#F8F9FC;font-family:Arial,Helvetica,sans-serif;color:#2D3A5A">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F9FC;padding:24px 12px"><tr><td align="center">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border-radius:20px;padding:28px">
-    <tr><td style="font-size:20px;font-weight:700;color:#4E7AC7;padding-bottom:16px">La Petite IDE</td></tr>
-    <tr><td style="font-size:22px;font-weight:700;padding-bottom:8px">Merci pour ta commande ! 💙</td></tr>
-    <tr><td style="font-size:15px;line-height:1.6;padding-bottom:16px">
-      Ton <strong>${esc(o.packName)}</strong> est prêt. Clique sur le bouton ci-dessous pour le télécharger :</td></tr>
-    ${buttons}
-    <tr><td style="font-size:13px;line-height:1.6;color:#5B6784;padding-top:16px">
-      Lien personnel, valable jusqu'au ${until}. Astuce : si le téléchargement ne démarre pas depuis TikTok ou Instagram,
-      ouvre cet email dans l'application Mail ou dans ton navigateur.</td></tr>
-    <tr><td style="border-top:1px solid #E3E8F2;margin-top:16px;padding-top:16px;font-size:13px;line-height:1.6;color:#5B6784">
-      Commande <strong>${esc(o.reference)}</strong> · ${esc(formatPrice(o.amountCents))}<br>
-      Tu as demandé l'accès immédiat au contenu numérique et renoncé à ton droit de rétractation (CGV : ${esc(SITE.url)}/cgv).<br>
-      Une question ? Réponds simplement à cet email.</td></tr>
+  return `<!doctype html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">
+<title>Ton ${esc(o.packName)} est prêt</title>
+</head>
+<body style="margin:0;padding:0;background:#F8F9FC;-webkit-text-size-adjust:100%">
+<div style="display:none;max-height:0;overflow:hidden">Ton PDF est prêt à télécharger.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F9FC">
+<tr><td align="center" style="padding:24px 12px">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;background:#ffffff;border-radius:20px">
+    <tr><td style="padding:28px 22px 8px;font-family:${font};color:#2D3A5A">
+      <p style="margin:0 0 18px;font-size:15px;font-weight:700;color:#4E7AC7">La Petite IDE</p>
+      <h1 style="margin:0 0 10px;font-size:22px;line-height:28px;font-weight:800">Merci pour ta commande 💙</h1>
+      <p style="margin:0 0 22px;font-size:16px;line-height:24px;color:#5B6784">Ton <strong style="color:#2D3A5A">${esc(o.packName)}</strong> est prêt.</p>
+    </td></tr>
+    <tr><td style="padding:0 22px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${buttons}</table>
+    </td></tr>
+    <tr><td style="padding:6px 22px 24px;font-family:${font};font-size:13px;line-height:20px;color:#5B6784">
+      Lien valable jusqu'au ${until}. Pense à enregistrer le PDF sur ton téléphone.
+    </td></tr>
+    <tr><td style="padding:16px 22px 22px;border-top:1px solid #E3E8F2;font-family:${font};font-size:14px;line-height:21px;color:#2D3A5A">
+      Commande ${esc(o.reference)} · ${esc(formatPrice(o.amountCents))}<br>
+      <span style="color:#5B6784">Une question ? Réponds simplement à cet email.</span>
+    </td></tr>
   </table>
-  <p style="font-size:12px;color:#9AA6C2">Fichiers réservés à un usage personnel — merci de ne pas les partager.</p>
-  </td></tr></table></body></html>`;
+  <p style="max-width:460px;margin:14px auto 0;font-family:${font};font-size:11px;line-height:16px;color:#9AA6C2">
+    Tu as demandé l'accès immédiat à ce contenu numérique et renoncé à ton droit de rétractation (<a href="${esc(SITE.url)}/cgv" style="color:#9AA6C2">CGV</a>).
+    Fichier réservé à un usage personnel.
+  </p>
+</td></tr></table>
+</body></html>`;
 }
 
 export function orderEmailText(o: Omit<OrderEmail, "to" | "idempotencyKey">): string {
@@ -53,8 +69,10 @@ export function orderEmailText(o: Omit<OrderEmail, "to" | "idempotencyKey">): st
     ...o.links.map((l) => `- ${l.label} : ${l.url}`),
     "",
     `Commande ${o.reference} · ${formatPrice(o.amountCents)}`,
-    `Lien personnel valable ${SITE.downloadDays} jours. Une question ? Réponds à cet email.`,
+    `Lien valable ${SITE.downloadDays} jours. Une question ? Réponds à cet email.`,
     "— La Petite IDE",
+    "",
+    "Tu as demandé l'accès immédiat à ce contenu numérique et renoncé à ton droit de rétractation.",
   ].join("\n");
 }
 
@@ -72,7 +90,7 @@ export async function sendOrderEmail(env: AppEnv, o: OrderEmail): Promise<void> 
       from: env.EMAIL_FROM ?? "La Petite IDE <commandes@lapetiteide.fr>",
       to: [o.to],
       reply_to: env.EMAIL_REPLY_TO ?? SITE.contactEmail,
-      subject: `Ton ${o.packName} est prêt à télécharger 📚`,
+      subject: `Ton ${o.packName} est prêt 💙`,
       html: orderEmailHtml(o),
       text: orderEmailText(o),
     }),

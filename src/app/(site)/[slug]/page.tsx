@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getPack, publishedPacks } from "@/content/packs";
 import { CheckoutError } from "@/components/shop/CheckoutError";
-import { StickyBuyBar } from "@/components/shop/StickyBuyBar";
 import { PackCheckout } from "@/components/shop/PackCheckout";
 import { PackCover } from "@/components/shop/PackCover";
+import { StickyBuyBar } from "@/components/shop/StickyBuyBar";
 import { Icon } from "@/components/ui/Icon";
-import { Mascot } from "@/components/ui/Mascot";
 import { Price } from "@/components/ui/Price";
 import { SITE, formatPrice } from "@/lib/format";
 import { jsonLd } from "@/lib/seo";
@@ -36,25 +34,15 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   };
 }
 
-const STEPS = [
-  { icon: "shield", title: "Tu paies en 30 secondes", text: "Apple Pay, Google Pay ou carte bancaire. Sans créer de compte." },
-  { icon: "mail", title: "Tu reçois ton PDF", text: "Téléchargement immédiat, et ton lien arrive aussi par email." },
-  { icon: "phone", title: "Tu l'as toujours sur toi", text: "Sur ton téléphone en stage, ta tablette, ou imprimé." },
-] as const;
-
 const FAQ = [
-  { q: "Comment je reçois mon pack ?", a: "Juste après le paiement, un bouton de téléchargement s'affiche. Tu reçois aussi un email avec ton lien personnel, valable 30 jours." },
-  { q: "C'est un livre papier ?", a: "Non, c'est un fichier PDF à télécharger. Tu peux le garder sur ton téléphone ou l'imprimer chez toi." },
-  { q: "Je n'ai pas reçu l'email", a: "Regarde dans tes spams ou l'onglet « Promotions ». Sinon, écris-nous avec l'adresse utilisée lors du paiement : on te le renvoie." },
-  { q: "Le téléchargement ne marche pas depuis TikTok / Instagram", a: "Ouvre la page dans Safari ou Chrome (menu « … » puis « Ouvrir dans le navigateur »), ou utilise le lien reçu par email." },
-  { q: "Faut-il créer un compte ?", a: "Non. Seule ton adresse email est demandée au moment du paiement." },
+  { q: "Comment je reçois mon pack ?", a: "Juste après le paiement : bouton de téléchargement immédiat et lien envoyé par email (valable 30 jours)." },
+  { q: "C'est un format papier ?", a: "Non, un PDF. Garde-le sur ton téléphone ou imprime-le." },
+  { q: "Je n'ai pas reçu l'email", a: "Regarde dans tes spams. Sinon, écris-nous à contact@lapetiteide.fr : on te le renvoie." },
 ];
 
 export default async function PackPage({ params }: { params: Params }) {
   const pack = getPack((await params).slug);
   if (!pack) notFound();
-  const others = publishedPacks().filter((p) => p.slug !== pack.slug);
-  const perItem = pack.items.length > 1 ? pack.priceCents / pack.items.length : null;
 
   const structured = {
     "@context": "https://schema.org",
@@ -74,163 +62,71 @@ export default async function PackPage({ params }: { params: Params }) {
 
   return (
     <div className="has-sticky-buy sale">
-      {/* ===== 1. Accroche + achat, visibles sans défiler ===== */}
-      <section className="sale-hero">
-        <div className="container sale-hero__grid">
-          <div className="sale-hero__visual">
-            {pack.images ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={pack.images.sale}
-                alt={pack.images.alt}
-                width={pack.images.saleSize[0]}
-                height={pack.images.saleSize[1]}
-                className="sale-hero__img"
-                fetchPriority="high"
-              />
-            ) : (
-              <PackCover icon={pack.icon} tone={pack.tone} />
-            )}
-          </div>
+      <section className="container sale-main">
+        <div className="sale-main__visual">
+          {pack.images ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={pack.images.card} alt={pack.images.alt} width={800} height={800} className="sale-main__img" fetchPriority="high" />
+          ) : (
+            <PackCover icon={pack.icon} tone={pack.tone} />
+          )}
+        </div>
 
-          <div className="sale-hero__text">
-            <p className="sale-hero__eyebrow">
-              {pack.name} · {pack.items.length} fiches mémo
-            </p>
-            <h1>{pack.headline}</h1>
-            <p className="sale-hero__promise">{pack.promise}</p>
+        <div className="sale-main__info">
+          <p className="sale-main__meta">
+            {pack.name} · {pack.items.length} fiches PDF
+          </p>
+          <h1>{pack.headline}</h1>
+          <p className="sale-main__promise">{pack.promise}</p>
 
-            <div className="sale-offer" id="acheter" data-buy-anchor="">
-              <div className="sale-offer__price">
-                <Price cents={pack.priceCents} compareAt={pack.compareAtPriceCents} />
-                {perItem ? <span className="sale-offer__unit">soit environ {formatPrice(Math.round(perItem))} la fiche</span> : null}
-              </div>
-              <Suspense>
-                <CheckoutError />
-              </Suspense>
-              <PackCheckout slug={pack.slug} priceCents={pack.priceCents} />
+          <ul className="sale-main__points">
+            {pack.highlights.map((h) => (
+              <li key={h}>
+                <Icon name="check" /> {h}
+              </li>
+            ))}
+          </ul>
+
+          <div className="sale-buy" id="acheter" data-buy-anchor="">
+            <div className="sale-buy__price">
+              <Price cents={pack.priceCents} compareAt={pack.compareAtPriceCents} />
+              <span>Paiement unique · accès immédiat</span>
             </div>
+            <Suspense>
+              <CheckoutError />
+            </Suspense>
+            <PackCheckout slug={pack.slug} priceCents={pack.priceCents} />
           </div>
         </div>
       </section>
 
-      <div className="container sale-body">
-        {/* ===== 2. Contenu : scannable en un coup d'œil ===== */}
-        <section className="sale-section" aria-labelledby="contenu-title">
-          <h2 id="contenu-title">Ce que tu vas trouver dans le pack</h2>
-          <ul className="sale-items">
-            {pack.items.map((item) => (
-              <li key={item.title} className="sale-item">
-                <span className="sale-item__icon"><Icon name={item.icon} /></span>
-                <strong>{item.title}</strong>
-                <span>{item.description}</span>
-              </li>
-            ))}
-          </ul>
+      {pack.images ? (
+        <section className="container sale-preview" aria-labelledby="apercu-title">
+          <h2 id="apercu-title">Ce que contient le pack</h2>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={pack.images.sale}
+            alt={pack.images.alt}
+            width={pack.images.saleSize[0]}
+            height={pack.images.saleSize[1]}
+            className="sale-preview__img"
+            loading="lazy"
+          />
         </section>
+      ) : null}
 
-        {/* ===== 3. Bénéfices ===== */}
-        <section className="sale-section sale-benefits" aria-labelledby="pourquoi-title">
-          <div className="sale-benefits__head">
-            <h2 id="pourquoi-title">Pourquoi tu vas l&apos;adorer</h2>
-            <Mascot pose="coucou" className="sale-benefits__mascot" />
-          </div>
-          <div className="sale-benefits__grid">
-            {pack.highlights.map((h) => (
-              <div key={h.title} className="sale-benefit">
-                <Icon name="check" />
-                <div>
-                  <h3>{h.title}</h3>
-                  <p>{h.text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+      <section className="container sale-faq" aria-labelledby="faq-title">
+        <h2 id="faq-title">Questions fréquentes</h2>
+        <div className="faq">
+          {FAQ.map((f) => (
+            <details key={f.q}>
+              <summary>{f.q}</summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
 
-        {/* ===== 4. Pour qui ===== */}
-        <section className="sale-section sale-audience" aria-labelledby="pourqui-title">
-          <h2 id="pourqui-title">Ce pack est fait pour toi si…</h2>
-          <ul>
-            {pack.audience.map((a) => (
-              <li key={a}><span aria-hidden="true">💙</span> {a}</li>
-            ))}
-          </ul>
-        </section>
-
-        {/* ===== 5. Comment ça marche ===== */}
-        <section className="sale-section" aria-labelledby="etapes-title">
-          <h2 id="etapes-title">Comment ça marche ?</h2>
-          <ol className="sale-steps">
-            {STEPS.map((s, i) => (
-              <li key={s.title}>
-                <span className="sale-steps__num">{i + 1}</span>
-                <div>
-                  <h3>{s.title}</h3>
-                  <p>{s.text}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        {/* ===== 6. Relance d'achat ===== */}
-        <section className="sale-cta" aria-labelledby="cta-title">
-          <Mascot pose="pouce" className="sale-cta__mascot" />
-          <h2 id="cta-title">Prêt·e pour ton prochain stage ?</h2>
-          <p>
-            {pack.items.length} fiches mémo pour {formatPrice(pack.priceCents)}, dans ta boîte mail en quelques secondes.
-          </p>
-          <a href="#acheter" className="btn btn--primary btn--block btn--buy sale-cta__btn">
-            Je veux le pack · {formatPrice(pack.priceCents)}
-          </a>
-        </section>
-
-        {/* ===== 7. FAQ ===== */}
-        <section className="sale-section" aria-labelledby="faq-title">
-          <div className="sale-benefits__head">
-            <h2 id="faq-title">Questions fréquentes</h2>
-            <Mascot pose="idee" className="sale-benefits__mascot" />
-          </div>
-          <div className="faq">
-            {FAQ.map((f) => (
-              <details key={f.q}>
-                <summary>{f.q}</summary>
-                <p>{f.a}</p>
-              </details>
-            ))}
-          </div>
-        </section>
-
-        {others.length ? (
-          <section className="sale-section" aria-labelledby="others-title">
-            <h2 id="others-title">Nos autres packs</h2>
-            <ul className="bio__list">
-              {others.map((p) => (
-                <li key={p.slug}>
-                  <Link href={`/${p.slug}`} className="bio-card">
-                    {p.images ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.images.card} alt="" width={800} height={800} className="bio-card__thumb" loading="lazy" />
-                    ) : (
-                      <PackCover icon={p.icon} tone={p.tone} stacked={false} className="bio-card__cover" />
-                    )}
-                    <span className="bio-card__row">
-                      <span className="bio-card__body">
-                        <span className="bio-card__name">{p.name}</span>
-                        <span className="bio-card__desc">{p.tagline}</span>
-                      </span>
-                      <span className="bio-card__arrow" aria-hidden="true"><Icon name="arrow" /></span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-      </div>
-
-      {/* Barre d'achat fixe (mobile) */}
       <StickyBuyBar>
         <div className="sticky-buy__price">
           <span>{pack.name}</span>

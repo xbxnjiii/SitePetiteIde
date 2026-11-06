@@ -87,6 +87,7 @@ function CheckoutForm({
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const platform = usePlatform();
 
   const recordConsent = async () => {
     const r = await fetch("/api/checkout/consent", {
@@ -148,42 +149,51 @@ function CheckoutForm({
           }}
         />
         <span>
-          J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link> et je veux recevoir mon PDF tout de suite : je renonce à
-          mon droit de rétractation.
+          J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link> et renonce à mon droit de rétractation pour recevoir le
+          PDF immédiatement.
         </span>
       </label>
       {consentError && !consent ? (
         <p className="checkout__hint" role="alert">
-          Coche la case ci-dessus pour continuer 🙂
+          Coche la case pour continuer
         </p>
       ) : null}
 
       {state.type === "loading" ? <div className="checkout__loading" aria-label="Chargement du paiement" /> : null}
 
-      {/* Apple Pay / Google Pay : n'apparaît que si l'appareil le permet */}
+      {/* Un seul bouton de paiement rapide, adapté à l'appareil :
+          Apple Pay sur iPhone / iPad / Mac, Google Pay sur Android. */}
       <div className={hasWallet === false ? "checkout__express checkout__express--empty" : "checkout__express"}>
         {/* Tant que la case n'est pas cochée, un calque intercepte le tap et affiche le rappel
             (le mode Stripe utilisé ne permet pas de bloquer le clic autrement). */}
         {!consent && hasWallet ? (
           <button type="button" className="checkout__guard" aria-label="Coche d'abord la case pour payer avec Apple Pay ou Google Pay" onClick={requireConsent} />
         ) : null}
+        {platform ? (
         <ExpressCheckoutElement
           options={{
-            buttonHeight: 52,
+            buttonHeight: 54,
             buttonType: { applePay: "buy", googlePay: "buy" },
             buttonTheme: { applePay: "black", googlePay: "black" },
-            paymentMethodOrder: ["apple_pay", "google_pay"],
-            paymentMethods: { applePay: "always", googlePay: "always", link: "never", amazonPay: "never", paypal: "never" },
+            paymentMethodOrder: platform === "android" ? ["google_pay"] : ["apple_pay", "google_pay"],
+            paymentMethods: {
+              applePay: platform === "apple" ? "always" : platform === "android" ? "never" : "auto",
+              googlePay: platform === "android" ? "always" : platform === "apple" ? "never" : "auto",
+              link: "never",
+              amazonPay: "never",
+              paypal: "never",
+            },
             layout: { maxColumns: 1, overflow: "never" },
           }}
           onReady={(e) => setHasWallet(Boolean(e.availablePaymentMethods && Object.values(e.availablePaymentMethods).some(Boolean)))}
           onConfirm={onExpressConfirm}
         />
+        ) : null}
       </div>
 
       {hasWallet && !showCard ? (
         <button type="button" className="checkout__alt" onClick={() => setShowCard(true)}>
-          ou payer par carte bancaire
+          Autres moyens de paiement
         </button>
       ) : null}
 
@@ -216,10 +226,9 @@ function CheckoutForm({
         </p>
       ) : null}
 
-      <ul className="sale-offer__trust">
-        <li><Icon name="download" /> PDF reçu immédiatement</li>
-        <li><Icon name="shield" /> Paiement sécurisé par Stripe</li>
-      </ul>
+      <p className="checkout__trust">
+        <Icon name="shield" /> Paiement sécurisé · PDF envoyé par email
+      </p>
     </div>
   );
 }
@@ -232,8 +241,8 @@ function HostedFallback({ slug, priceCents }: { slug: string; priceCents: number
       <label className="consent">
         <input type="checkbox" name="consent" required />
         <span>
-          J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link> et je veux recevoir mon PDF tout de suite : je renonce à
-          mon droit de rétractation.
+          J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link> et renonce à mon droit de rétractation pour recevoir le
+          PDF immédiatement.
         </span>
       </label>
       <button type="submit" className="btn btn--primary btn--block btn--buy">
@@ -241,4 +250,17 @@ function HostedFallback({ slug, priceCents }: { slug: string; priceCents: number
       </button>
     </form>
   );
+}
+
+type Platform = "apple" | "android" | "other";
+
+/** Détecte la famille d'appareil pour n'afficher que le portefeuille pertinent. */
+function usePlatform(): Platform | null {
+  const [platform, setPlatform] = useState<Platform | null>(null);
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    const isApple = /iPhone|iPad|iPod|Macintosh|Mac OS X/.test(ua) || (navigator.maxTouchPoints > 1 && /Mac/.test(ua));
+    setPlatform(/Android/i.test(ua) ? "android" : isApple ? "apple" : "other");
+  }, []);
+  return platform;
 }

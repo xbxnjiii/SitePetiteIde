@@ -6,10 +6,9 @@ export const SITE = {
   name: "La Petite IDE",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://lapetiteide.fr",
   description: "Fiches mémo et packs de révision pour les étudiants en soins infirmiers. Paiement sécurisé, PDF reçu par email.",
-  // ⚠️ À remplacer par les vrais comptes.
   social: {
-    tiktok: "https://www.tiktok.com/",
-    instagram: "https://www.instagram.com/",
+    tiktok: "https://www.tiktok.com/@lapetiteide.fr",
+    instagram: "https://www.instagram.com/lapetiteide.fr",
   },
   contactEmail: "contact@lapetiteide.fr",
   /** Durée de validité des liens de téléchargement (jours après l'achat). */

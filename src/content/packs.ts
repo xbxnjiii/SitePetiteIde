@@ -56,10 +56,8 @@ export interface Pack {
   images?: PackImages;
   /** Ce que contient le pack (affiché sur la page de vente). */
   items: PackItem[];
-  /** Bénéfices concrets (section « Pourquoi tu vas l'adorer »). */
-  highlights: { title: string; text: string }[];
-  /** À qui s'adresse le pack. */
-  audience: string[];
+  /** 3 points forts courts, affichés sous le titre de la page de vente. */
+  highlights: string[];
   /** Fichiers livrés après paiement. */
   files: PackFile[];
   /** Caractéristiques affichées (pages, format…). Laisser vide si inconnu. */
@@ -72,14 +70,12 @@ export const packs: Pack[] = [
   {
     slug: "pack-des-constantes",
     name: "Pack des constantes",
-    headline: "Les 6 constantes, enfin claires et toujours dans ta poche",
-    promise:
-      "Normes, technique de mesure et signes qui doivent t'alerter : tout l'essentiel des paramètres vitaux en 6 fiches mémo visuelles, prêtes pour ton prochain stage.",
-    tagline: "6 fiches mémo pour maîtriser les paramètres vitaux en stage.",
+    headline: "Les 6 constantes, mémorisées en un clin d'œil",
+    promise: "6 fiches mémo ultra-visuelles pour réviser l'essentiel, sans rien de superflu.",
+    tagline: "6 fiches mémo pour réviser les paramètres vitaux.",
     description:
-      "Le pack indispensable pour tes premiers stages : un mémo clair et synthétique pour chaque paramètre vital — valeurs normales, technique de mesure et signes qui doivent t'alerter. À consulter sur ton téléphone ou à imprimer.",
+      "Un mémo clair et synthétique pour chaque paramètre vital : valeurs normales, technique de mesure et signes d'alerte. Conçu pour réviser vite et bien, sur téléphone ou imprimé.",
     priceCents: 299,
-    badge: "Nouveau",
     icon: "heart",
     tone: "pink",
     images: {
@@ -98,14 +94,9 @@ export const packs: Pack[] = [
       { title: "Saturation (SpO2)", icon: "lungs", description: "Pose de l'oxymètre, interprétation et limites." },
     ],
     highlights: [
-      { title: "L'essentiel, sans blabla", text: "Une fiche par constante, les valeurs clés repérables en un coup d'œil." },
-      { title: "Prêt pour le stage", text: "Sur ton téléphone dans la poche de ta tunique, à sortir au bon moment." },
-      { title: "Clair et visuel", text: "Des couleurs, des icônes et des repères pour mémoriser plus vite." },
-    ],
-    audience: [
-      "Tu es en 1re année d'IFSI et tu découvres les constantes",
-      "Tu prépares un stage et tu veux te rassurer",
-      "Tu veux réviser vite avant un partiel ou une MSP",
+      "Valeurs normales et signes d'alerte",
+      "Une fiche par constante, l'essentiel en un coup d'œil",
+      "Couleurs et repères visuels pour retenir plus vite",
     ],
     files: [
       {

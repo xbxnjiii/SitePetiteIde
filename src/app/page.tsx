@@ -20,10 +20,10 @@ export default function BioPage() {
           </h1>
           <p className="bio__slogan">Les soins, simplement.</p>
           <p className="bio__tagline">Fiches mémo et packs de révision pour les étudiants infirmiers 💙</p>
-          <div className="social">
-            <a href={SITE.social.tiktok} target="_blank" rel="noopener noreferrer" aria-label="TikTok"><Icon name="tiktok" /></a>
-            <a href={SITE.social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram"><Icon name="instagram" /></a>
-            <a href={`mailto:${SITE.contactEmail}`} aria-label="Email"><Icon name="mail" /></a>
+          <div className="social social--brand">
+            <a href={SITE.social.tiktok} target="_blank" rel="noopener noreferrer" aria-label="La Petite IDE sur TikTok" className="social__tiktok"><Icon name="tiktok" /></a>
+            <a href={SITE.social.instagram} target="_blank" rel="noopener noreferrer" aria-label="La Petite IDE sur Instagram" className="social__instagram"><Icon name="instagram" /></a>
+            <a href={`mailto:${SITE.contactEmail}`} aria-label="Nous écrire par email" className="social__mail"><Icon name="mail" /></a>
           </div>
         </header>
 
@@ -57,13 +57,6 @@ export default function BioPage() {
           </div>
         </section>
 
-        <section className="bio__section">
-          <ul className="bio__perks">
-            <li><Icon name="download" /> PDF reçu par email, immédiatement</li>
-            <li><Icon name="shield" /> Paiement sécurisé · Apple Pay, Google Pay, carte</li>
-            <li><Icon name="phone" /> Sur ton téléphone ou à imprimer</li>
-          </ul>
-        </section>
       </main>
       <Footer social={false} />
     </div>
