@@ -19,7 +19,7 @@ export function Footer({ social = true }: { social?: boolean }) {
         <Link href="/cgv">CGV</Link>
         <Link href="/confidentialite">Confidentialité</Link>
       </nav>
-      <p>© {new Date().getFullYear()} La Petite IDE · Supports pédagogiques : ils ne remplacent ni les protocoles de ton service ni l&apos;encadrement en stage.</p>
+      <p>© {new Date().getFullYear()} La Petite IDE · Supports de révision : ils ne remplacent ni tes cours ni les protocoles de soins.</p>
     </footer>
   );
 }

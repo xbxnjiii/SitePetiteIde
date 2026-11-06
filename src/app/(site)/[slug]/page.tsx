@@ -73,9 +73,6 @@ export default async function PackPage({ params }: { params: Params }) {
         </div>
 
         <div className="sale-main__info">
-          <p className="sale-main__meta">
-            {pack.name} · {pack.items.length} fiches PDF
-          </p>
           <h1>{pack.headline}</h1>
           <p className="sale-main__promise">{pack.promise}</p>
 
@@ -90,7 +87,7 @@ export default async function PackPage({ params }: { params: Params }) {
           <div className="sale-buy" id="acheter" data-buy-anchor="">
             <div className="sale-buy__price">
               <Price cents={pack.priceCents} compareAt={pack.compareAtPriceCents} />
-              <span>Paiement unique · accès immédiat</span>
+              <span>PDF · accès immédiat</span>
             </div>
             <Suspense>
               <CheckoutError />
@@ -128,12 +125,8 @@ export default async function PackPage({ params }: { params: Params }) {
       </section>
 
       <StickyBuyBar>
-        <div className="sticky-buy__price">
-          <span>{pack.name}</span>
-          <Price cents={pack.priceCents} />
-        </div>
         <a href="#acheter" className="btn btn--primary btn--buy sticky-buy__btn">
-          Acheter
+          Obtenir
         </a>
       </StickyBuyBar>
 

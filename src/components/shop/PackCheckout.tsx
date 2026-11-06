@@ -64,7 +64,12 @@ export function PackCheckout({ slug, priceCents }: { slug: string; priceCents: n
   if (!clientSecret) return <div className="checkout__loading" aria-label="Chargement du paiement" />;
 
   return (
-    <CheckoutElementsProvider stripe={getStripe()} options={{ clientSecret, elementsOptions: { appearance } }}>
+    <CheckoutElementsProvider stripe={getStripe()} options={{
+        clientSecret,
+        elementsOptions: { appearance },
+        // France par défaut : pas de champ « code postal » à remplir.
+        defaultValues: { billingAddress: { address: { country: "FR" } } },
+      }}>
       <CheckoutForm slug={slug} priceCents={priceCents} clientSecretRef={clientSecretRef} />
     </CheckoutElementsProvider>
   );
@@ -101,7 +106,7 @@ function CheckoutForm({
   const requireConsent = () => {
     if (consent) return true;
     setConsentError(true);
-    document.getElementById(`consent-${slug}`)?.focus();
+    document.getElementById(`consent-${showCard ? "modal" : "page"}-${slug}`)?.focus();
     return false;
   };
 
@@ -136,11 +141,11 @@ function CheckoutForm({
 
   if (state.type === "error") return <HostedFallback slug={slug} priceCents={priceCents} />;
 
-  return (
-    <div className="checkout">
+  const consentBox = (where: "page" | "modal") => (
+    <>
       <label className={consentError && !consent ? "consent consent--error" : "consent"}>
         <input
-          id={`consent-${slug}`}
+          id={`consent-${where}-${slug}`}
           type="checkbox"
           checked={consent}
           onChange={(e) => {
@@ -158,8 +163,12 @@ function CheckoutForm({
           Coche la case pour continuer
         </p>
       ) : null}
+    </>
+  );
 
-      {state.type === "loading" ? <div className="checkout__loading" aria-label="Chargement du paiement" /> : null}
+  return (
+    <div className="checkout">
+      {state.type === "loading" || hasWallet === null ? <div className="checkout__loading" aria-label="Chargement du paiement" /> : null}
 
       {/* Un seul bouton de paiement rapide, adapté à l'appareil :
           Apple Pay sur iPhone / iPad / Mac, Google Pay sur Android. */}
@@ -170,65 +179,107 @@ function CheckoutForm({
           <button type="button" className="checkout__guard" aria-label="Coche d'abord la case pour payer avec Apple Pay ou Google Pay" onClick={requireConsent} />
         ) : null}
         {platform ? (
-        <ExpressCheckoutElement
-          options={{
-            buttonHeight: 54,
-            buttonType: { applePay: "buy", googlePay: "buy" },
-            buttonTheme: { applePay: "black", googlePay: "black" },
-            paymentMethodOrder: platform === "android" ? ["google_pay"] : ["apple_pay", "google_pay"],
-            paymentMethods: {
-              applePay: platform === "apple" ? "always" : platform === "android" ? "never" : "auto",
-              googlePay: platform === "android" ? "always" : platform === "apple" ? "never" : "auto",
-              link: "never",
-              amazonPay: "never",
-              paypal: "never",
-            },
-            layout: { maxColumns: 1, overflow: "never" },
-          }}
-          onReady={(e) => setHasWallet(Boolean(e.availablePaymentMethods && Object.values(e.availablePaymentMethods).some(Boolean)))}
-          onConfirm={onExpressConfirm}
-        />
+          <ExpressCheckoutElement
+            options={{
+              buttonHeight: 52,
+              buttonType: { applePay: "buy", googlePay: "buy" },
+              buttonTheme: { applePay: "black", googlePay: "black" },
+              paymentMethodOrder: platform === "android" ? ["google_pay"] : ["apple_pay", "google_pay"],
+              paymentMethods: {
+                applePay: platform === "apple" ? "always" : platform === "android" ? "never" : "auto",
+                googlePay: platform === "android" ? "always" : platform === "apple" ? "never" : "auto",
+                link: "never",
+                amazonPay: "never",
+                paypal: "never",
+              },
+              layout: { maxColumns: 1, overflow: "never" },
+            }}
+            onReady={(e) => setHasWallet(Boolean(e.availablePaymentMethods && Object.values(e.availablePaymentMethods).some(Boolean)))}
+            onConfirm={onExpressConfirm}
+          />
         ) : null}
       </div>
 
-      {hasWallet && !showCard ? (
+      {/* Sans Apple Pay / Google Pay : bouton principal ; sinon : lien discret. Les deux ouvrent la fenêtre carte. */}
+      {hasWallet === false ? (
+        <button type="button" className="btn btn--primary btn--block btn--buy" onClick={() => setShowCard(true)} disabled={state.type !== "success"}>
+          <Icon name="shield" /> Payer {formatPrice(priceCents)} par carte
+        </button>
+      ) : null}
+      {hasWallet ? (
         <button type="button" className="checkout__alt" onClick={() => setShowCard(true)}>
           Autres moyens de paiement
         </button>
       ) : null}
 
-      {hasWallet === false || showCard ? (
-        <form className="checkout__card" onSubmit={onCardSubmit}>
-          <label className="checkout__label" htmlFor={`email-${slug}`}>
-            Ton email <span>(pour recevoir ton PDF)</span>
-          </label>
-          <input
-            id={`email-${slug}`}
-            className="input checkout__email"
-            type="email"
-            required
-            autoComplete="email"
-            inputMode="email"
-            placeholder="prenom@exemple.fr"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <PaymentElement options={{ layout: "tabs", fields: { billingDetails: { email: "never" } } }} />
-          <button type="submit" className="btn btn--primary btn--block btn--buy" disabled={busy || state.type !== "success"}>
-            {busy ? "Paiement en cours…" : `Payer ${formatPrice(priceCents)}`}
-          </button>
-        </form>
-      ) : null}
+      {consentBox("page")}
 
-      {message ? (
+      {message && !showCard ? (
         <p className="alert" role="alert">
           {message}
         </p>
       ) : null}
 
-      <p className="checkout__trust">
-        <Icon name="shield" /> Paiement sécurisé · PDF envoyé par email
-      </p>
+      {showCard ? (
+        <CardModal onClose={() => setShowCard(false)} title={`Payer ${formatPrice(priceCents)}`}>
+          <form className="checkout__card" onSubmit={onCardSubmit}>
+            <label className="checkout__label" htmlFor={`email-${slug}`}>
+              Ton email <span>(pour recevoir ton PDF)</span>
+            </label>
+            <input
+              id={`email-${slug}`}
+              className="input checkout__email"
+              type="email"
+              required
+              autoComplete="email"
+              inputMode="email"
+              placeholder="prenom@exemple.fr"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <PaymentElement options={{ layout: "tabs", fields: { billingDetails: { email: "never" } } }} />
+            {consentBox("modal")}
+            {message ? (
+              <p className="alert" role="alert">
+                {message}
+              </p>
+            ) : null}
+            <button type="submit" className="btn btn--primary btn--block btn--buy" disabled={busy || state.type !== "success"}>
+              {busy ? "Paiement en cours…" : `Payer ${formatPrice(priceCents)}`}
+            </button>
+            <p className="checkout__trust">
+              <Icon name="shield" /> Paiement sécurisé par Stripe
+            </p>
+          </form>
+        </CardModal>
+      ) : null}
+    </div>
+  );
+}
+
+/** Fenêtre (bas d'écran sur mobile, centrée sur ordinateur) pour le paiement par carte. */
+function CardModal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+  return (
+    <div className="modal" role="presentation" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal__panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div className="modal__head">
+          <h2 id="modal-title">{title}</h2>
+          <button type="button" className="modal__close" onClick={onClose} aria-label="Fermer">
+            <Icon name="close" />
+          </button>
+        </div>
+        {children}
+      </div>
     </div>
   );
 }

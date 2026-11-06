@@ -63,6 +63,8 @@ async function createSession(env: AppEnv, base: string, pack: Pack, uiMode: "ele
     line_items: [{ price: price.id, quantity: 1 }],
     // Carte bancaire uniquement : Apple Pay et Google Pay en font partie.
     allowed_payment_method_types: ["card"],
+    // Pas de proposition d'enregistrement « Link » : formulaire le plus court possible.
+    wallet_options: { link: { display: "never" as const } },
     // Prix toujours en euros (pas de conversion de devise automatique).
     adaptive_pricing: { enabled: false },
     allow_promotion_codes: true,

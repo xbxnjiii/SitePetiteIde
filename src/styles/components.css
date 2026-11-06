@@ -93,7 +93,7 @@
 .sticky-buy__price { display: flex; flex-direction: column; line-height: 1.2; }
 .sticky-buy__price span:first-child { font-size: 0.75rem; color: var(--c-ink-soft); }
 .sticky-buy .price { font-size: 1.2rem; }
-.has-sticky-buy { padding-bottom: 84px; }
+.has-sticky-buy { padding-bottom: 0; }
 @media (min-width: 900px) {
   .sticky-buy { display: none; }
   .has-sticky-buy { padding-bottom: 0; }
@@ -171,7 +171,7 @@
 .mini-footer__links a { color: var(--c-ink-soft); text-decoration: none; }
 .mini-footer__links a:hover { color: var(--c-primary); text-decoration: underline; }
 .mini-footer p { max-width: 520px; margin: 0 auto; }
-.has-sticky-buy + .mini-footer, main:has(.has-sticky-buy) + .mini-footer { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+main:has(.has-sticky-buy) + .mini-footer { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
 @media (min-width: 900px) { main:has(.has-sticky-buy) + .mini-footer { padding-bottom: 28px; } }
 
 /* ===== Achat ============================================================ */
@@ -249,7 +249,6 @@ html { scroll-padding-top: calc(var(--header-h) + 12px); }
 .sale-main__visual { max-width: 230px; width: 100%; margin: 0 auto; }
 .sale-main__img { width: 100%; height: auto; display: block; border-radius: 28px; box-shadow: var(--shadow-lg); }
 .sale-main__info { display: flex; flex-direction: column; }
-.sale-main__meta { margin: 0 0 8px; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--c-accent-dark); }
 .sale-main h1 { font-size: clamp(1.7rem, 3vw + 0.9rem, 2.5rem); margin-bottom: 10px; }
 .sale-main__promise { font-size: 1.05rem; color: var(--c-ink-soft); margin-bottom: 14px; }
 .sale-main__points { list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 8px; }
@@ -262,7 +261,7 @@ html { scroll-padding-top: calc(var(--header-h) + 12px); }
 .sale-preview, .sale-faq { padding-top: 40px; max-width: 760px; }
 .sale-preview h2, .sale-faq h2 { font-size: 1.3rem; text-align: center; }
 .sale-preview__img { width: 100%; height: auto; display: block; border-radius: var(--r-lg); box-shadow: var(--shadow-md); }
-.sale-faq { padding-bottom: 32px; }
+.sale-faq { padding-bottom: 0; }
 .checkout__trust { margin: 2px 0 0; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.8rem; color: var(--c-ink-soft); }
 .checkout__trust svg { width: 14px; height: 14px; color: var(--c-success); }
 .consent { font-size: 0.8rem; padding: 8px 10px; background: transparent; }
@@ -270,4 +269,37 @@ html { scroll-padding-top: calc(var(--header-h) + 12px); }
 @media (min-width: 900px) {
   .sale-main { grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; padding-block: 48px 16px; max-width: 1040px; }
   .sale-main__visual { max-width: 460px; position: sticky; top: calc(var(--header-h) + 32px); }
+}
+
+/* ===== Bloc d'achat compact + fenêtre carte ============================= */
+.sale-buy { padding: 16px; border-radius: 22px; }
+.sale-buy__price { margin-bottom: 12px; align-items: center; }
+.sale-buy__price .price { font-size: 1.9rem; }
+.checkout { gap: 10px; }
+.checkout__alt { justify-self: center; padding: 2px 6px; font-size: 0.85rem; color: var(--c-ink-soft); }
+.consent { padding: 4px 2px 0; font-size: 0.76rem; gap: 8px; }
+.consent--error { padding: 8px 10px; }
+.consent input { width: 17px; height: 17px; }
+.sale-faq h2 { margin-bottom: 14px; }
+.mini-footer { padding-top: 24px; }
+.sticky-buy__btn { width: 100%; }
+
+.modal {
+  position: fixed; inset: 0; z-index: 100; background: rgb(45 58 90 / 45%);
+  display: flex; align-items: flex-end; justify-content: center; animation: fade-in 0.2s;
+}
+.modal__panel {
+  width: 100%; max-height: 92vh; overflow-y: auto; background: #fff;
+  border-radius: 24px 24px 0 0; padding: 18px 18px calc(20px + env(safe-area-inset-bottom));
+  animation: sheet-up 0.25s var(--ease);
+}
+.modal__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.modal__head h2 { font-size: 1.2rem; margin: 0; }
+.modal__close { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--c-primary-50); color: var(--c-ink); display: grid; place-items: center; cursor: pointer; }
+.modal__close svg { width: 20px; height: 20px; }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } }
+@media (min-width: 700px) {
+  .modal { align-items: center; padding: 24px; }
+  .modal__panel { max-width: 460px; border-radius: 24px; padding: 22px; }
 }
