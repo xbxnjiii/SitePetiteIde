@@ -102,6 +102,8 @@ function CheckoutForm({
   const session = state.type === "success" ? state.checkout : null;
   const discount = session?.discountAmounts?.[0] ?? null;
   const totalLabel = session ? session.total.total.amount : formatPrice(priceCents);
+  // Commande gratuite (code à -100 %) : pas de carte à saisir.
+  const isFree = session ? session.total.total.minorUnitsAmount === 0 : false;
 
   const applyPromo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -192,7 +194,7 @@ function CheckoutForm({
 
       {/* Un seul bouton de paiement rapide, adapté à l'appareil :
           Apple Pay sur iPhone / iPad / Mac, Google Pay sur Android. */}
-      <div className={hasWallet === false ? "checkout__express checkout__express--empty" : "checkout__express"}>
+      <div className={hasWallet === false || isFree ? "checkout__express checkout__express--empty" : "checkout__express"}>
         {/* Tant que la case n'est pas cochée, un calque intercepte le tap et affiche le rappel
             (le mode Stripe utilisé ne permet pas de bloquer le clic autrement). */}
         {!consent && hasWallet ? (
@@ -221,12 +223,20 @@ function CheckoutForm({
       </div>
 
       {/* Sans Apple Pay / Google Pay : bouton principal ; sinon : lien discret. Les deux ouvrent la fenêtre carte. */}
-      {hasWallet === false ? (
+      {hasWallet === false || isFree ? (
         <button type="button" className="btn btn--primary btn--block btn--buy" onClick={() => setShowCard(true)} disabled={state.type !== "success"}>
-          <Icon name="shield" /> Payer {totalLabel} par carte
+          {isFree ? (
+            <>
+              <Icon name="download" /> Recevoir mes fiches
+            </>
+          ) : (
+            <>
+              <Icon name="shield" /> Payer {totalLabel} par carte
+            </>
+          )}
         </button>
       ) : null}
-      {hasWallet ? (
+      {hasWallet && !isFree ? (
         <button type="button" className="checkout__alt" onClick={() => setShowCard(true)}>
           Autres moyens de paiement
         </button>
@@ -275,7 +285,7 @@ function CheckoutForm({
       ) : null}
 
       {showCard ? (
-        <CardModal onClose={() => setShowCard(false)} title={`Payer ${totalLabel}`}>
+        <CardModal onClose={() => setShowCard(false)} title={isFree ? "Commande gratuite" : `Payer ${totalLabel}`}>
           <form className="checkout__card" onSubmit={onCardSubmit}>
             <label className="checkout__label" htmlFor={`email-${slug}`}>
               Ton email <span>(pour recevoir ton PDF)</span>
@@ -291,7 +301,7 @@ function CheckoutForm({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            <PaymentElement options={{ layout: "tabs", fields: { billingDetails: { email: "never" } } }} />
+            {isFree ? null : <PaymentElement options={{ layout: "tabs", fields: { billingDetails: { email: "never" } } }} />}
             {consentBox("modal")}
             {message ? (
               <p className="alert" role="alert">
@@ -299,7 +309,7 @@ function CheckoutForm({
               </p>
             ) : null}
             <button type="submit" className="btn btn--primary btn--block btn--buy" disabled={busy || state.type !== "success"}>
-              {busy ? "Paiement en cours…" : `Payer ${totalLabel}`}
+              {busy ? "Un instant…" : isFree ? "Recevoir mes fiches" : `Payer ${totalLabel}`}
             </button>
             <p className="checkout__trust">
               <Icon name="shield" /> Paiement sécurisé par Stripe

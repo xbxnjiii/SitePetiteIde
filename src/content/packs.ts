@@ -109,7 +109,7 @@ export const packs: Pack[] = [
     files: [
       {
         key: "pack-des-constantes/pack-des-constantes.pdf",
-        downloadName: "La-Petite-IDE-Pack-des-constantes.pdf",
+        downloadName: "La-Petite-IDE-Pack-Memos-Constantes.pdf",
         label: "Pack Mémos : Constantes (PDF)",
       },
     ],
