@@ -6,7 +6,6 @@ import { getPack, publishedPacks } from "@/content/packs";
 import { BuyButton } from "@/components/shop/BuyButton";
 import { CheckoutError } from "@/components/shop/CheckoutError";
 import { PackCover } from "@/components/shop/PackCover";
-import { PackGallery } from "@/components/shop/PackGallery";
 import { Icon } from "@/components/ui/Icon";
 import { Mascot } from "@/components/ui/Mascot";
 import { Price } from "@/components/ui/Price";
@@ -28,7 +27,11 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     title: pack.name,
     description: `${pack.tagline} PDF reçu par email — ${formatPrice(pack.priceCents)}.`,
     alternates: { canonical: `/${pack.slug}` },
-    openGraph: { title: pack.name, description: pack.tagline },
+    openGraph: {
+      title: pack.name,
+      description: pack.tagline,
+      ...(pack.images?.og ? { images: [{ url: pack.images.og, width: 1200, height: 630 }] } : {}),
+    },
   };
 }
 
@@ -49,6 +52,7 @@ export default async function PackPage({ params }: { params: Params }) {
     "@type": "Product",
     name: pack.name,
     description: pack.description,
+    ...(pack.images ? { image: `${SITE.url}${pack.images.card}` } : {}),
     brand: { "@type": "Brand", name: SITE.name },
     offers: {
       "@type": "Offer",
@@ -63,7 +67,21 @@ export default async function PackPage({ params }: { params: Params }) {
     <div className="has-sticky-buy">
       <div className="container">
         <div className="product">
-          <PackGallery pack={pack} />
+          <div className="product__gallery">
+            {pack.images ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={pack.images.sale}
+                alt={pack.images.alt}
+                width={pack.images.saleSize[0]}
+                height={pack.images.saleSize[1]}
+                className="product__img"
+                fetchPriority="high"
+              />
+            ) : (
+              <PackCover icon={pack.icon} tone={pack.tone} />
+            )}
+          </div>
 
           <div className="product__info">
             <div className="product__meta">
@@ -138,7 +156,12 @@ export default async function PackPage({ params }: { params: Params }) {
               {others.map((p) => (
                 <li key={p.slug}>
                   <Link href={`/${p.slug}`} className="bio-card">
-                    <PackCover icon={p.icon} tone={p.tone} stacked={false} className="bio-card__cover" />
+                    {p.images ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.images.card} alt="" width={800} height={800} className="bio-card__thumb" loading="lazy" />
+                    ) : (
+                      <PackCover icon={p.icon} tone={p.tone} stacked={false} className="bio-card__cover" />
+                    )}
                     <span className="bio-card__body">
                       <span className="bio-card__name">{p.name}</span>
                       <Price cents={p.priceCents} compareAt={p.compareAtPriceCents} />

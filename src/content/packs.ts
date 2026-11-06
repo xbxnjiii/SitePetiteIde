@@ -25,6 +25,18 @@ export interface PackFile {
   label: string;
 }
 
+export interface PackImages {
+  /** Visuel carré (page d'accueil « lien en bio »), dans public/. */
+  card: string;
+  /** Visuel détaillé (page de vente), dans public/. */
+  sale: string;
+  /** Dimensions du visuel de vente [largeur, hauteur]. */
+  saleSize: [number, number];
+  /** Image de partage réseaux sociaux (1200×630), dans public/. */
+  og?: string;
+  alt: string;
+}
+
 export interface Pack {
   slug: string;
   name: string;
@@ -35,6 +47,8 @@ export interface Pack {
   badge?: string;
   icon: IconName;
   tone: Tone;
+  /** Visuels officiels. Sans visuel, une couverture provisoire est générée. */
+  images?: PackImages;
   /** Ce que contient le pack (affiché sur la page de vente). */
   items: PackItem[];
   /** Points forts (liste « Pourquoi ce pack »). */
@@ -58,6 +72,13 @@ export const packs: Pack[] = [
     badge: "Nouveau",
     icon: "heart",
     tone: "pink",
+    images: {
+      card: "/img/packs/pack-des-constantes-carre.webp",
+      sale: "/img/packs/pack-des-constantes-vente.webp",
+      saleSize: [1199, 1312],
+      og: "/img/packs/pack-des-constantes-og.jpg",
+      alt: "Pack Les Constantes : 6 fiches mémos — fréquence cardiaque, fréquence respiratoire, température, tension artérielle, glycémie et saturation (SpO2)",
+    },
     items: [
       { title: "Fréquence cardiaque", icon: "heart", description: "Normes, prise de pouls, tachycardie et bradycardie." },
       { title: "Fréquence respiratoire", icon: "lungs", description: "Compter, observer, repérer une détresse respiratoire." },

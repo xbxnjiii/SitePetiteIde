@@ -31,12 +31,6 @@
 .price { font-family: var(--font-title); font-weight: 800; color: var(--c-ink); }
 .price__old { color: var(--c-ink-soft); text-decoration: line-through; font-weight: 600; margin-left: 8px; font-size: 0.9em; }
 
-/* ===== Bandeau démo ===================================================== */
-.demo-banner {
-  background: var(--c-ink); color: #fff; text-align: center;
-  font-size: 0.82rem; padding: 8px var(--gutter);
-}
-
 /* ===== Header =========================================================== */
 .header {
   position: sticky; top: 0; z-index: 50;
@@ -90,21 +84,6 @@
 /* ===== Fiche produit ==================================================== */
 .product { display: grid; gap: 28px; padding-block: 8px 40px; }
 .product__gallery { display: grid; gap: 12px; }
-.product__thumbs { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; }
-.product__thumbs::-webkit-scrollbar { display: none; }
-.product__thumb { flex: none; width: 76px; border-radius: 12px; border: 2px solid transparent; padding: 0; background: none; cursor: pointer; }
-.product__thumb[aria-pressed="true"] { border-color: var(--c-primary); }
-.product__thumb .cover { border-radius: 10px; }
-.preview-page {
-  aspect-ratio: 4 / 5; border-radius: var(--r-md); background: linear-gradient(150deg, #f3f6fc, #e6edf9);
-  display: grid; place-items: center; padding: 10%;
-}
-.preview-page__sheet { width: 72%; aspect-ratio: 210 / 297; background: #fff; border-radius: 6px; box-shadow: var(--shadow-md); padding: 10%; display: flex; flex-direction: column; gap: 6%; }
-.preview-page__sheet i { display: block; height: 4%; border-radius: 99px; background: var(--c-line); }
-.preview-page__sheet i:first-child { height: 7%; width: 70%; background: var(--c-primary-light); }
-.preview-page__sheet i:nth-child(4n) { width: 65%; }
-.preview-page__sheet b { display: block; height: 22%; border-radius: 8px; background: var(--c-accent-50); }
-.preview-page__label { font-size: 0.72rem; color: var(--c-ink-soft); margin-top: 6px; text-align: center; }
 
 .product__info h1 { font-size: clamp(1.7rem, 3vw + 0.8rem, 2.5rem); margin-bottom: 12px; }
 .product__lead { font-size: 1.05rem; color: var(--c-ink-soft); }
@@ -260,3 +239,18 @@ img.bio__avatar {
 .thanks__mascot { width: auto; height: 170px; margin: 0 auto 16px; }
 .panel__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .panel__mascot { width: 56px; height: auto; margin-top: -10px; }
+
+/* ===== Visuels des packs ================================================ */
+.bio-card__row { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+.bio-card--visual { flex-direction: column; align-items: stretch; padding: 10px; gap: 12px; }
+.bio-card__img { width: 100%; height: auto; aspect-ratio: 1; border-radius: calc(var(--r-lg) - 6px); display: block; }
+.bio-card--visual .bio-card__row { padding: 0 6px 6px; }
+.bio-card__thumb { width: 72px; height: 72px; border-radius: var(--r-md); flex: none; }
+.product__img {
+  width: 100%; height: auto; display: block; border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md); background: #fff;
+}
+@media (max-width: 899px) {
+  .product { padding-top: 16px; }
+  .product__gallery { margin-inline: calc(-1 * var(--gutter) + 8px); }
+}

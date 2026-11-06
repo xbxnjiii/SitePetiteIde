@@ -25,11 +25,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr" className={`${fredoka.variable} ${nunito.variable} ${inter.variable}`}>
       <body>
         <a href="#contenu" className="skip-link">Aller au contenu</a>
-        {IS_LIVE ? null : (
-          <div className="demo-banner" role="note">
-            Mode test — aucun paiement réel. Carte de test : 4242 4242 4242 4242.
-          </div>
-        )}
         {children}
       </body>
     </html>

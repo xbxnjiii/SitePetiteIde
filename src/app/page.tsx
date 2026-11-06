@@ -33,15 +33,22 @@ export default function BioPage() {
           <ul className="bio__list">
             {packs.map((p) => (
               <li key={p.slug}>
-                <Link href={`/${p.slug}`} className="bio-card">
-                  <PackCover icon={p.icon} tone={p.tone} stacked={false} className="bio-card__cover" />
-                  <span className="bio-card__body">
-                    {p.badge ? <span className="badge badge--pink">{p.badge}</span> : null}
-                    <span className="bio-card__name">{p.name}</span>
-                    <span className="bio-card__desc">{p.tagline}</span>
-                    <Price cents={p.priceCents} compareAt={p.compareAtPriceCents} />
+                <Link href={`/${p.slug}`} className={p.images ? "bio-card bio-card--visual" : "bio-card"}>
+                  {p.images ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.images.card} alt={p.images.alt} width={800} height={800} className="bio-card__img" fetchPriority="high" />
+                  ) : (
+                    <PackCover icon={p.icon} tone={p.tone} stacked={false} className="bio-card__cover" />
+                  )}
+                  <span className="bio-card__row">
+                    <span className="bio-card__body">
+                      {p.badge ? <span className="badge badge--pink">{p.badge}</span> : null}
+                      <span className="bio-card__name">{p.name}</span>
+                      <span className="bio-card__desc">{p.tagline}</span>
+                      <Price cents={p.priceCents} compareAt={p.compareAtPriceCents} />
+                    </span>
+                    <span className="bio-card__arrow" aria-hidden="true"><Icon name="arrow" /></span>
                   </span>
-                  <span className="bio-card__arrow" aria-hidden="true"><Icon name="arrow" /></span>
                 </Link>
               </li>
             ))}
@@ -60,7 +67,7 @@ export default function BioPage() {
           </ul>
         </section>
       </main>
-      <Footer />
+      <Footer social={false} />
     </div>
   );
 }
