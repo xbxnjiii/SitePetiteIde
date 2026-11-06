@@ -1,56 +1,100 @@
 import type { Metadata } from "next";
+import { InfoList, LegalPage } from "@/components/content/LegalPage";
 import { LEGAL } from "@/lib/format";
-import { Breadcrumb } from "@/components/ui/Breadcrumb";
 
 export const metadata: Metadata = { title: "Politique de confidentialité", alternates: { canonical: "/confidentialite" } };
 
-// GABARIT — à compléter et à faire relire.
 export default function PrivacyPage() {
   return (
-    <div className="container">
-      <header className="page-head">
-        <Breadcrumb items={[{ label: "Confidentialité" }]} />
-        <h1>Politique de confidentialité</h1>
-        <p>Dernière mise à jour : {LEGAL.updatedAt}</p>
-      </header>
-      <div className="prose">
-        <h2>Responsable du traitement</h2>
-        <p>{LEGAL.owner} EI (« {LEGAL.tradeName} »), {LEGAL.address} — <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a></p>
-        <h2>Données collectées</h2>
-        <ul>
-          <li>Lors d&apos;un achat : adresse email, pays de facturation, contenu et montant de la commande.</li>
-          <li>Les données bancaires sont traitées exclusivement par Stripe : nous n&apos;y avons jamais accès.</li>
-        </ul>
-        <h2>Finalités et bases légales</h2>
-        <ul>
-          <li>Exécution de la commande et envoi des fichiers (exécution du contrat).</li>
-          <li>Comptabilité et facturation (obligation légale).</li>
-        </ul>
-        <h2>Durées de conservation</h2>
-        <ul>
-          <li>Données de commande : 10 ans (obligations comptables).</li>
-          <li>Journaux techniques du site : quelques jours (hébergeur).</li>
-        </ul>
-        <h2>Sous-traitants</h2>
-        <ul>
-          <li>Cloudflare (hébergement, stockage des fichiers).</li>
-          <li>Stripe (paiement et historique des commandes).</li>
-          <li>Resend (envoi des emails de commande).</li>
-        </ul>
-        <p>
-          Certains de ces prestataires sont établis aux États-Unis ; les transferts sont encadrés par le Data Privacy Framework
-          et/ou des clauses contractuelles types de la Commission européenne.
-        </p>
-        <h2>Cookies</h2>
-        <p>
-          Le site n&apos;utilise que des éléments strictement nécessaires à son fonctionnement (sécurité du paiement). Aucun cookie publicitaire ou de mesure d&apos;audience n&apos;est déposé.
-        </p>
-        <h2>Tes droits</h2>
-        <p>
-          Tu disposes d&apos;un droit d&apos;accès, de rectification, d&apos;effacement, de limitation et d&apos;opposition. Pour
-          les exercer : <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>. Tu peux aussi adresser une réclamation à la CNIL (www.cnil.fr).
-        </p>
-      </div>
-    </div>
+    <LegalPage
+      title="Politique de confidentialité"
+      intro="On collecte le strict minimum : juste ce qu'il faut pour t'envoyer tes fiches."
+      updatedAt={LEGAL.updatedAt}
+      sections={[
+        {
+          id: "responsable",
+          title: "Responsable du traitement",
+          content: (
+            <InfoList
+              items={[
+                ["Responsable", `${LEGAL.owner} EI — « ${LEGAL.tradeName} »`],
+                ["Adresse", LEGAL.address],
+                ["Contact", <a key="m" href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>],
+              ]}
+            />
+          ),
+        },
+        {
+          id: "donnees",
+          title: "Données collectées",
+          content: (
+            <ul>
+              <li>Lors d&apos;un achat : adresse email, pays de facturation, contenu et montant de la commande.</li>
+              <li>Les données bancaires sont traitées exclusivement par Stripe : nous n&apos;y avons jamais accès.</li>
+            </ul>
+          ),
+        },
+        {
+          id: "finalites",
+          title: "Pourquoi ces données",
+          content: (
+            <ul>
+              <li>Traiter ta commande et t&apos;envoyer tes fichiers (exécution du contrat).</li>
+              <li>Tenir la comptabilité (obligation légale).</li>
+            </ul>
+          ),
+        },
+        {
+          id: "conservation",
+          title: "Durée de conservation",
+          content: (
+            <ul>
+              <li>Données de commande : 10 ans (obligations comptables).</li>
+              <li>Journaux techniques du site : quelques jours.</li>
+            </ul>
+          ),
+        },
+        {
+          id: "prestataires",
+          title: "Prestataires",
+          content: (
+            <>
+              <InfoList
+                items={[
+                  ["Cloudflare", "Hébergement du site et stockage des fichiers"],
+                  ["Stripe", "Paiement et historique des commandes"],
+                  ["Resend", "Envoi des emails de commande"],
+                ]}
+              />
+              <p className="legal__note">
+                Ces prestataires sont établis aux États-Unis ; les transferts de données sont encadrés par le Data Privacy Framework
+                et/ou les clauses contractuelles types de la Commission européenne.
+              </p>
+            </>
+          ),
+        },
+        {
+          id: "cookies",
+          title: "Cookies",
+          content: (
+            <p>
+              Aucun cookie publicitaire ni de mesure d&apos;audience. Seuls les éléments strictement nécessaires au paiement sécurisé
+              sont utilisés.
+            </p>
+          ),
+        },
+        {
+          id: "droits",
+          title: "Tes droits",
+          content: (
+            <p>
+              Tu peux accéder à tes données, les rectifier, les effacer, limiter leur traitement ou t&apos;y opposer. Écris-nous à{" "}
+              <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>. Tu peux aussi adresser une réclamation à la{" "}
+              <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer">CNIL</a>.
+            </p>
+          ),
+        },
+      ]}
+    />
   );
 }

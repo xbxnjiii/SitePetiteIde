@@ -32,5 +32,7 @@ export const LEGAL = {
   naf: "4791A",
   vat: "TVA non applicable, art. 293 B du CGI",
   email: "contact@lapetiteide.fr",
+  phone: "06 77 91 86 29",
+  phoneHref: "+33677918629",
   updatedAt: "6 novembre 2026",
 };

@@ -302,3 +302,50 @@ html { scroll-padding-top: calc(var(--header-h) + 12px); }
   .modal { align-items: center; padding: 24px; }
   .modal__panel { max-width: 460px; border-radius: 24px; padding: 22px; }
 }
+
+/* ===== Pages légales et contact ========================================= */
+.legal { max-width: 780px; padding-bottom: 8px; }
+.legal__head { padding-block: 28px 18px; }
+.legal__head h1 { font-size: clamp(1.7rem, 2.5vw + 1rem, 2.4rem); margin-bottom: 8px; }
+.legal__intro { color: var(--c-ink-soft); font-size: 1.02rem; margin: 0 0 10px; }
+.legal__date { display: inline-block; margin: 0; padding: 4px 12px; border-radius: var(--r-pill); background: var(--c-primary-50); color: var(--c-primary-dark); font-size: 0.8rem; font-weight: 600; }
+.legal__toc { background: #fff; border: 1px solid var(--c-line); border-radius: var(--r-lg); padding: 14px 16px; margin-bottom: 14px; }
+.legal__toc ol { margin: 0; padding-left: 1.3em; columns: 2; column-gap: 24px; font-size: 0.9rem; }
+.legal__toc li { padding: 3px 0; break-inside: avoid; }
+.legal__toc a { color: var(--c-ink); text-decoration: none; }
+.legal__toc a:hover { color: var(--c-primary); text-decoration: underline; }
+.legal__sections { display: grid; gap: 12px; }
+.legal__card { background: #fff; border: 1px solid var(--c-line); border-radius: var(--r-lg); padding: 18px 18px 6px; scroll-margin-top: calc(var(--header-h) + 12px); }
+.legal__card h2 { display: flex; align-items: center; gap: 10px; font-size: 1.08rem; margin-bottom: 10px; }
+.legal__num { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--c-primary); color: #fff; font-size: 0.78rem; }
+.legal__body { font-size: 0.94rem; color: var(--c-ink-soft); line-height: 1.65; }
+.legal__body p, .legal__body ul { margin: 0 0 12px; }
+.legal__body ul { padding-left: 1.2em; }
+.legal__body li { margin-bottom: 4px; }
+.legal__note { font-size: 0.84rem; }
+.info-list { margin: 0 0 12px; display: grid; }
+.info-list > div { display: grid; grid-template-columns: 1fr; gap: 2px; padding: 9px 0; border-bottom: 1px solid var(--c-line); }
+.info-list > div:last-child { border-bottom: 0; }
+.info-list dt { font-size: 0.78rem; font-weight: 600; color: var(--c-ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+.info-list dd { margin: 0; color: var(--c-ink); font-weight: 500; }
+@media (min-width: 600px) {
+  .info-list > div { grid-template-columns: 210px 1fr; gap: 16px; align-items: baseline; }
+}
+@media (max-width: 520px) { .legal__toc ol { columns: 1; } }
+
+.contact__head { text-align: center; }
+.contact__head .breadcrumb { text-align: left; }
+.contact__mascot { width: auto; height: 120px; margin: 4px auto 10px; }
+.contact__list { display: grid; gap: 12px; max-width: 520px; margin: 0 auto; }
+.contact__card {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: #fff; text-decoration: none; color: var(--c-ink);
+  border: 1px solid var(--c-line); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); transition: transform 0.15s var(--ease), box-shadow 0.2s;
+}
+.contact__card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.contact__icon { flex: none; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; color: #fff; }
+.contact__icon svg { width: 24px; height: 24px; }
+.contact__text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.contact__text strong { font-family: var(--font-title); font-size: 1rem; }
+.contact__text span { color: var(--c-ink-soft); font-size: 0.9rem; overflow-wrap: anywhere; }
+.contact__arrow { width: 20px; height: 20px; color: var(--c-ink-soft); flex: none; }
+.contact__tip { max-width: 520px; margin: 18px auto 0; text-align: center; font-size: 0.86rem; color: var(--c-ink-soft); }
