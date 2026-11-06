@@ -5,7 +5,6 @@ import { PackCover } from "@/components/shop/PackCover";
 import { QuizCta } from "@/components/shop/QuizCta";
 import { SourceLink } from "@/components/shop/SourceLink";
 import { Icon } from "@/components/ui/Icon";
-import { Mascot } from "@/components/ui/Mascot";
 import { SITE } from "@/lib/format";
 
 export const metadata = { alternates: { canonical: "/" } };
@@ -23,7 +22,7 @@ export default function BioPage() {
             La Petite <span>IDE</span>
           </h1>
           <p className="bio__slogan">Les soins, simplement.</p>
-          <p className="bio__tagline">Fiches mémo et packs de révision pour les étudiants infirmiers 💙</p>
+          <p className="bio__tagline">Fiches mémo pour étudiants infirmiers 💙</p>
           <div className="social social--brand">
             <a href={SITE.social.tiktok} target="_blank" rel="noopener noreferrer" aria-label="La Petite IDE sur TikTok" className="social__tiktok"><Icon name="tiktok" /></a>
             <a href={SITE.social.instagram} target="_blank" rel="noopener noreferrer" aria-label="La Petite IDE sur Instagram" className="social__instagram"><Icon name="instagram" /></a>
@@ -32,41 +31,57 @@ export default function BioPage() {
         </header>
 
         <section aria-labelledby="packs-title" className="bio__section">
-          <h2 id="packs-title" className="bio__label">Nos packs de fiches</h2>
+          <h2 id="packs-title" className="visually-hidden">Nos packs de fiches</h2>
           <OfferBanner variant="bio" />
-          <ul className="bio__list">
-            {packs.map((p) => (
-              <li key={p.slug}>
-                <SourceLink href={`/${p.slug}`} className="bio-card">
-                  {p.images ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.images.card} alt="" width={800} height={800} className="bio-card__thumb" fetchPriority="high" />
-                  ) : (
-                    <PackCover icon={p.icon} tone={p.tone} stacked={false} className="bio-card__cover" />
-                  )}
-                  <span className="bio-card__row">
-                    <span className="bio-card__body">
-                      {p.badge ? <span className="badge badge--pink">{p.badge}</span> : null}
-                      <span className="bio-card__name">{p.name}</span>
-                      <span className="bio-card__desc">{p.tagline}</span>
-                    </span>
-                    <span className="bio-card__arrow" aria-hidden="true"><Icon name="arrow" /></span>
-                  </span>
-                </SourceLink>
-              </li>
-            ))}
-          </ul>
-          <div className="bio__soon">
-            <Mascot pose="lecture" className="bio__soon-img" />
-            <p>D&apos;autres packs sont en préparation… Suis-nous pour ne rien rater !</p>
-          </div>
-        </section>
-
-        <section className="bio__section" aria-label="Quiz gratuit">
-          <QuizCta />
+          {packs.length === 1 ? (
+            // Un seul pack : grande carte avec bouton d'achat et accès au quiz (tout tient sur un écran).
+            <div className="bio-feature">
+              <SourceLink href={`/${packs[0].slug}`} className="bio-feature__main">
+                {packs[0].images ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={packs[0].images.card} alt="" width={800} height={800} className="bio-feature__img" fetchPriority="high" />
+                ) : (
+                  <PackCover icon={packs[0].icon} tone={packs[0].tone} stacked={false} className="bio-feature__img" />
+                )}
+                <span className="bio-feature__text">
+                  <span className="bio-feature__name">{packs[0].name}</span>
+                  <span className="bio-feature__desc">{packs[0].tagline}</span>
+                </span>
+              </SourceLink>
+              <SourceLink href={`/${packs[0].slug}`} className="btn btn--primary btn--block bio-feature__btn">
+                Découvrir le pack <Icon name="arrow" />
+              </SourceLink>
+              <QuizCta className="bio-feature__quiz" />
+            </div>
+          ) : (
+            <>
+              <ul className="bio__list">
+                {packs.map((p) => (
+                  <li key={p.slug}>
+                    <SourceLink href={`/${p.slug}`} className="bio-card">
+                      {p.images ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.images.card} alt="" width={800} height={800} className="bio-card__thumb" />
+                      ) : (
+                        <PackCover icon={p.icon} tone={p.tone} stacked={false} className="bio-card__cover" />
+                      )}
+                      <span className="bio-card__row">
+                        <span className="bio-card__body">
+                          <span className="bio-card__name">{p.name}</span>
+                          <span className="bio-card__desc">{p.tagline}</span>
+                        </span>
+                        <span className="bio-card__arrow" aria-hidden="true"><Icon name="arrow" /></span>
+                      </span>
+                    </SourceLink>
+                  </li>
+                ))}
+              </ul>
+              <QuizCta className="bio__quiz" />
+            </>
+          )}
         </section>
       </main>
-      <Footer social={false} />
+      <Footer social={false} compact />
     </div>
   );
 }

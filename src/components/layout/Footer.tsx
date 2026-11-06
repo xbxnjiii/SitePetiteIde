@@ -2,9 +2,9 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { SITE } from "@/lib/format";
 
-export function Footer({ social = true }: { social?: boolean }) {
+export function Footer({ social = true, compact = false }: { social?: boolean; compact?: boolean }) {
   return (
-    <footer className="mini-footer">
+    <footer className={compact ? "mini-footer mini-footer--compact" : "mini-footer"}>
       {social ? (
       <div className="social social--light">
         <a href={SITE.social.tiktok} target="_blank" rel="noopener noreferrer" aria-label="La Petite IDE sur TikTok"><Icon name="tiktok" /></a>
@@ -20,7 +20,9 @@ export function Footer({ social = true }: { social?: boolean }) {
         <Link href="/cgv">CGV</Link>
         <Link href="/confidentialite">Confidentialité</Link>
       </nav>
-      <p>© {new Date().getFullYear()} La Petite IDE · Supports de révision : ils ne remplacent ni tes cours ni les protocoles de soins.</p>
+      <p>
+        © {new Date().getFullYear()} La Petite IDE{compact ? null : <> · Supports de révision : ils ne remplacent ni tes cours ni les protocoles de soins.</>}
+      </p>
     </footer>
   );
 }

@@ -22,8 +22,15 @@ export function OfferBanner({ variant = "page" }: { variant?: "page" | "bio" }) 
     <div className={`offer-banner offer-banner--${variant}`} role="note">
       <span aria-hidden="true">🎉</span>
       <span>
-        <strong>Offre de lancement {OFFER.label}</strong> jusqu&apos;au {OFFER.endsLabel}
-        {variant === "page" ? " · appliquée automatiquement" : ` avec le code ${OFFER.code}`}
+        {variant === "page" ? (
+          <>
+            <strong>Offre de lancement {OFFER.label}</strong> jusqu&apos;au {OFFER.endsLabel} · appliquée automatiquement
+          </>
+        ) : (
+          <>
+            <strong>{OFFER.label}</strong> jusqu&apos;au {OFFER.endsLabel} avec le code <strong>{OFFER.code}</strong>
+          </>
+        )}
       </span>
     </div>
   );
