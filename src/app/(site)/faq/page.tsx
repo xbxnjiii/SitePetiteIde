@@ -16,7 +16,7 @@ const FAQ = [
   },
   {
     q: "Je n'ai pas reçu l'email, que faire ?",
-    a: "Vérifie tes spams et ton dossier « Promotions ». Sinon, écris-nous avec l'adresse email utilisée lors du paiement : on te renvoie ton lien.",
+    a: "Vérifie tes spams et ton dossier « Promotions ». Sinon, rends-toi sur la page « Retrouver mon achat » : indique ton email et tes liens te sont renvoyés.",
   },
   {
     q: "Combien de temps mon lien est-il valable ?",

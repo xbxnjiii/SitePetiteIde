@@ -27,7 +27,7 @@ export default async function DownloadErrorPage({ searchParams }: { searchParams
           Besoin d&apos;aide ? Écris-nous à <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a> en indiquant
           l&apos;adresse email utilisée lors de ton achat.
         </p>
-        <Link href="/" className="btn btn--primary">Retour à l&apos;accueil</Link>
+        <Link href="/retrouver-mon-achat" className="btn btn--primary">Recevoir de nouveaux liens</Link>
       </div>
     </div>
   );

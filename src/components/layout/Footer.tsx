@@ -13,6 +13,7 @@ export function Footer({ social = true }: { social?: boolean }) {
       </div>
       ) : null}
       <nav aria-label="Informations légales" className="mini-footer__links">
+        <Link href="/retrouver-mon-achat">Retrouver mon achat</Link>
         <Link href="/faq">FAQ</Link>
         <Link href="/contact">Contact</Link>
         <Link href="/mentions-legales">Mentions légales</Link>

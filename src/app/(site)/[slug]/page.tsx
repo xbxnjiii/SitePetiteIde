@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 const FAQ = [
   { q: "Comment je reçois mon pack ?", a: "Juste après le paiement : bouton de téléchargement immédiat et lien envoyé par email (valable 30 jours)." },
   { q: "C'est un format papier ?", a: "Non, un PDF. Garde-le sur ton téléphone ou imprime-le." },
-  { q: "Je n'ai pas reçu l'email", a: "Regarde dans tes spams. Sinon, écris-nous à contact@lapetiteide.fr : on te le renvoie." },
+  { q: "Je n'ai pas reçu l'email", a: "Regarde dans tes spams. Sinon, va sur la page « Retrouver mon achat » (en bas de page) : tes liens te sont renvoyés." },
 ];
 
 export default async function PackPage({ params }: { params: Params }) {

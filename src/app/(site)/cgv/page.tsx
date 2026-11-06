@@ -62,8 +62,9 @@ export default function CgvPage() {
           content: (
             <p>
               Les fichiers sont accessibles immédiatement après confirmation du paiement, sur la page de confirmation et par email, via
-              un lien de téléchargement personnel valable {SITE.downloadDays} jours. Il appartient au client d&apos;enregistrer les
-              fichiers sur son appareil.
+              un lien de téléchargement personnel valable {SITE.downloadDays} jours. De nouveaux liens peuvent être obtenus à tout moment
+              depuis la page « <Link href="/retrouver-mon-achat">Retrouver mon achat</Link> ». Il appartient au client d&apos;enregistrer
+              les fichiers sur son appareil.
             </p>
           ),
         },

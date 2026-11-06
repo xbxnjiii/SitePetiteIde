@@ -94,6 +94,25 @@ function CheckoutForm({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const platform = usePlatform();
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoBusy, setPromoBusy] = useState(false);
+
+  const session = state.type === "success" ? state.checkout : null;
+  const discount = session?.discountAmounts?.[0] ?? null;
+  const totalLabel = session ? session.total.total.amount : formatPrice(priceCents);
+
+  const applyPromo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!session || !promoCode.trim()) return;
+    setPromoBusy(true);
+    setPromoError(null);
+    const result = await session.applyPromotionCode(promoCode.trim());
+    setPromoBusy(false);
+    if (result.type === "error") setPromoError("Ce code n'est pas valide.");
+    else setPromoOpen(false);
+  };
 
   const recordConsent = async () => {
     const r = await fetch("/api/checkout/consent", {
@@ -204,12 +223,46 @@ function CheckoutForm({
       {/* Sans Apple Pay / Google Pay : bouton principal ; sinon : lien discret. Les deux ouvrent la fenêtre carte. */}
       {hasWallet === false ? (
         <button type="button" className="btn btn--primary btn--block btn--buy" onClick={() => setShowCard(true)} disabled={state.type !== "success"}>
-          <Icon name="shield" /> Payer {formatPrice(priceCents)} par carte
+          <Icon name="shield" /> Payer {totalLabel} par carte
         </button>
       ) : null}
       {hasWallet ? (
         <button type="button" className="checkout__alt" onClick={() => setShowCard(true)}>
           Autres moyens de paiement
+        </button>
+      ) : null}
+
+      {/* Code promo : appliqué directement sur la session Stripe (Apple Pay / Google Pay compris). */}
+      {discount ? (
+        <p className="promo-applied">
+          <span>
+            Code <strong>{discount.promotionCode ?? discount.displayName}</strong> : −{discount.amount} · Total{" "}
+            <strong>{totalLabel}</strong>
+          </span>
+          <button type="button" className="link-btn" onClick={() => session?.removePromotionCode()}>
+            Retirer
+          </button>
+        </p>
+      ) : promoOpen ? (
+        <form className="promo-form" onSubmit={applyPromo}>
+          <label htmlFor={`promo-${slug}`} className="visually-hidden">Code promo</label>
+          <input
+            id={`promo-${slug}`}
+            className="input promo-form__input"
+            value={promoCode}
+            onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+            placeholder="Code promo"
+            autoComplete="off"
+            autoCapitalize="characters"
+          />
+          <button type="submit" className="btn btn--secondary btn--sm" disabled={promoBusy || !session}>
+            {promoBusy ? "…" : "Appliquer"}
+          </button>
+          {promoError ? <p className="promo-form__error" role="alert">{promoError}</p> : null}
+        </form>
+      ) : session ? (
+        <button type="button" className="checkout__alt" onClick={() => setPromoOpen(true)}>
+          J&apos;ai un code promo
         </button>
       ) : null}
 
@@ -222,7 +275,7 @@ function CheckoutForm({
       ) : null}
 
       {showCard ? (
-        <CardModal onClose={() => setShowCard(false)} title={`Payer ${formatPrice(priceCents)}`}>
+        <CardModal onClose={() => setShowCard(false)} title={`Payer ${totalLabel}`}>
           <form className="checkout__card" onSubmit={onCardSubmit}>
             <label className="checkout__label" htmlFor={`email-${slug}`}>
               Ton email <span>(pour recevoir ton PDF)</span>
@@ -246,7 +299,7 @@ function CheckoutForm({
               </p>
             ) : null}
             <button type="submit" className="btn btn--primary btn--block btn--buy" disabled={busy || state.type !== "success"}>
-              {busy ? "Paiement en cours…" : `Payer ${formatPrice(priceCents)}`}
+              {busy ? "Paiement en cours…" : `Payer ${totalLabel}`}
             </button>
             <p className="checkout__trust">
               <Icon name="shield" /> Paiement sécurisé par Stripe

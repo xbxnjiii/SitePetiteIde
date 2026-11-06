@@ -69,7 +69,9 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
         <p className="notice">Ton lien de téléchargement t&apos;arrive par email dans quelques instants.</p>
       ) : null}
       {expired ? (
-        <p className="notice">Ce lien a expiré. Écris-nous à {SITE.contactEmail} avec ta référence de commande : on te le renvoie.</p>
+        <p className="notice">
+          Ce lien a expiré. <Link href="/retrouver-mon-achat">Reçois de nouveaux liens par email</Link>.
+        </p>
       ) : (
         <div className="thanks__links">
           {links.map((l) => (

@@ -44,13 +44,13 @@ export interface DownloadLink {
   url: string;
 }
 
-export async function downloadLinks(env: AppEnv, order: Order): Promise<DownloadLink[]> {
+export async function downloadLinks(env: AppEnv, order: Order, expiresAt: number = order.expiresAt): Promise<DownloadLink[]> {
   if (!order.pack || !order.paid || order.revoked) return [];
   const secret = requireVar(env, "DOWNLOAD_TOKEN_SECRET");
   return Promise.all(
     order.pack.files.map(async (file, index) => ({
       label: file.label,
-      url: `${siteUrl(env)}/telecharger?t=${await signDownloadToken({ s: order.session.id, f: index, e: order.expiresAt }, secret)}`,
+      url: `${siteUrl(env)}/telecharger?t=${await signDownloadToken({ s: order.session.id, f: index, e: expiresAt }, secret)}`,
     })),
   );
 }
