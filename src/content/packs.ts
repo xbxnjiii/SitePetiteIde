@@ -56,6 +56,8 @@ export interface Pack {
   images?: PackImages;
   /** Ce que contient le pack (affiché sur la page de vente). */
   items: PackItem[];
+  /** Fiche bonus incluse dans le pack (mise en avant sur la page de liens et la page de vente). */
+  bonus?: { title: string; text: string };
   /** 3 points forts courts, affichés sous le titre de la page de vente. */
   highlights: string[];
   /** Fichiers livrés après paiement. */
@@ -71,8 +73,12 @@ export const packs: Pack[] = [
     slug: "pack-des-constantes",
     name: "Pack Mémos : Constantes",
     headline: "Les constantes à mémoriser en 1 clin d'œil 👁️",
-    promise: "6 fiches mémo ultra-visuelles pour réviser l'essentiel, sans rien de superflu.",
-    tagline: "6 fiches mémo pour réviser les paramètres vitaux.",
+    promise: "7 fiches mémo ultra-visuelles pour réviser l'essentiel, sans rien de superflu.",
+    tagline: "7 fiches mémo pour réviser les paramètres vitaux.",
+    bonus: {
+      title: "Fiche bonus : la méthode pour mieux apprendre",
+      text: "Des astuces simples pour mémoriser durablement les valeurs et les retrouver facilement le jour J.",
+    },
     description:
       "Un mémo clair et synthétique pour chaque paramètre vital : valeurs normales, technique de mesure et signes d'alerte. Conçu pour réviser vite et bien, sur téléphone ou imprimé.",
     priceCents: 299,
@@ -83,8 +89,9 @@ export const packs: Pack[] = [
       sale: "/img/packs/pack-constantes-v2-detail.webp",
       saleSize: [1100, 1100],
       og: "/img/packs/pack-constantes-v2-og.jpg",
-      alt: "Pack Mémos : Constantes, 6 fiches mémos — fréquence cardiaque, fréquence respiratoire, température, tension artérielle, glycémie et saturation (SpO2)",
+      alt: "Pack Mémos : Constantes — 7 fiches mémo sur les paramètres vitaux et 1 fiche bonus",
     },
+    // Liste indicative (non affichée sur le site) — 7e fiche à compléter.
     items: [
       { title: "Fréquence cardiaque", icon: "heart", description: "Normes, prise de pouls, tachycardie et bradycardie." },
       { title: "Fréquence respiratoire", icon: "lungs", description: "Compter, observer, repérer une détresse respiratoire." },

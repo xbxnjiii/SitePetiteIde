@@ -84,6 +84,19 @@ export default async function PackPage({ params }: { params: Params }) {
             ))}
           </ul>
 
+          {pack.bonus ? (
+            <div className="bonus-card">
+              <span className="bonus-card__icon" aria-hidden="true">
+                <Icon name="gift" />
+              </span>
+              <div>
+                <p className="bonus-card__label">Bonus inclus</p>
+                <p className="bonus-card__title">{pack.bonus.title}</p>
+                <p className="bonus-card__text">{pack.bonus.text}</p>
+              </div>
+            </div>
+          ) : null}
+
           <div className="sale-buy" id="acheter" data-buy-anchor="">
             <div className="sale-buy__price">
               <Price cents={pack.priceCents} compareAt={pack.compareAtPriceCents} />
