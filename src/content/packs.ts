@@ -69,7 +69,7 @@ export interface Pack {
 export const packs: Pack[] = [
   {
     slug: "pack-des-constantes",
-    name: "Pack des constantes",
+    name: "Pack Mémos : Constantes",
     headline: "Les constantes à mémoriser en 1 clin d'œil 👁️",
     promise: "6 fiches mémo ultra-visuelles pour réviser l'essentiel, sans rien de superflu.",
     tagline: "6 fiches mémo pour réviser les paramètres vitaux.",
@@ -79,11 +79,11 @@ export const packs: Pack[] = [
     icon: "heart",
     tone: "pink",
     images: {
-      card: "/img/packs/pack-des-constantes-carre.webp",
-      sale: "/img/packs/pack-des-constantes-vente.webp",
-      saleSize: [1199, 1312],
-      og: "/img/packs/pack-des-constantes-og.jpg",
-      alt: "Pack Les Constantes : 6 fiches mémos — fréquence cardiaque, fréquence respiratoire, température, tension artérielle, glycémie et saturation (SpO2)",
+      card: "/img/packs/pack-constantes-v2-carre.webp",
+      sale: "/img/packs/pack-constantes-v2-detail.webp",
+      saleSize: [1100, 1100],
+      og: "/img/packs/pack-constantes-v2-og.jpg",
+      alt: "Pack Mémos : Constantes, 6 fiches mémos — fréquence cardiaque, fréquence respiratoire, température, tension artérielle, glycémie et saturation (SpO2)",
     },
     items: [
       { title: "Fréquence cardiaque", icon: "heart", description: "Normes, prise de pouls, tachycardie et bradycardie." },
@@ -102,7 +102,7 @@ export const packs: Pack[] = [
       {
         key: "pack-des-constantes/pack-des-constantes.pdf",
         downloadName: "La-Petite-IDE-Pack-des-constantes.pdf",
-        label: "Pack des constantes (PDF)",
+        label: "Pack Mémos : Constantes (PDF)",
       },
     ],
     status: "published",
