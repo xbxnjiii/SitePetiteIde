@@ -2,6 +2,7 @@ import { publishedPacks } from "@/content/packs";
 import { Footer } from "@/components/layout/Footer";
 import { OfferBanner } from "@/components/shop/OfferBanner";
 import { PackCover } from "@/components/shop/PackCover";
+import { type BlockVariant, PackQuizBlock } from "@/components/shop/PackQuizBlock";
 import { QuizCta } from "@/components/shop/QuizCta";
 import { SourceLink } from "@/components/shop/SourceLink";
 import { Icon } from "@/components/ui/Icon";
@@ -9,6 +10,8 @@ import { Mascot } from "@/components/ui/Mascot";
 import { SITE } from "@/lib/format";
 
 export const metadata = { alternates: { canonical: "/" } };
+
+const BLOCK_VARIANT: BlockVariant = "a";
 
 // Page d'accueil « lien en bio » (façon Beacons) : une colonne, une action par carte.
 export default function BioPage() {
@@ -35,25 +38,8 @@ export default function BioPage() {
         <section aria-labelledby="packs-title" className="bio__section">
           <h2 id="packs-title" className="visually-hidden">Nos packs de fiches</h2>
           {packs.length === 1 ? (
-            // Un seul pack : grande carte avec bouton d'achat et accès au quiz (tout tient sur un écran).
-            <div className="bio-feature">
-              <SourceLink href={`/${packs[0].slug}`} className="bio-feature__main">
-                {packs[0].images ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={packs[0].images.card} alt="" width={800} height={800} className="bio-feature__img" fetchPriority="high" />
-                ) : (
-                  <PackCover icon={packs[0].icon} tone={packs[0].tone} stacked={false} className="bio-feature__img" />
-                )}
-                <span className="bio-feature__text">
-                  <span className="bio-feature__name">{packs[0].name}</span>
-                  <span className="bio-feature__desc">{packs[0].tagline}</span>
-                </span>
-              </SourceLink>
-              <SourceLink href={`/${packs[0].slug}`} className="btn btn--primary btn--sm bio-feature__btn">
-                Découvrir le pack <Icon name="arrow" />
-              </SourceLink>
-              <QuizCta className="bio-feature__quiz" />
-            </div>
+            // Un seul pack : pack + quiz réunis (tout tient sur un écran).
+            <PackQuizBlock pack={packs[0]} variant={BLOCK_VARIANT} />
           ) : (
             <>
               <ul className="bio__list">
