@@ -87,7 +87,7 @@ export default async function PackPage({ params }: { params: Params }) {
             ))}
           </ul>
           <p className="sale-main__update">
-            <Icon name="spark" /> Mises à jour gratuites : tu reçois chaque nouvelle version des fiches.
+            <Icon name="spark" /> Une mise à jour des fiches ? Tu les récupères gratuitement !
           </p>
 
           {pack.bonus ? (
