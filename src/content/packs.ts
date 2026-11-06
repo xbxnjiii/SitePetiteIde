@@ -40,6 +40,11 @@ export interface PackImages {
 export interface Pack {
   slug: string;
   name: string;
+  /** Titre principal de la page de vente : le bénéfice, pas le nom du produit. */
+  headline: string;
+  /** Promesse en une ou deux phrases sous le titre. */
+  promise: string;
+  /** Phrase courte pour la carte de la page « lien en bio ». */
   tagline: string;
   description: string;
   priceCents: number;
@@ -51,8 +56,10 @@ export interface Pack {
   images?: PackImages;
   /** Ce que contient le pack (affiché sur la page de vente). */
   items: PackItem[];
-  /** Points forts (liste « Pourquoi ce pack »). */
-  highlights: string[];
+  /** Bénéfices concrets (section « Pourquoi tu vas l'adorer »). */
+  highlights: { title: string; text: string }[];
+  /** À qui s'adresse le pack. */
+  audience: string[];
   /** Fichiers livrés après paiement. */
   files: PackFile[];
   /** Caractéristiques affichées (pages, format…). Laisser vide si inconnu. */
@@ -65,7 +72,10 @@ export const packs: Pack[] = [
   {
     slug: "pack-des-constantes",
     name: "Pack des constantes",
-    tagline: "Les 6 mémos des paramètres vitaux, à garder dans ta poche en stage.",
+    headline: "Les 6 constantes, enfin claires et toujours dans ta poche",
+    promise:
+      "Normes, technique de mesure et signes qui doivent t'alerter : tout l'essentiel des paramètres vitaux en 6 fiches mémo visuelles, prêtes pour ton prochain stage.",
+    tagline: "6 fiches mémo pour maîtriser les paramètres vitaux en stage.",
     description:
       "Le pack indispensable pour tes premiers stages : un mémo clair et synthétique pour chaque paramètre vital — valeurs normales, technique de mesure et signes qui doivent t'alerter. À consulter sur ton téléphone ou à imprimer.",
     priceCents: 299,
@@ -88,9 +98,14 @@ export const packs: Pack[] = [
       { title: "Saturation (SpO2)", icon: "lungs", description: "Pose de l'oxymètre, interprétation et limites." },
     ],
     highlights: [
-      "L'essentiel de chaque constante, sans blabla",
-      "Pensé pour les étudiants IFSI et les premiers stages",
-      "Lisible sur téléphone, tablette ou à imprimer",
+      { title: "L'essentiel, sans blabla", text: "Une fiche par constante, les valeurs clés repérables en un coup d'œil." },
+      { title: "Prêt pour le stage", text: "Sur ton téléphone dans la poche de ta tunique, à sortir au bon moment." },
+      { title: "Clair et visuel", text: "Des couleurs, des icônes et des repères pour mémoriser plus vite." },
+    ],
+    audience: [
+      "Tu es en 1re année d'IFSI et tu découvres les constantes",
+      "Tu prépares un stage et tu veux te rassurer",
+      "Tu veux réviser vite avant un partiel ou une MSP",
     ],
     files: [
       {

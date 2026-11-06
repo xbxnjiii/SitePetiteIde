@@ -8,9 +8,9 @@ export async function POST(request: Request) {
   const env = await getEnvAsync();
   const base = siteUrl(env);
 
-  // Le formulaire doit venir de notre site.
+  // Le formulaire doit venir de notre site (avec ou sans « www », ou en local).
   const origin = request.headers.get("origin");
-  if (origin && origin !== base && !origin.startsWith("http://localhost") && !origin.startsWith("http://127.0.0.1")) {
+  if (origin && !isAllowedOrigin(origin, base)) {
     return new Response("Origine non autorisée", { status: 403 });
   }
 
@@ -60,5 +60,16 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("checkout: erreur Stripe", err instanceof Error ? err.message : err);
     return Response.redirect(`${base}/${pack.slug}?erreur=paiement`, 303);
+  }
+}
+
+function isAllowedOrigin(origin: string, base: string): boolean {
+  try {
+    const o = new URL(origin);
+    if (o.hostname === "localhost" || o.hostname === "127.0.0.1") return true;
+    const strip = (h: string) => h.replace(/^www\./, "");
+    return o.protocol === "https:" && strip(o.hostname) === strip(new URL(base).hostname);
+  } catch {
+    return false;
   }
 }

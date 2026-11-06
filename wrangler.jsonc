@@ -22,7 +22,9 @@
     "EMAIL_FROM": "La Petite IDE <commandes@lapetiteide.fr>",
     "EMAIL_REPLY_TO": "contact@lapetiteide.fr",
     "STRIPE_AUTOMATIC_TAX": "false",
-    "STRIPE_TOS_CONSENT": "true"
+    // ⚠️ AVANT LE LANCEMENT : repasser à "true" (case CGV + renonciation au droit de rétractation),
+    // après avoir renseigné l'URL des CGV dans Stripe (Paramètres → Informations publiques).
+    "STRIPE_TOS_CONSENT": "false"
   },
   "observability": { "enabled": true }
 }

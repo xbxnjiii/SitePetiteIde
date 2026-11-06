@@ -4,7 +4,6 @@ import { Footer } from "@/components/layout/Footer";
 import { PackCover } from "@/components/shop/PackCover";
 import { Icon } from "@/components/ui/Icon";
 import { Mascot } from "@/components/ui/Mascot";
-import { Price } from "@/components/ui/Price";
 import { SITE } from "@/lib/format";
 
 // Page d'accueil « lien en bio » (façon Beacons) : une colonne, une action par carte.
@@ -33,10 +32,10 @@ export default function BioPage() {
           <ul className="bio__list">
             {packs.map((p) => (
               <li key={p.slug}>
-                <Link href={`/${p.slug}`} className={p.images ? "bio-card bio-card--visual" : "bio-card"}>
+                <Link href={`/${p.slug}`} className="bio-card">
                   {p.images ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.images.card} alt={p.images.alt} width={800} height={800} className="bio-card__img" fetchPriority="high" />
+                    <img src={p.images.card} alt="" width={800} height={800} className="bio-card__thumb" fetchPriority="high" />
                   ) : (
                     <PackCover icon={p.icon} tone={p.tone} stacked={false} className="bio-card__cover" />
                   )}
@@ -45,7 +44,6 @@ export default function BioPage() {
                       {p.badge ? <span className="badge badge--pink">{p.badge}</span> : null}
                       <span className="bio-card__name">{p.name}</span>
                       <span className="bio-card__desc">{p.tagline}</span>
-                      <Price cents={p.priceCents} compareAt={p.compareAtPriceCents} />
                     </span>
                     <span className="bio-card__arrow" aria-hidden="true"><Icon name="arrow" /></span>
                   </span>
