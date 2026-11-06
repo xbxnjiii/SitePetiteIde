@@ -2,6 +2,7 @@ import { publishedPacks } from "@/content/packs";
 import { Footer } from "@/components/layout/Footer";
 import { OfferBanner } from "@/components/shop/OfferBanner";
 import { PackCover } from "@/components/shop/PackCover";
+import { QuizCta } from "@/components/shop/QuizCta";
 import { SourceLink } from "@/components/shop/SourceLink";
 import { Icon } from "@/components/ui/Icon";
 import { Mascot } from "@/components/ui/Mascot";
@@ -61,6 +62,9 @@ export default function BioPage() {
           </div>
         </section>
 
+        <section className="bio__section" aria-label="Quiz gratuit">
+          <QuizCta />
+        </section>
       </main>
       <Footer social={false} />
     </div>

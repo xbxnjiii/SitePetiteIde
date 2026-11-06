@@ -6,6 +6,7 @@ import { CheckoutError } from "@/components/shop/CheckoutError";
 import { OfferBanner } from "@/components/shop/OfferBanner";
 import { PackCheckout } from "@/components/shop/PackCheckout";
 import { PackCover } from "@/components/shop/PackCover";
+import { QuizCta } from "@/components/shop/QuizCta";
 import { StickyBuyBar } from "@/components/shop/StickyBuyBar";
 import { Icon } from "@/components/ui/Icon";
 import { SITE, formatPrice } from "@/lib/format";
@@ -37,6 +38,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 const FAQ = [
   { q: "Comment je reçois mon pack ?", a: "Juste après le paiement : bouton de téléchargement immédiat et lien envoyé par email (valable 30 jours)." },
   { q: "C'est un format papier ?", a: "Non, un PDF. Garde-le sur ton téléphone ou imprime-le." },
+  { q: "Et si les fiches sont améliorées ?", a: "Les mises à jour sont gratuites : tu reçois la nouvelle version des fiches que tu as achetées." },
   { q: "Je n'ai pas reçu l'email", a: "Regarde dans tes spams. Sinon, va sur la page « Retrouver mon achat » (en bas de page) : tes liens te sont renvoyés." },
 ];
 
@@ -84,6 +86,9 @@ export default async function PackPage({ params }: { params: Params }) {
               </li>
             ))}
           </ul>
+          <p className="sale-main__update">
+            <Icon name="spark" /> Mises à jour gratuites : tu reçois chaque nouvelle version des fiches.
+          </p>
 
           {pack.bonus ? (
             <div className="bonus-card">
@@ -130,6 +135,10 @@ export default async function PackPage({ params }: { params: Params }) {
             </details>
           ))}
         </div>
+      </section>
+
+      <section className="container sale-quiz" aria-label="Quiz gratuit">
+        <QuizCta />
       </section>
 
       <StickyBuyBar>
