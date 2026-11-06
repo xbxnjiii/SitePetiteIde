@@ -1,72 +1,58 @@
-# La Petite IDE — boutique de PDF pour étudiants infirmiers
+# La Petite IDE — page de vente de packs de fiches
 
-Boutique en ligne de supports pédagogiques numériques (fiches, mémos, packs).
+Page « lien en bio » façon Beacons.ai → page de vente → paiement Stripe → PDF livré par email.
 
-- **Architecture et choix techniques** : [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-- **Pile** : Next.js (App Router, TypeScript) déployé sur **Cloudflare Workers** via OpenNext ·
-  Supabase (base de données, à partir de la phase 3) · Cloudflare R2 (fichiers) · Stripe (paiement) · Resend (emails)
+- **Cahier des charges** : [`docs/CAHIER-DES-CHARGES.md`](docs/CAHIER-DES-CHARGES.md)
+- **Pile** : Next.js sur **Cloudflare Workers** (OpenNext) · **Stripe Checkout** · **Cloudflare R2** (PDF privés) · **Resend** (emails).
+  Aucune base de données : les commandes vivent dans Stripe.
 
-## État d'avancement
+## Parcours et fichiers clés
 
-| Phase | Statut |
-|---|---|
-| 1. Analyse et architecture | ✅ validée |
-| 2. Interface avec données fictives | ✅ livrée — à valider |
-| 3. Base de données et administration | ⏳ |
-| 4. Paiement et téléchargements | ⏳ |
-| 5. Tests et mise en production | ⏳ |
+| Étape | Route | Fichier |
+|---|---|---|
+| Accueil « lien en bio » | `/` | `src/app/page.tsx` |
+| Page de vente | `/<slug-du-pack>` | `src/app/(site)/[slug]/page.tsx` |
+| Création du paiement | `POST /api/checkout` | `src/app/api/checkout/route.ts` |
+| Retour après paiement | `/merci?session_id=…` | `src/app/(site)/merci/page.tsx` |
+| Webhook Stripe → email | `POST /api/webhooks/stripe` | `src/app/api/webhooks/stripe/route.ts` |
+| Téléchargement sécurisé | `/telecharger?t=…` | `src/app/telecharger/route.ts` |
 
-> En phase 2, **toutes les données sont fictives** (`src/lib/mock-data.ts`) et le paiement est
-> volontairement désactivé. Un bandeau le signale sur chaque page et l'indexation est bloquée.
-
-## Démarrer en local
-
-Prérequis : Node.js 20+.
+**Catalogue** : `src/content/packs.ts`. Après toute modification de nom ou de prix :
 
 ```bash
-npm install
-npm run dev          # http://localhost:3000 (serveur de développement Next.js)
-npm run preview      # build Cloudflare + exécution locale dans workerd (http://localhost:8787)
-npm run lint         # vérification TypeScript
+npm run stripe:sync        # crée/met à jour le produit et le prix TTC dans Stripe (idempotent)
 ```
-
-## Déployer sur Cloudflare
-
-Recommandé : **Workers Builds** (déploiement automatique à chaque `git push`) :
-Cloudflare → *Workers & Pages* → *Create* → *Import a repository* → ce dépôt, puis :
-
-- Build command : `npx opennextjs-cloudflare build`
-- Deploy command : `npx opennextjs-cloudflare deploy`
-
-Le nom du Worker doit être `la-petite-ide` (voir `wrangler.jsonc`).
-
-En ligne de commande : `npx wrangler login` puis `npm run deploy`.
-
-## Organisation du code
-
-```
-src/
-├── app/            pages (accueil, boutique, catégories, packs, produit, panier, pages légales…)
-├── components/
-│   ├── layout/     en-tête, menu mobile, pied de page
-│   ├── shop/       cartes produit/catégorie, galerie, panier, tri
-│   ├── content/    éléments des pages de contenu
-│   └── ui/         icônes, logo, mascotte (provisoire), prix, fil d'Ariane
-├── lib/
-│   ├── catalog.ts  accès au catalogue (données fictives → Supabase en phase 3)
-│   ├── mock-data.ts
-│   ├── cart-store.ts / use-cart.ts   panier (localStorage, identifiants uniquement)
-│   └── types.ts, format.ts, seo.ts
-└── styles/         tokens.css (charte), base.css, components.css
-```
-
-## Éléments provisoires à remplacer
-
-- **Logo et mascotte** : `src/components/ui/Logo.tsx`, `src/components/ui/Mascot.tsx` (fichiers officiels attendus).
-- **Visuels produits et aperçus** : générés en CSS ; remplacés par les images importées dans l'admin en phase 3.
-- **Liens TikTok / Instagram, email de contact** : `src/lib/format.ts`.
-- **Pages légales** : gabarits avec des mentions `[À compléter : …]` (aucune information légale inventée).
 
 ## Sécurité
 
-Aucun secret dans le dépôt. Voir `.env.example` ; en production, les secrets sont stockés via `npx wrangler secret put`.
+- Le paiement n'est jamais déduit de la redirection : `/merci`, le webhook et chaque téléchargement **revérifient la session chez Stripe**.
+- Webhook : signature vérifiée (`STRIPE_WEBHOOK_SECRET`), email envoyé une seule fois (marqueur sur le PaymentIntent + clé d'idempotence Resend).
+- Liens de téléchargement signés (HMAC-SHA256), valables 30 jours après l'achat, **coupés en cas de remboursement ou de litige**.
+- PDF dans un bucket R2 privé : aucune URL publique.
+- Aucun secret dans le dépôt (`.dev.vars` est ignoré par Git).
+
+## Développement local
+
+```bash
+npm install
+cp .env.example .dev.vars          # puis renseigner les valeurs de test
+npx wrangler r2 object put la-petite-ide-pdfs/pack-des-constantes/pack-des-constantes.pdf --file ./mon.pdf --local
+npm run preview                    # http://localhost:8787 (environnement Cloudflare local)
+```
+
+Carte de test Stripe : `4242 4242 4242 4242`, date future, CVC quelconque.
+
+## Mise en production (Cloudflare)
+
+1. **R2** : créer le bucket `la-petite-ide-pdfs` et y déposer `pack-des-constantes/pack-des-constantes.pdf`.
+2. **Worker** : *Workers & Pages → Create → Import a repository* → ce dépôt.
+   Build : `npx opennextjs-cloudflare build` · Deploy : `npx opennextjs-cloudflare deploy`.
+3. **Secrets** (*Settings → Variables and Secrets*) : `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY`, `DOWNLOAD_TOKEN_SECRET`.
+4. **Stripe** : webhook vers `https://<domaine>/api/webhooks/stripe` (événements `checkout.session.completed`,
+   `checkout.session.async_payment_succeeded`) ; URL des CGV dans *Paramètres → Informations publiques*.
+5. **Lancement** : `IS_LIVE = true` dans `src/lib/format.ts` (retire le bandeau test, autorise l'indexation).
+
+## Éléments provisoires
+
+Logo et mascotte (`src/components/ui/`), visuels des packs (générés en CSS), liens réseaux sociaux (`src/lib/format.ts`),
+mentions `[À compléter : …]` des pages légales.

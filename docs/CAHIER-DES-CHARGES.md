@@ -1,6 +1,6 @@
 # La Petite IDE — Cahier des charges V1 (version simplifiée)
 
-> Statut : **proposition à valider**. Ce document remplace le cahier des charges initial.
+> Statut : **validé** (6 nov. 2026) — livraison par lien sécurisé valable 30 jours, un seul pack au lancement (Pack des constantes, 2,99 € TTC).
 > Date : 6 novembre 2026
 
 ---
@@ -97,22 +97,18 @@ Mentions légales, CGV, politique de confidentialité, contact (email et réseau
 
 ---
 
-## 5. Gestion des packs : Stripe sert de back-office
+## 5. Gestion des packs
 
-Pas d'interface d'administration à développer et à maintenir : **tout se gère depuis le tableau de bord Stripe**, déjà utilisé pour l'argent.
+Pas de back-office : avec un seul pack (puis quelques-uns), la solution la plus simple est un **fichier de configuration**
+(`src/content/packs.ts`) qui décrit chaque pack : nom, prix, textes, contenu, fichiers PDF.
 
-| Besoin | Où le faire |
+| Besoin | Comment |
 |---|---|
-| Créer ou modifier un pack (nom, prix, description, visuel, liste du contenu) | Stripe → *Catalogue de produits* |
-| Mettre en ligne ou retirer un pack | Stripe → archiver ou réactiver le produit |
-| Associer les PDF au pack | Envoi des PDF dans Cloudflare R2, puis leur nom renseigné dans le produit Stripe (champ « métadonnées ») |
-| Voir les ventes et le chiffre d'affaires | Stripe → *Paiements* et *Rapports* |
-| Rembourser | Stripe → *Paiements* → *Rembourser* |
-| Créer un code promo | Stripe → *Coupons* |
+| Ajouter ou modifier un pack | Modifier `src/content/packs.ts` (ou le demander au développeur), puis `npm run stripe:sync` met Stripe à jour automatiquement |
+| Déposer le PDF d'un pack | Cloudflare → R2 → bucket `la-petite-ide-pdfs` → *Upload* |
+| Voir les ventes, rembourser, créer un code promo | Tableau de bord Stripe |
 
-Le site lit la liste des packs directement chez Stripe et l'affiche automatiquement. Une modification du prix dans Stripe est visible sur le site en quelques minutes, sans aucune intervention technique.
-
-Je fournirai un **guide pas à pas avec captures d'écran** (« Ajouter un nouveau pack »).
+*(Version initiale de ce document : catalogue géré dans Stripe. Abandonné car trop complexe pour un seul pack.)*
 
 ---
 
@@ -122,7 +118,7 @@ Je fournirai un **guide pas à pas avec captures d'écran** (« Ajouter un nouve
 |---|---|---|
 | Site | Next.js sur **Cloudflare Workers** (déjà en place) | 0 € (offre gratuite a priori suffisante : le site actuel pèse environ 1 Mo compressé) |
 | Fichiers PDF | **Cloudflare R2**, bucket privé | 0 € (jusqu'à 10 Go) |
-| Paiement + catalogue + commandes | **Stripe Checkout** | Commission par vente uniquement |
+| Paiement + historique des commandes | **Stripe Checkout** | Commission par vente uniquement |
 | Emails | **Resend**, envoyé depuis `contact@lapetiteide.fr` | 0 € (jusqu'à 3 000 emails/mois) |
 | Statistiques de visites | **Cloudflare Web Analytics** (sans cookie, donc sans bandeau de consentement) | 0 € |
 | Base de données | **Aucune** : les commandes sont dans Stripe, les fichiers dans R2 | — |

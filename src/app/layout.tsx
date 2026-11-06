@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fredoka, Inter, Nunito_Sans } from "next/font/google";
-import { Footer } from "@/components/layout/Footer";
-import { Header } from "@/components/layout/Header";
-import { SITE } from "@/lib/format";
+import { IS_LIVE, SITE } from "@/lib/format";
 import "@/styles/tokens.css";
 import "@/styles/base.css";
 import "@/styles/components.css";
@@ -14,32 +12,25 @@ const inter = Inter({ subsets: ["latin"], variable: "--ff-inter", display: "swap
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
-  title: { default: "La Petite IDE — Fiches et mémos pour étudiants infirmiers", template: "%s | La Petite IDE" },
+  title: { default: "La Petite IDE — Fiches mémo pour étudiants infirmiers", template: "%s | La Petite IDE" },
   description: SITE.description,
   openGraph: { siteName: SITE.name, locale: "fr_FR", type: "website" },
-  // Phase 2 (démo) : on bloque l'indexation tant que les données sont fictives.
-  robots: { index: false, follow: false },
+  robots: IS_LIVE ? undefined : { index: false, follow: false },
 };
 
-export const viewport: Viewport = {
-  themeColor: "#4E7AC7",
-  width: "device-width",
-  initialScale: 1,
-};
+export const viewport: Viewport = { themeColor: "#4E7AC7", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={`${fredoka.variable} ${nunito.variable} ${inter.variable}`}>
       <body>
-        <a href="#contenu" className="skip-link">
-          Aller au contenu
-        </a>
-        <div className="demo-banner" role="note">
-          Version de démonstration — produits et prix fictifs, paiement non activé.
-        </div>
-        <Header />
-        <main id="contenu">{children}</main>
-        <Footer />
+        <a href="#contenu" className="skip-link">Aller au contenu</a>
+        {IS_LIVE ? null : (
+          <div className="demo-banner" role="note">
+            Mode test — aucun paiement réel. Carte de test : 4242 4242 4242 4242.
+          </div>
+        )}
+        {children}
       </body>
     </html>
   );

@@ -5,12 +5,19 @@ export const formatPrice = (cents: number) => euro.format(cents / 100);
 export const SITE = {
   name: "La Petite IDE",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://lapetiteide.fr",
-  description:
-    "Fiches de révision, mémos et outils pratiques pour les étudiants en soins infirmiers (IFSI). Téléchargement immédiat en PDF.",
-  // À compléter avec les vrais comptes (cf. questions ouvertes).
+  description: "Fiches mémo et packs de révision pour les étudiants en soins infirmiers. Paiement sécurisé, PDF reçu par email.",
+  // ⚠️ À remplacer par les vrais comptes.
   social: {
     tiktok: "https://www.tiktok.com/",
     instagram: "https://www.instagram.com/",
   },
   contactEmail: "contact@lapetiteide.fr",
+  /** Durée de validité des liens de téléchargement (jours après l'achat). */
+  downloadDays: 30,
 };
+
+/**
+ * Passer à `true` au lancement : retire le bandeau « mode test » et autorise
+ * l'indexation par les moteurs de recherche.
+ */
+export const IS_LIVE = false;

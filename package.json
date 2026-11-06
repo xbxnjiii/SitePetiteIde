@@ -9,12 +9,15 @@
     "lint": "tsc --noEmit",
     "cf:build": "opennextjs-cloudflare build",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "stripe:sync": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/stripe-sync.mts"
   },
   "dependencies": {
     "next": "16.4.5",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "server-only": "0.0.1",
+    "stripe": "23.1.0"
   },
   "devDependencies": {
     "@opennextjs/cloudflare": "1.20.16",
