@@ -34,7 +34,7 @@
 | Paiement | **Stripe Checkout** + webhooks | Paiement par carte, Apple Pay et Google Pay, 3-D Secure, codes promo. Stripe Tax en option. |
 | Emails transactionnels | **Resend**, avec les modèles d'email écrits en React | Intégration simple avec Next.js, bonne délivrabilité. Alternative européenne : Brevo (via son API). |
 | Tâches planifiées | **Cloudflare Cron Triggers** | Activité quotidienne sur la base (évite la mise en pause, voir §1.6), sauvegarde quotidienne vers R2, nettoyage des commandes abandonnées et des liens expirés. |
-| Styles | **CSS Modules + variables CSS**, polices via `next/font` | Aucune bibliothèque CSS. Les polices sont auto-hébergées, ce qui est bon pour le RGPD et les performances. |
+| Styles | **CSS natif + variables CSS** (fichiers `tokens.css`, `base.css`, `components.css`), polices via `next/font` | Aucune bibliothèque CSS. Les polices sont auto-hébergées, ce qui est bon pour le RGPD et les performances. |
 
 **Dépendances (liste volontairement courte)** : `next`, `react`, `@opennextjs/cloudflare`, `@supabase/supabase-js`,
 `@supabase/ssr`, `stripe`, `resend`, `@react-email/components`, `zod` (validation des formulaires).

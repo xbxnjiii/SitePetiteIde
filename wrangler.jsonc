@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "la-petite-ide",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    // Auto-référence requise par OpenNext (doit correspondre au nom du Worker)
+    { "binding": "WORKER_SELF_REFERENCE", "service": "la-petite-ide" }
+  ],
+  "observability": { "enabled": true }
+  // Phases 3-4 : buckets R2 (PDF privés, médias publics, cache) et Cron Triggers.
+}

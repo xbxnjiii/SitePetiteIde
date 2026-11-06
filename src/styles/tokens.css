@@ -1,0 +1,45 @@
+/* Charte graphique La Petite IDE — source unique des couleurs et espacements. */
+:root {
+  /* Palette officielle */
+  --c-primary: #4e7ac7;       /* Bleu */
+  --c-primary-light: #c5d8f4; /* Bleu clair */
+  --c-bg: #f8f9fc;            /* Blanc cassé */
+  --c-accent: #eaa7c1;        /* Rose */
+  --c-ink: #2d3a5a;           /* Bleu nuit */
+
+  /* Dérivées (nuances calculées à partir de la palette) */
+  --c-primary-dark: #3a63ab;
+  --c-primary-50: #eef3fb;
+  --c-accent-50: #fcf0f5;
+  --c-accent-dark: #c9668f;
+  --c-ink-soft: #5b6784;
+  --c-line: #e3e8f2;
+  --c-white: #ffffff;
+  --c-success: #2f8f6b;
+
+  /* Typographies (variables injectées par next/font dans layout.tsx) */
+  --font-logo: var(--ff-fredoka), "Fredoka", system-ui, sans-serif;
+  --font-title: var(--ff-nunito), "Nunito Sans", system-ui, sans-serif;
+  --font-body: var(--ff-inter), "Inter", system-ui, sans-serif;
+
+  /* Rayons, ombres, espacements */
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-pill: 999px;
+  --shadow-sm: 0 1px 2px rgb(45 58 90 / 6%), 0 2px 8px rgb(45 58 90 / 5%);
+  --shadow-md: 0 4px 20px rgb(45 58 90 / 9%);
+  --shadow-lg: 0 12px 40px rgb(78 122 199 / 18%);
+  --container: 1160px;
+  --gutter: 16px;
+  --header-h: 64px;
+
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 32px;
+    --header-h: 76px;
+  }
+}
