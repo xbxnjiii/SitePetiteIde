@@ -3,9 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getPack, publishedPacks } from "@/content/packs";
-import { BuyButton } from "@/components/shop/BuyButton";
 import { CheckoutError } from "@/components/shop/CheckoutError";
 import { StickyBuyBar } from "@/components/shop/StickyBuyBar";
+import { PackCheckout } from "@/components/shop/PackCheckout";
 import { PackCover } from "@/components/shop/PackCover";
 import { Icon } from "@/components/ui/Icon";
 import { Mascot } from "@/components/ui/Mascot";
@@ -100,7 +100,7 @@ export default async function PackPage({ params }: { params: Params }) {
             <h1>{pack.headline}</h1>
             <p className="sale-hero__promise">{pack.promise}</p>
 
-            <div className="sale-offer">
+            <div className="sale-offer" id="acheter" data-buy-anchor="">
               <div className="sale-offer__price">
                 <Price cents={pack.priceCents} compareAt={pack.compareAtPriceCents} />
                 {perItem ? <span className="sale-offer__unit">soit environ {formatPrice(Math.round(perItem))} la fiche</span> : null}
@@ -108,11 +108,7 @@ export default async function PackPage({ params }: { params: Params }) {
               <Suspense>
                 <CheckoutError />
               </Suspense>
-              <BuyButton slug={pack.slug} priceCents={pack.priceCents} label="Je veux le pack" />
-              <ul className="sale-offer__trust">
-                <li><Icon name="download" /> PDF reçu immédiatement</li>
-                <li><Icon name="shield" /> Paiement 100 % sécurisé</li>
-              </ul>
+              <PackCheckout slug={pack.slug} priceCents={pack.priceCents} />
             </div>
           </div>
         </div>
@@ -185,7 +181,9 @@ export default async function PackPage({ params }: { params: Params }) {
           <p>
             {pack.items.length} fiches mémo pour {formatPrice(pack.priceCents)}, dans ta boîte mail en quelques secondes.
           </p>
-          <BuyButton slug={pack.slug} priceCents={pack.priceCents} label="Je veux le pack" />
+          <a href="#acheter" className="btn btn--primary btn--block btn--buy sale-cta__btn">
+            Je veux le pack · {formatPrice(pack.priceCents)}
+          </a>
         </section>
 
         {/* ===== 7. FAQ ===== */}
@@ -238,7 +236,9 @@ export default async function PackPage({ params }: { params: Params }) {
           <span>{pack.name}</span>
           <Price cents={pack.priceCents} />
         </div>
-        <BuyButton slug={pack.slug} priceCents={pack.priceCents} compact label="Acheter" />
+        <a href="#acheter" className="btn btn--primary btn--buy sticky-buy__btn">
+          Acheter
+        </a>
       </StickyBuyBar>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(structured)} />

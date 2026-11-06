@@ -12,7 +12,9 @@ Page « lien en bio » façon Beacons.ai → page de vente → paiement Stripe �
 |---|---|---|
 | Accueil « lien en bio » | `/` | `src/app/page.tsx` |
 | Page de vente | `/<slug-du-pack>` | `src/app/(site)/[slug]/page.tsx` |
-| Création du paiement | `POST /api/checkout` | `src/app/api/checkout/route.ts` |
+| Paiement intégré (Apple Pay, Google Pay, carte) | bloc d'achat de la page de vente | `src/components/shop/PackCheckout.tsx` |
+| Création de la session de paiement | `POST /api/checkout` (JSON → intégré, formulaire → page Stripe en secours) | `src/app/api/checkout/route.ts` |
+| Consentement CGV + renonciation | `POST /api/checkout/consent` | `src/app/api/checkout/consent/route.ts` |
 | Retour après paiement | `/merci?session_id=…` | `src/app/(site)/merci/page.tsx` |
 | Webhook Stripe → email | `POST /api/webhooks/stripe` | `src/app/api/webhooks/stripe/route.ts` |
 | Téléchargement sécurisé | `/telecharger?t=…` | `src/app/telecharger/route.ts` |
@@ -50,7 +52,10 @@ Carte de test Stripe : `4242 4242 4242 4242`, date future, CVC quelconque.
 3. **Secrets** (*Settings → Variables and Secrets*) : `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY`, `DOWNLOAD_TOKEN_SECRET`.
 4. **Stripe** : webhook vers `https://<domaine>/api/webhooks/stripe` (événements `checkout.session.completed`,
    `checkout.session.async_payment_succeeded`) ; URL des CGV dans *Paramètres → Informations publiques*.
-5. **Lancement** : `IS_LIVE = true` dans `src/lib/format.ts` (retire le bandeau test, autorise l'indexation).
+5. **Apple Pay / Google Pay** : enregistrer `lapetiteide.fr` et `www.lapetiteide.fr` dans Stripe **en mode live**
+   (*Paramètres → Moyens de paiement → Domaines*). Déjà fait en mode test.
+6. **Clé publique** : remplacer la clé `pk_test_…` par `pk_live_…` dans `src/lib/stripe-public.ts`.
+7. **Lancement** : `IS_LIVE = true` dans `src/lib/format.ts` (retire le bandeau test, autorise l'indexation).
 
 ## Éléments provisoires
 
