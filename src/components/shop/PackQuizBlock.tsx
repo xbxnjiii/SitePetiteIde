@@ -27,9 +27,9 @@ export function PackQuizBlock({ pack, variant }: { pack: Pack; variant: BlockVar
           </span>
           <Icon name="arrow" />
         </SourceLink>
-        <SourceLink href="/quiz-constantes" className="pq-a__quiz">
+        <SourceLink href="/quiz" className="pq-a__quiz">
           <Icon name="quiz" />
-          <span>Pas sûre de toi ? <strong>Teste-toi en 2 min !</strong></span>
+          <span><strong>Quiz gratuits</strong> · teste-toi en 2 min</span>
         </SourceLink>
       </div>
     );
@@ -44,7 +44,7 @@ export function PackQuizBlock({ pack, variant }: { pack: Pack; variant: BlockVar
           <strong>{pack.name}</strong>
           <span className="pq-b__cta">Découvrir <Icon name="arrow" /></span>
         </SourceLink>
-        <SourceLink href="/quiz-constantes" className="pq-b__tile pq-b__tile--quiz">
+        <SourceLink href="/quiz" className="pq-b__tile pq-b__tile--quiz">
           <span className="pq-b__quizicon"><Icon name="quiz" /></span>
           <strong>Pas sûre de toi ?</strong>
           <span className="pq-b__sub">Quiz gratuit · 10 questions</span>
@@ -68,7 +68,7 @@ export function PackQuizBlock({ pack, variant }: { pack: Pack; variant: BlockVar
         <SourceLink href={href} className="btn btn--primary pq-c__btn">
           Voir le pack
         </SourceLink>
-        <SourceLink href="/quiz-constantes" className="btn btn--secondary pq-c__btn">
+        <SourceLink href="/quiz" className="btn btn--secondary pq-c__btn">
           <Icon name="quiz" /> Quiz 2 min
         </SourceLink>
       </div>

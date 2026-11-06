@@ -15,7 +15,8 @@
 - [ ] Faire relire les CGV / vérifier le régime de TVA avec un comptable
 
 ## Contenu
-- [ ] Faire valider les questions et réponses du quiz (`src/content/quiz.ts`)
+- [ ] Faire valider les 50 questions du quiz « Les constantes » (`src/content/quiz.ts`)
+- [ ] Créer les quiz « Les pathologies », « L'arrêt cardiaque », « Le diabète » (actuellement « Bientôt »)
 - [ ] Visuels définitifs du Pack Mémos : Constantes
 
 ## Idées en attente

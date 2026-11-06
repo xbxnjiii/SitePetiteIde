@@ -11,6 +11,10 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: { unoptimized: true },
+  // Ancienne adresse du quiz (liens déjà partagés).
+  async redirects() {
+    return [{ source: "/quiz-constantes", destination: "/quiz/constantes", permanent: true }];
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

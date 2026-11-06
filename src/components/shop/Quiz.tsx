@@ -1,19 +1,96 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Mascot } from "@/components/ui/Mascot";
-import { QUIZ_PACK_SLUG, quiz, quizVerdict } from "@/content/quiz";
+import { QUIZ_MODES, type QuizMode, type QuizQuestion, type QuizTheme, quizVerdict } from "@/content/quiz";
 
-export function Quiz() {
+/** Tire `n` questions au hasard (mélange de Fisher-Yates). */
+function draw(all: QuizQuestion[], n: number): QuizQuestion[] {
+  const a = [...all];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a.slice(0, Math.min(n, a.length));
+}
+
+const isMode = (v: unknown): v is QuizMode => v === "flash" || v === "pros";
+
+/** Choix entre « Flash Quiz » et « Le Quiz des Pros ». */
+export function ModePicker({ onPick, themeSlug, current }: { onPick?: (m: QuizMode) => void; themeSlug?: string; current?: QuizMode }) {
+  return (
+    <div className="quiz-modes">
+      {(Object.keys(QUIZ_MODES) as QuizMode[]).map((m) => {
+        const mode = QUIZ_MODES[m];
+        const content = (
+          <>
+            <span className={`quiz-mode__badge quiz-mode__badge--${m}`}>{m === "flash" ? "⚡" : "🏆"}</span>
+            <span className="quiz-mode__text">
+              <strong>{mode.label}</strong>
+              <span>
+                {mode.count} questions · {mode.duration}
+              </span>
+              <em>{mode.tagline}</em>
+            </span>
+            <Icon name="arrow" />
+          </>
+        );
+        const cls = `quiz-mode quiz-mode--${m}${current === m ? " quiz-mode--current" : ""}`;
+        return onPick ? (
+          <button key={m} type="button" className={cls} onClick={() => onPick(m)}>
+            {content}
+          </button>
+        ) : (
+          <Link key={m} href={`/quiz/${themeSlug}?mode=${m}`} className={cls}>
+            {content}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+export function Quiz({ theme }: { theme: QuizTheme }) {
+  const [mode, setMode] = useState<QuizMode | null>(null);
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const total = quiz.length;
-  const q = quiz[index];
+  const start = (m: QuizMode) => {
+    // Tirage côté navigateur uniquement (évite un écart entre le rendu serveur et le navigateur).
+    setMode(m);
+    setQuestions(draw(theme.questions, QUIZ_MODES[m].count));
+    setIndex(0);
+    setPicked(null);
+    setScore(0);
+    setDone(false);
+    setCopied(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Format demandé dans l'adresse (?mode=flash / ?mode=pros), depuis la page des thèmes.
+  useEffect(() => {
+    const m = new URLSearchParams(window.location.search).get("mode");
+    if (isMode(m)) start(m);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (!mode || questions.length === 0) {
+    return (
+      <div className="quiz quiz--start">
+        <h2>Choisis ton format</h2>
+        <ModePicker onPick={start} />
+      </div>
+    );
+  }
+
+  const total = questions.length;
+  const q = questions[index];
+  const label = QUIZ_MODES[mode].label;
 
   const choose = (i: number) => {
     if (picked !== null) return;
@@ -29,18 +106,11 @@ export function Quiz() {
     }
   };
 
-  const restart = () => {
-    setIndex(0);
-    setPicked(null);
-    setScore(0);
-    setDone(false);
-  };
-
   const share = async () => {
-    const url = `${window.location.origin}/quiz-constantes`;
-    const text = `J'ai eu ${score}/${total} au quiz des constantes de La Petite IDE. Et toi ? 👀`;
+    const url = `${window.location.origin}/quiz/${theme.slug}?mode=${mode}`;
+    const text = `J'ai eu ${score}/${total} au ${label} « ${theme.title} » de La Petite IDE. Et toi ? 👀`;
     try {
-      if (navigator.share) await navigator.share({ title: "Quiz des constantes", text, url });
+      if (navigator.share) await navigator.share({ title: `${label} : ${theme.title}`, text, url });
       else {
         await navigator.clipboard.writeText(`${text} ${url}`);
         setCopied(true);
@@ -55,22 +125,27 @@ export function Quiz() {
     return (
       <div className="quiz quiz--end">
         <Mascot pose={score / total >= 0.7 ? "bravo" : "lecture"} className="quiz__mascot" />
+        <p className="quiz__mode-label">{label}</p>
         <p className="quiz__score">
           {score}
           <span>/{total}</span>
         </p>
         <h2>{verdict.title}</h2>
         <p className="quiz__verdict">{verdict.text}</p>
-        <Link href={`/${QUIZ_PACK_SLUG}?src=quiz`} className="btn btn--primary btn--block btn--buy">
-          Découvrir le Pack Mémos : Constantes
-        </Link>
-        <div className="quiz__actions">
-          <button type="button" className="btn btn--secondary btn--sm" onClick={share}>
-            {copied ? "Lien copié ✓" : "Défier une amie"}
-          </button>
-          <button type="button" className="btn btn--ghost btn--sm" onClick={restart}>
-            Recommencer
-          </button>
+        {theme.packSlug ? (
+          <Link href={`/${theme.packSlug}?src=quiz`} className="btn btn--primary btn--block btn--buy">
+            Découvrir le {theme.packName}
+          </Link>
+        ) : null}
+        <button type="button" className="btn btn--secondary btn--sm quiz__share" onClick={share}>
+          {copied ? "Lien copié ✓" : "Défier une amie"}
+        </button>
+        <div className="quiz__replay">
+          <p>Rejouer :</p>
+          <ModePicker onPick={start} current={mode} />
+          <Link href="/quiz" className="quiz__other">
+            Autres thèmes
+          </Link>
         </div>
       </div>
     );
@@ -82,7 +157,7 @@ export function Quiz() {
         <span style={{ width: `${((index + (picked !== null ? 1 : 0)) / total) * 100}%` }} />
       </div>
       <p className="quiz__count">
-        Question {index + 1} / {total}
+        {label} · Question {index + 1} / {total}
       </p>
       <h2 className="quiz__question">{q.question}</h2>
       <div className="quiz__choices" role="group" aria-label="Réponses">
