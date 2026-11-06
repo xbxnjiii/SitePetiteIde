@@ -592,3 +592,46 @@ a.quiz-theme:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); 
 }
 .back-home svg { width: 16px; height: 16px; transform: rotate(180deg); color: var(--c-primary); }
 .back-home:hover { border-color: var(--c-primary-light); }
+
+/* ===== Page de liens et /packs : tablettes ============================== */
+@media (min-width: 700px) {
+  .bio__inner {
+    max-width: 640px; display: flex; flex-direction: column; justify-content: center;
+    padding: 48px var(--gutter) 32px;
+  }
+  img.bio__avatar { width: 200px; height: 200px; margin-bottom: 14px; }
+  .bio__head { margin-bottom: 36px; }
+  .bio__name { font-size: 2.6rem; margin-bottom: 6px; }
+  .bio__slogan { font-size: 1.4rem; margin-bottom: 8px; }
+  .bio__tagline { font-size: 1.15rem; margin-bottom: 20px; }
+  .social--brand { gap: 18px; }
+  .social--brand a { width: 60px; height: 60px; }
+  .social--brand svg { width: 28px; height: 28px; }
+  .offer-banner--bio { font-size: 0.95rem; padding: 10px var(--gutter); }
+
+  .pq { gap: 16px; }
+  .pq-a__pack { padding: 12px 22px 12px 12px; gap: 18px; border-radius: 28px; }
+  .pq-a__pack .pq__img { width: 96px; height: 96px; border-radius: 20px; }
+  .pq-a__text strong { font-size: 1.4rem; }
+  .pq-a__text span { font-size: 1rem; }
+  .pq-a__pack > svg { width: 26px; height: 26px; }
+  .pq-a__quiz { min-height: 68px; font-size: 1.1rem; border-radius: 28px; }
+  .pq-a__quiz svg { width: 24px; height: 24px; }
+  .pq + .bio__soon { margin-top: 32px; }
+  .bio__soon { padding: 14px 18px; gap: 16px; }
+  .bio__soon-img { width: 64px; }
+  .bio__soon p { font-size: 1rem; }
+
+  .bio-card { padding: 16px; gap: 18px; }
+  .bio-card__thumb { width: 104px; height: 104px; }
+  .bio-card__name { font-size: 1.35rem; }
+  .bio-card__desc { font-size: 1rem; }
+  .bio-card__arrow { width: 46px; height: 46px; }
+  .back-home { font-size: 1.05rem; padding: 14px 24px; margin-top: 32px; }
+
+  .mini-footer--compact { font-size: 0.88rem; padding-bottom: 28px; }
+}
+/* Grandes tablettes / ordinateurs : un peu plus d'air */
+@media (min-width: 1000px) {
+  .bio__inner { max-width: 680px; }
+}
