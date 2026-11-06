@@ -8,6 +8,7 @@ import { CheckoutError } from "@/components/shop/CheckoutError";
 import { PackCover } from "@/components/shop/PackCover";
 import { PackGallery } from "@/components/shop/PackGallery";
 import { Icon } from "@/components/ui/Icon";
+import { Mascot } from "@/components/ui/Mascot";
 import { Price } from "@/components/ui/Price";
 import { SITE, formatPrice } from "@/lib/format";
 import { jsonLd } from "@/lib/seo";
@@ -113,7 +114,10 @@ export default async function PackPage({ params }: { params: Params }) {
               </section>
 
               <section className="panel">
-                <h2>Questions fréquentes</h2>
+                <div className="panel__head">
+                  <h2>Questions fréquentes</h2>
+                  <Mascot pose="idee" className="panel__mascot" />
+                </div>
                 <div className="faq faq--flat">
                   {FAQ.map((f) => (
                     <details key={f.q}>

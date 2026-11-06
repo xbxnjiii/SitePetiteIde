@@ -20,7 +20,7 @@ export default async function DownloadErrorPage({ searchParams }: { searchParams
   return (
     <div className="container">
       <div className="thanks">
-        <Mascot className="thanks__mascot" />
+        <Mascot pose="question" className="thanks__mascot" />
         <h1>Téléchargement impossible</h1>
         <p>{message}</p>
         <p>

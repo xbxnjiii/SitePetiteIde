@@ -14,13 +14,13 @@ export default function BioPage() {
     <div className="bio">
       <main id="contenu" className="bio__inner">
         <header className="bio__head">
-          <div className="bio__avatar">
-            <Mascot />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/img/logo-rond-512.webp" alt="Logo La Petite IDE" width={256} height={256} className="bio__avatar" fetchPriority="high" />
           <h1 className="bio__name">
             La Petite <span>IDE</span>
           </h1>
-          <p className="bio__tagline">Tes études infirmières, un peu plus simples au quotidien ✨</p>
+          <p className="bio__slogan">Les soins, simplement.</p>
+          <p className="bio__tagline">Fiches mémo et packs de révision pour les étudiants infirmiers 💙</p>
           <div className="social">
             <a href={SITE.social.tiktok} target="_blank" rel="noopener noreferrer" aria-label="TikTok"><Icon name="tiktok" /></a>
             <a href={SITE.social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram"><Icon name="instagram" /></a>
@@ -46,7 +46,10 @@ export default function BioPage() {
               </li>
             ))}
           </ul>
-          <p className="bio__soon">D&apos;autres packs arrivent bientôt 💙</p>
+          <div className="bio__soon">
+            <Mascot pose="lecture" className="bio__soon-img" />
+            <p>D&apos;autres packs sont en préparation… Suis-nous pour ne rien rater !</p>
+          </div>
         </section>
 
         <section className="bio__section">

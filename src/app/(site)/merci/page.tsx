@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AutoRefresh } from "@/components/shop/AutoRefresh";
 import { Icon } from "@/components/ui/Icon";
-import { Mascot } from "@/components/ui/Mascot";
+import { Mascot, type MascotPose } from "@/components/ui/Mascot";
 import { getEnvAsync } from "@/lib/env";
 import { SITE } from "@/lib/format";
 import { downloadLinks, getOrder, orderReference } from "@/lib/orders";
@@ -23,7 +23,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
 
   if (!order || !order.pack) {
     return (
-      <Layout>
+      <Layout pose="question">
         <h1>Commande introuvable</h1>
         <p>Si tu viens de payer, vérifie ta boîte mail : ton lien de téléchargement t&apos;y attend.</p>
         <Link href="/" className="btn btn--primary">Retour à l&apos;accueil</Link>
@@ -33,7 +33,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
 
   if (!order.paid) {
     return (
-      <Layout>
+      <Layout pose="lecture">
         <h1>Paiement en cours de confirmation…</h1>
         <p>Ça ne prend généralement que quelques secondes. Cette page se met à jour toute seule.</p>
         <AutoRefresh />
@@ -43,7 +43,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
 
   if (order.revoked) {
     return (
-      <Layout>
+      <Layout pose="question">
         <h1>Commande remboursée</h1>
         <p>Cette commande a été remboursée : l&apos;accès aux fichiers n&apos;est plus disponible.</p>
       </Layout>
@@ -54,7 +54,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
   const links = expired ? [] : await downloadLinks(env, order);
 
   return (
-    <Layout>
+    <Layout pose="bravo">
       <h1>Merci pour ta commande ! 💙</h1>
       <p>
         Ton <strong>{order.pack.name}</strong> est prêt.
@@ -80,11 +80,11 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
   );
 }
 
-function Layout({ children }: { children: React.ReactNode }) {
+function Layout({ children, pose = "pouce" }: { children: React.ReactNode; pose?: MascotPose }) {
   return (
     <div className="container">
       <div className="thanks">
-        <Mascot className="thanks__mascot" />
+        <Mascot pose={pose} className="thanks__mascot" />
         {children}
       </div>
     </div>

@@ -18,8 +18,8 @@ export async function POST(request: Request) {
   const pack = getPack(String(form?.get("pack") ?? ""));
   if (!pack) return new Response("Pack introuvable", { status: 404 });
 
-  const stripe = stripeClient(env);
   try {
+    const stripe = stripeClient(env);
     // Le prix vient de Stripe (jamais du navigateur), et doit correspondre au prix affiché.
     const { data } = await stripe.prices.list({ lookup_keys: [priceLookupKey(pack.slug)], active: true, limit: 1 });
     const price = data[0];

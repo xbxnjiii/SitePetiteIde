@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: { default: "La Petite IDE — Fiches mémo pour étudiants infirmiers", template: "%s | La Petite IDE" },
   description: SITE.description,
-  openGraph: { siteName: SITE.name, locale: "fr_FR", type: "website" },
+  openGraph: { siteName: SITE.name, locale: "fr_FR", type: "website", images: [{ url: "/img/og.jpg", width: 1200, height: 630 }] },
   robots: IS_LIVE ? undefined : { index: false, follow: false },
 };
 
