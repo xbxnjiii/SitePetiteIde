@@ -1,5 +1,7 @@
 # La Petite IDE — Phase 1 : analyse et proposition d'architecture
 
+> ⚠️ **Document remplacé** par [`CAHIER-DES-CHARGES.md`](CAHIER-DES-CHARGES.md) (version simplifiée façon Beacons.ai, sans base de données ni back-office). Conservé pour l'historique des décisions.
+
 > Statut : **proposition à valider** (version 3 : Cloudflare + Supabase). Aucun code applicatif n'a été écrit.
 > Date : 6 novembre 2026
 >
