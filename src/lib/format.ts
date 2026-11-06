@@ -20,3 +20,17 @@ export const SITE = {
  * l'indexation par les moteurs de recherche.
  */
 export const IS_LIVE = false;
+
+/** Informations légales de l'éditeur (mentions légales, CGV, confidentialité). */
+export const LEGAL = {
+  owner: "Benjamin MAYER",
+  status: "Entrepreneur individuel (EI) — micro-entreprise",
+  tradeName: "La Petite IDE",
+  address: "97 Grande Rue, 88600 Sercœur, France",
+  siren: "991 674 730",
+  siret: "991 674 730 00015",
+  naf: "4791A",
+  vat: "TVA non applicable, art. 293 B du CGI",
+  email: "contact@lapetiteide.fr",
+  updatedAt: "6 novembre 2026",
+};

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Todo } from "@/components/content/Todo";
+import { LEGAL } from "@/lib/format";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 
 export const metadata: Metadata = { title: "Politique de confidentialité", alternates: { canonical: "/confidentialite" } };
@@ -11,11 +11,11 @@ export default function PrivacyPage() {
       <header className="page-head">
         <Breadcrumb items={[{ label: "Confidentialité" }]} />
         <h1>Politique de confidentialité</h1>
-        <p>Dernière mise à jour : <Todo>date</Todo></p>
+        <p>Dernière mise à jour : {LEGAL.updatedAt}</p>
       </header>
       <div className="prose">
         <h2>Responsable du traitement</h2>
-        <p><Todo>dénomination, adresse, email de contact</Todo></p>
+        <p>{LEGAL.owner} EI (« {LEGAL.tradeName} »), {LEGAL.address} — <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a></p>
         <h2>Données collectées</h2>
         <ul>
           <li>Lors d&apos;un achat : adresse email, pays de facturation, contenu et montant de la commande.</li>
@@ -48,7 +48,7 @@ export default function PrivacyPage() {
         <h2>Tes droits</h2>
         <p>
           Tu disposes d&apos;un droit d&apos;accès, de rectification, d&apos;effacement, de limitation et d&apos;opposition. Pour
-          les exercer : <Todo>email</Todo>. Tu peux aussi adresser une réclamation à la CNIL (www.cnil.fr).
+          les exercer : <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>. Tu peux aussi adresser une réclamation à la CNIL (www.cnil.fr).
         </p>
       </div>
     </div>

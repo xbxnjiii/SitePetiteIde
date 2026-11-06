@@ -107,7 +107,6 @@
 .prose { max-width: 760px; padding-bottom: 56px; }
 .prose h2 { margin-top: 1.6em; font-size: 1.35rem; }
 .prose ul { padding-left: 1.2em; }
-.todo { background: #fff6d6; color: #6b5500; padding: 2px 6px; border-radius: 6px; font-size: 0.9em; }
 .faq { display: grid; gap: 10px; }
 .faq details { background: #fff; border: 1px solid var(--c-line); border-radius: var(--r-md); padding: 0 18px; }
 .faq summary { cursor: pointer; padding: 16px 0; font-family: var(--font-title); font-weight: 800; list-style: none; display: flex; justify-content: space-between; gap: 12px; }

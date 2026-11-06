@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Todo } from "@/components/content/Todo";
+import { LEGAL } from "@/lib/format";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 
 export const metadata: Metadata = { title: "Mentions légales", alternates: { canonical: "/mentions-legales" } };
@@ -15,11 +15,13 @@ export default function LegalNoticePage() {
       <div className="prose">
         <h2>Éditeur du site</h2>
         <p>
-          Le site lapetiteide.fr est édité par <Todo>dénomination ou nom, forme juridique</Todo>, dont le siège est situé{" "}
-          <Todo>adresse</Todo>, immatriculé sous le numéro <Todo>SIREN / SIRET</Todo>.<br />
-          Numéro de TVA intracommunautaire : <Todo>numéro, ou mention « TVA non applicable, art. 293 B du CGI »</Todo>.<br />
-          Directrice de la publication : <Todo>nom</Todo>.<br />
-          Contact : <Todo>email</Todo>.
+          Le site lapetiteide.fr est édité par {LEGAL.owner} EI, exerçant sous le nom commercial « {LEGAL.tradeName} ».<br />
+          Statut : {LEGAL.status}.<br />
+          Adresse : {LEGAL.address}.<br />
+          SIRET : {LEGAL.siret} — code APE / NAF : {LEGAL.naf}.<br />
+          TVA : {LEGAL.vat}.<br />
+          Responsable de la publication : {LEGAL.owner}.<br />
+          Contact : <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>.
         </p>
         <h2>Hébergement</h2>
         <p>
