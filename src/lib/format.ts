@@ -26,7 +26,7 @@ export const IS_LIVE = false;
  * Laisser vide si l'injection automatique est activée dans Cloudflare ;
  * sinon coller ici le « token » du site (Cloudflare → Web Analytics → Manage site → JS snippet).
  */
-export const CF_WEB_ANALYTICS_TOKEN = "";
+export const CF_WEB_ANALYTICS_TOKEN = "f0ac438bf6aa4e05b72f60397065915a";
 
 /** Informations légales de l'éditeur (mentions légales, CGV, confidentialité). */
 export const LEGAL = {
