@@ -7,8 +7,8 @@
 //  Prix de référence affiché barré : le prix normal pratiqué avant l'offre.
 // ============================================================================
 export const OFFER = {
-  // ⚠️ Passer à true UNIQUEMENT après avoir créé le code dans Stripe (mode réel).
-  enabled: false,
+  // ⚠️ true seulement si le code existe dans Stripe (mode réel).
+  enabled: true,
   code: "LANCEMENT",
   /** Texte de la réduction (doit correspondre au coupon Stripe). */
   label: "−20 %",
@@ -18,3 +18,6 @@ export const OFFER = {
 };
 
 export const isOfferActive = (now = Date.now()) => OFFER.enabled && now < new Date(OFFER.endsAt).getTime();
+
+/** Événement émis quand le code de l'offre a bien été appliqué par Stripe. */
+export const OFFER_APPLIED_EVENT = "lpi:offer-applied";

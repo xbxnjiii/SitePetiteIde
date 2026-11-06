@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { formatPrice } from "@/lib/format";
-import { OFFER, isOfferActive } from "@/content/offer";
+import { OFFER, OFFER_APPLIED_EVENT, isOfferActive } from "@/content/offer";
 import { sourceFromLocation } from "@/lib/source";
 import { STRIPE_PUBLISHABLE_KEY } from "@/lib/stripe-public";
 
@@ -126,6 +126,10 @@ function CheckoutForm({
     session.applyPromotionCode(OFFER.code).catch(() => {});
   }, [session]);
   const isOffer = Boolean(discount?.promotionCode && discount.promotionCode.toUpperCase() === OFFER.code.toUpperCase());
+  // Prévient le bandeau de la page : il ne s'affiche que si la réduction est réellement appliquée.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(OFFER_APPLIED_EVENT, { detail: isOffer }));
+  }, [isOffer]);
 
   const applyPromo = async (e: React.FormEvent) => {
     e.preventDefault();
