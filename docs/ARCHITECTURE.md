@@ -1,10 +1,12 @@
 # La Petite IDE — Phase 1 : analyse et proposition d'architecture
 
-> Statut : **proposition à valider** (version 2 : Vercel + Supabase). Aucun code applicatif n'a été écrit.
+> Statut : **proposition à valider** (version 3 : Cloudflare + Supabase). Aucun code applicatif n'a été écrit.
 > Date : 6 novembre 2026
 >
-> Changement par rapport à la version 1 : l'exigence « PHP / MySQL » du cahier des charges est
-> **abandonnée à la demande du client**, au profit de Vercel et Supabase.
+> Historique :
+> - v1 : PHP/MySQL.
+> - v2 : Vercel + Supabase. L'exigence « PHP / MySQL » du cahier des charges est **abandonnée à la demande du client**.
+> - v3 : **Cloudflare (hébergement + fichiers) + Supabase gratuit (base + connexion admin)**, pour réduire les coûts.
 
 ---
 
@@ -13,7 +15,7 @@
 | Élément | Constat |
 |---|---|
 | Dépôt Git `xbxnjiii/SitePetiteIde` | **Vide** : aucun code existant à reprendre ni à préserver. |
-| Domaine `lapetiteide.fr` | Acheté chez **LWS** (registrar), qui affiche sa page d'attente. **Aucun hébergement**. Le domaine restera chez LWS ; seuls ses enregistrements DNS pointeront vers Vercel et vers le service d'email. |
+| Domaine `lapetiteide.fr` | Acheté chez **LWS** (registrar), qui affiche sa page d'attente. **Aucun hébergement**. Le domaine restera chez LWS ; seule sa gestion DNS sera confiée à Cloudflare (changement des serveurs de noms). |
 
 ---
 
@@ -24,38 +26,37 @@
 | Brique | Choix | Rôle |
 |---|---|---|
 | Framework | **Next.js (App Router) + TypeScript** | Pages du site, back-office et API dans un seul projet. Rendu côté serveur, donc bon référencement et chargement rapide sur mobile. |
-| Hébergement | **Vercel**, fonctions en région Paris (`cdg1`) | Déploiement automatique à chaque `git push`, HTTPS, CDN, aperçu de chaque branche. |
-| Base de données | **Supabase PostgreSQL**, région UE (Paris ou Francfort) | Données de la boutique, avec la sécurité par ligne (RLS) activée sur toutes les tables. |
+| Hébergement | **Cloudflare Workers**, via l'adaptateur officiel `@opennextjs/cloudflare` | Déploiement automatique à chaque `git push`, HTTPS, CDN mondial, protection anti-attaques, usage commercial autorisé. |
+| DNS | **Cloudflare** (le domaine reste chez LWS) | CDN, redirection gratuite des emails reçus (`contact@lapetiteide.fr` → vos boîtes Gmail). |
+| Base de données | **Supabase PostgreSQL** (offre gratuite au départ), région UE (Paris ou Francfort) | Catalogue, commandes et liens de téléchargement, avec la sécurité par ligne (RLS) activée sur toutes les tables. |
 | Authentification | **Supabase Auth** | Connexion au back-office dès la V1. Base prête pour l'espace client en V2 (email + mot de passe ou lien magique). |
-| Fichiers | **Supabase Storage** | Bucket **privé** `product-files` pour les PDF vendus, bucket **public** `product-media` pour les visuels et aperçus. |
+| Fichiers | **Cloudflare R2** | Bucket **privé** pour les PDF vendus (aucune URL publique : le Worker lit le fichier et le transmet après vérification), bucket **public** pour les visuels et aperçus. Aucun frais de bande passante. |
 | Paiement | **Stripe Checkout** + webhooks | Paiement par carte, Apple Pay et Google Pay, 3-D Secure, codes promo. Stripe Tax en option. |
 | Emails transactionnels | **Resend**, avec les modèles d'email écrits en React | Intégration simple avec Next.js, bonne délivrabilité. Alternative européenne : Brevo (via son API). |
-| Tâches planifiées | **pg_cron** (dans Supabase) | Nettoyage des commandes abandonnées et des liens expirés, purge des logs. |
+| Tâches planifiées | **Cloudflare Cron Triggers** | Activité quotidienne sur la base (évite la mise en pause, voir §1.6), sauvegarde quotidienne vers R2, nettoyage des commandes abandonnées et des liens expirés. |
 | Styles | **CSS Modules + variables CSS**, polices via `next/font` | Aucune bibliothèque CSS. Les polices sont auto-hébergées, ce qui est bon pour le RGPD et les performances. |
 
-**Dépendances (liste volontairement courte)** : `next`, `react`, `@supabase/supabase-js`,
+**Dépendances (liste volontairement courte)** : `next`, `react`, `@opennextjs/cloudflare`, `@supabase/supabase-js`,
 `@supabase/ssr`, `stripe`, `resend`, `@react-email/components`, `zod` (validation des formulaires).
 
-### 1.2 Coûts : point important
+### 1.2 Coûts
 
-Les offres gratuites conviennent au **développement**, mais **pas à la mise en production** :
-
-| Service | Offre gratuite | Pourquoi passer à l'offre payante pour vendre | Coût indicatif* |
+| Service | Offre retenue | Remarque | Coût indicatif* |
 |---|---|---|---|
-| Vercel | Hobby | Les conditions d'utilisation de l'offre Hobby **interdisent l'usage commercial**. Une boutique doit être sur l'offre Pro. | ~20 $/mois par membre |
-| Supabase | Free | Un projet gratuit est **mis en pause après 7 jours sans activité**, et l'offre gratuite n'a pas de sauvegardes quotidiennes. | ~25 $/mois (Pro) |
-| Resend | 3 000 emails/mois, 100/jour | Suffisant au lancement | 0 € au départ |
-| Stripe | Pas d'abonnement | Commission sur chaque vente (+ Stripe Tax si activé) | % par transaction |
+| Cloudflare Workers | Gratuit pour développer, **Workers Paid** probablement nécessaire en production | Un site Next.js dépasse en général les limites de taille et de calcul de l'offre gratuite. À vérifier pendant la phase 2. | 0 à 5 $/mois |
+| Cloudflare R2 | Gratuit (10 Go) | Largement suffisant pour des PDF et des images | 0 € |
+| Supabase | **Free** | Mise en pause après 7 jours sans activité, contournée par le cron (voir §1.6). Passer en Pro (~25 $/mois) quand le chiffre d'affaires le justifie. | 0 € |
+| Resend | Gratuit (3 000 emails/mois, 100/jour) | Suffisant au lancement | 0 € |
+| Stripe | Sans abonnement | Commission sur chaque vente (+ Stripe Tax si activé) | % par transaction |
 
 \* Tarifs à vérifier au moment de la souscription.
 
-**Total en production : environ 45 $/mois**, contre 5 à 10 €/mois pour un hébergement PHP mutualisé. Si le budget est un frein,
-on peut garder exactement la même architecture en remplaçant Vercel par Netlify ou Cloudflare, dont l'offre gratuite autorise l'usage commercial.
+**Total au lancement : 0 à 5 $/mois.**
 
 ### 1.3 Parcours d'achat
 
 ```
-Mobile (TikTok/Insta) ──► Next.js sur Vercel
+Mobile (TikTok/Insta) ──► Next.js sur Cloudflare Workers
    │ 1. Panier (localStorage) ou « Acheter maintenant »
    │ 2. Case CGV + renonciation au droit de rétractation (obligatoire)
    │ 3. POST /api/checkout : prix RECALCULÉS côté serveur depuis Supabase,
@@ -70,7 +71,7 @@ Webhook Stripe ──► /api/webhooks/stripe (signature vérifiée, idempotence
    │    en une seule transaction (packs développés en un lien par PDF)
    │ 6. Email récapitulatif avec les liens (Resend)
    ▼
-/api/telecharger/{token} ──► vérifications en SQL ──► URL signée Supabase de 60 s ──► PDF
+/api/telecharger/{token} ──► vérifications en SQL ──► le Worker lit le PDF dans R2 (privé) et l'envoie
 ```
 
 La page de confirmation interroge `/api/commande/statut` toutes les deux secondes, jusqu'à ce que le webhook ait validé la commande.
@@ -93,7 +94,36 @@ Les liens s'affichent alors à l'écran.
   Elle sert au checkout, au webhook, aux téléchargements et au back-office.
 - **Admin** : connecté via Supabase Auth, puis vérifié dans la table `admins`. Le contrôle est fait par le `middleware`
   **et** de nouveau dans chaque action serveur. Activation de la double authentification (MFA TOTP) recommandée.
-- **Secrets** (clés Stripe, Supabase, Resend) : stockés dans les variables d'environnement Vercel. Seul un `.env.example` sans valeurs est versionné.
+- **Secrets** (clés Stripe, Supabase, Resend) : stockés dans les secrets Cloudflare (`wrangler secret`). Seul un `.env.example` sans valeurs est versionné.
+
+### 1.6 Ce que contient la base, et ce que signifie une « mise en pause »
+
+**Une mise en pause ne supprime rien.** Les données sont conservées et le projet se relance en un clic depuis le tableau de bord Supabase.
+D'après les sources consultées, un projet resté en pause trop longtemps (environ 90 jours) ne peut plus être relancé directement, mais ses données restent téléchargeables.
+
+**Le vrai risque n'est pas la perte de données, c'est la panne de la boutique.** La base ne contient pas seulement l'historique des ventes :
+
+| Contenu | Exemples | Conséquence si la base est en pause |
+|---|---|---|
+| **Catalogue** | Produits, prix, descriptions, catégories, packs, chemins des PDF | Pages produits et boutique indisponibles |
+| **Commandes** | Référence, montant, statut, produits achetés | Paiement impossible. Si un client paie juste avant la pause, il ne reçoit pas son email (Stripe réessaie l'envoi de la confirmation pendant environ 3 jours). |
+| **Liens de téléchargement** | Jetons, expiration, compteur | Les clients ne peuvent plus télécharger |
+| **Admin** | Vos 2 comptes, journal des actions | Back-office inaccessible |
+
+**Attention : il y aura bien des données personnelles, même sans compte client.**
+- **L'email de l'acheteur** est indispensable pour envoyer les liens et pour « Retrouver mes achats ».
+- S'y ajoutent le pays de facturation (TVA), éventuellement le prénom, et les journaux de téléchargement (avec l'IP hachée).
+- Le RGPD s'applique donc : politique de confidentialité, durée de conservation, droit d'accès et de suppression.
+- Les données bancaires, elles, restent **uniquement chez Stripe**.
+- Les factures et les données comptables doivent être conservées **10 ans** (obligation comptable).
+
+**Mesures prévues avec Supabase gratuit :**
+1. **Cron quotidien** (Cloudflare Cron Trigger) qui fait une vraie requête sur la base. Le projet n'est donc jamais inactif 7 jours.
+   Avec du trafic réel, la boutique génère de toute façon de l'activité.
+2. **Sauvegarde quotidienne** de la base (export des tables) vers un bucket R2 privé, conservée 30 jours. On ne dépend pas des sauvegardes Supabase, absentes ou incertaines sur l'offre gratuite.
+3. **Les PDF sont dans R2**, pas dans Supabase : même si la base avait un souci, les fichiers sources ne sont jamais concernés.
+4. **Alerte par email** si le cron ou la sauvegarde échoue.
+5. Passage à **Supabase Pro** dès que les ventes le justifient. Aucun code à modifier.
 
 ---
 
@@ -145,13 +175,16 @@ SitePetiteIde/
 │   │   └── validation/ (schémas zod)
 │   ├── emails/        OrderConfirmation.tsx, ResendLinks.tsx
 │   ├── styles/        tokens.css (charte), globals.css
-│   └── middleware.ts  (protection de /admin, rafraîchissement de session)
+│   ├── middleware.ts  (protection de /admin, rafraîchissement de session)
+│   └── cron/          keep-alive.ts, backup.ts, cleanup.ts (Cron Triggers Cloudflare)
 ├── supabase/
-│   ├── migrations/    0001_init.sql, 0002_rls.sql, 0003_functions.sql, 0004_cron.sql
+│   ├── migrations/    0001_init.sql, 0002_rls.sql, 0003_functions.sql
 │   └── seed.sql       (données fictives pour la phase 2)
 ├── public/
 │   └── img/           logo, mascotte (SVG/WebP), favicon
 ├── .env.example
+├── wrangler.jsonc     (config Cloudflare : buckets R2, crons, variables)
+├── open-next.config.ts
 ├── next.config.ts  tsconfig.json  package.json
 └── README.md          (installation, variables d'env, configuration Stripe/Supabase/DNS)
 ```
@@ -230,7 +263,7 @@ create index on products (category_id);
 create table product_files (
   id            uuid primary key default gen_random_uuid(),
   product_id    uuid not null references products(id) on delete restrict,
-  storage_path  text not null unique,      -- chemin dans le bucket privé product-files
+  storage_path  text not null unique,      -- clé de l'objet dans le bucket R2 privé
   download_name text not null,             -- « LaPetiteIDE-Memo-Constantes.pdf »
   size_bytes    integer not null,
   is_current    boolean not null default true,
@@ -385,8 +418,8 @@ ce qui les rend atomiques :
 - **Codes promo** gérés dans Stripe (Promotion Codes). Le code utilisé et la remise sont enregistrés sur la commande.
 - **Best-sellers** calculés à partir des `order_items` des commandes payées.
 - **Archiver plutôt que supprimer** un produit déjà vendu, pour que les liens des anciens clients restent valides.
-- **Téléchargement** : le lien envoyé au client est **notre** URL `/api/telecharger/{token}`. Elle redirige vers une URL signée Supabase
-  valable 60 secondes. Le fichier n'a donc jamais d'URL publique permanente.
+- **Téléchargement** : le lien envoyé au client est **notre** URL `/api/telecharger/{token}`. Après vérification, le Worker lit le PDF
+  directement dans le bucket R2 privé et l'envoie au client. Le fichier n'a **aucune** URL publique, même temporaire.
 
 ---
 
@@ -394,10 +427,10 @@ ce qui les rend atomiques :
 
 | Phase | Contenu | Livrable à valider |
 |---|---|---|
-| **2. Interface** (données fictives) | Initialisation de Next.js, design system (couleurs, polices, boutons, cartes), header avec panier, footer, accueil (hero + mascotte, populaires, catégories, avantages, packs), boutique (recherche, filtres, tris), catégorie, fiche produit, panier, gabarits légaux. Déploiement d'aperçu sur Vercel. | URL d'aperçu Vercel, testable sur téléphone |
-| **3. Supabase + admin** | Projet Supabase (UE), migrations, RLS, buckets, connexion admin, gestion des catégories, produits (images, PDF, aperçus) et packs, statuts, commandes, tableau de bord, réglages | Boutique administrable : les données fictives sont remplacées par la base |
+| **2. Interface** (données fictives) | Initialisation de Next.js pour Cloudflare, design system (couleurs, polices, boutons, cartes), header avec panier, footer, accueil (hero + mascotte, populaires, catégories, avantages, packs), boutique (recherche, filtres, tris), catégorie, fiche produit, panier, gabarits légaux. Déploiement d'aperçu sur Cloudflare (`*.workers.dev`). | URL d'aperçu, testable sur téléphone |
+| **3. Supabase + admin** | Projet Supabase (UE), migrations, RLS, buckets R2, connexion admin, gestion des catégories, produits (images, PDF, aperçus) et packs, statuts, commandes, tableau de bord, réglages | Boutique administrable : les données fictives sont remplacées par la base |
 | **4. Paiement + téléchargements** | Stripe Checkout (mode test), webhook signé et idempotent, `fulfill_order`, liens sécurisés, email Resend, « Retrouver mes achats », remboursements et échecs | Achat de bout en bout en mode test |
-| **5. Tests + mise en production** | Tests mobiles (Safari iOS, Chrome Android, navigateurs intégrés TikTok/Instagram), paiements, emails, sécurité (RLS, en-têtes), performances, SEO (sitemap, JSON-LD), DNS LWS → Vercel, passage aux offres Pro, Stripe en mode live | V1 commerciale en ligne |
+| **5. Tests + mise en production** | Tests mobiles (Safari iOS, Chrome Android, navigateurs intégrés TikTok/Instagram), paiements, emails, sécurité (RLS, en-têtes), performances, SEO (sitemap, JSON-LD), DNS LWS → Cloudflare, vérification du cron et des sauvegardes, Stripe en mode live | V1 commerciale en ligne |
 
 **Le chemin critique pour vendre** : fiche produit → Stripe → webhook → email avec lien → téléchargement.
 
@@ -415,37 +448,39 @@ ce qui les rend atomiques :
    - Stripe Tax peut être activé plus tard sans modifier le code.
    - → **À confirmer avec un expert-comptable.**
 3. **RGPD** :
-   - Vercel, Supabase et Resend sont des sociétés américaines. Elles proposent des accords de traitement des données (DPA) et adhèrent au Data Privacy Framework.
+   - Il y aura bien des données personnelles (email des acheteurs), même sans compte client : voir §1.6.
+   - Cloudflare, Supabase et Resend sont des sociétés américaines. Elles proposent des accords de traitement des données (DPA) et adhèrent au Data Privacy Framework.
    - Choisir les régions UE, et mentionner ces sous-traitants dans la politique de confidentialité.
 4. **Pages légales** : je fournirai des gabarits, mais vos informations réelles sont nécessaires (SIRET, adresse, statut). Je n'inventerai aucune donnée.
 5. **Contenu à caractère médical** : prévoir une mention indiquant que les supports sont pédagogiques et ne remplacent pas les protocoles de service.
 
 ### 5.2 Technique
 
-6. **Conditions Vercel et pause Supabase** : voir le §1.2. Il faut passer aux offres payantes avant la mise en ligne commerciale.
+6. **Pause de Supabase gratuit** : voir le §1.6 (cron d'activité, sauvegarde maison, alertes). Next.js sur Cloudflare passe par l'adaptateur OpenNext :
+   il faut vérifier dès la phase 2 que la taille du site et le temps de calcul tiennent dans l'offre choisie, et utiliser des bibliothèques compatibles avec Workers.
 7. **Navigateurs intégrés TikTok/Instagram** : le panier est perdu quand on bascule vers Safari, Apple Pay fonctionne mal, et le téléchargement échoue souvent sur iOS.
    → Bouton « Acheter maintenant » direct, email systématique avec les liens, message « Ouvrir dans le navigateur » et liens réutilisables.
 8. **Webhook** :
    - lire le corps brut de la requête (`req.text()`) pour vérifier la signature ;
-   - utiliser le runtime Node.js ;
+   - utiliser `constructEventAsync` (version asynchrone compatible avec Workers) ;
    - gérer les doublons et les événements reçus dans le désordre (`stripe_events` + `fulfill_order` idempotente) ;
    - ne jamais valider une commande depuis la page de succès.
 9. **Clé `service_role`** : elle contourne toute la sécurité RLS. Elle est limitée aux modules marqués `server-only` et ne doit jamais être préfixée `NEXT_PUBLIC_`.
-10. **Taille des PDF importés** : les fonctions Vercel limitent la taille du corps des requêtes (environ 4,5 Mo). L'admin enverra donc les PDF
-    **directement vers Supabase Storage**, via une URL d'envoi signée.
-11. **Délivrabilité des emails** : ajouter les enregistrements DNS SPF, DKIM et DMARC de Resend dans la zone DNS chez LWS.
+10. **Taille des PDF importés** : pour ne pas dépendre des limites de requête, l'admin enverra les PDF **directement vers R2**,
+    via une URL d'envoi signée et temporaire.
+11. **Délivrabilité des emails** : ajouter les enregistrements DNS SPF, DKIM et DMARC de Resend dans la zone DNS Cloudflare.
 12. **Partage des PDF** : on peut le limiter (durée, quota, révocation), pas l'empêcher. Un filigrane avec l'email de l'acheteur pourrait venir en V1.1.
 13. **Traceurs marketing** : les pixels TikTok/Meta imposent un bandeau de consentement. En V1, on peut suivre les ventes sans traceur
-    (tableau de bord admin, Stripe, paramètres UTM sur les liens en bio, ou Vercel Web Analytics, qui fonctionne sans cookie).
-14. **Sauvegardes** : sauvegardes quotidiennes de l'offre Supabase Pro, plus un export régulier du bucket des PDF (vous gardez aussi vos originaux).
+    (tableau de bord admin, Stripe, paramètres UTM sur les liens en bio, ou Cloudflare Web Analytics, qui fonctionne sans cookie).
+14. **Sauvegardes** : export quotidien de la base vers R2 (voir §1.6). Les PDF sont dans R2, et vous gardez aussi vos originaux.
 
 ---
 
 ## 6. Questions à valider avant la phase 2
 
-1. **Architecture** : validez-vous Next.js + Vercel + Supabase + Stripe Checkout + Resend ?
-2. **Budget** : êtes-vous d'accord avec environ 45 $/mois en production (Vercel Pro + Supabase Pro) ? Sinon, préférez-vous Netlify ou Cloudflare à la place de Vercel ?
-3. **Comptes** : je vous guiderai pour créer les comptes Vercel, Supabase, Stripe et Resend. Avez-vous déjà l'un d'eux ?
+1. **Architecture** : ✅ validée par le client — Next.js sur Cloudflare Workers + R2, Supabase gratuit, Stripe Checkout, Resend.
+2. **DNS** : êtes-vous d'accord pour confier la gestion DNS de `lapetiteide.fr` à Cloudflare (le domaine reste chez LWS) ?
+3. **Comptes** : je vous guiderai pour créer les comptes Cloudflare, Supabase, Stripe et Resend. Avez-vous déjà l'un d'eux ?
 4. **Statut juridique et régime de TVA** de La Petite IDE ?
 5. **Éléments graphiques** : logo et mascotte en haute définition (SVG ou PNG transparent), visuels produits ?
 6. **Catalogue** : nombre de produits au lancement et fourchettes de prix ?
