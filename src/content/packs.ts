@@ -70,7 +70,7 @@ export const packs: Pack[] = [
   {
     slug: "pack-des-constantes",
     name: "Pack des constantes",
-    headline: "Les 6 constantes, mémorisées en un clin d'œil",
+    headline: "Les constantes à mémorisées en 1 clin d'oeil👁️",
     promise: "6 fiches mémo ultra-visuelles pour réviser l'essentiel, sans rien de superflu.",
     tagline: "6 fiches mémo pour réviser les paramètres vitaux.",
     description:
