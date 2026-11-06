@@ -3,6 +3,6 @@ import { publishedPacks } from "@/content/packs";
 import { SITE } from "@/lib/format";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = ["", "/faq", "/contact", "/mentions-legales", "/cgv", "/confidentialite", "/retrouver-mon-achat", "/quiz", "/quiz/constantes"];
+  const pages = ["", "/faq", "/contact", "/mentions-legales", "/cgv", "/confidentialite", "/retrouver-mon-achat", "/quiz", "/quiz/constantes", "/packs"];
   return [...pages, ...publishedPacks().map((p) => `/${p.slug}`)].map((p) => ({ url: `${SITE.url}${p}` }));
 }

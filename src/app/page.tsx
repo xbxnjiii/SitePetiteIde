@@ -18,7 +18,7 @@ export default function BioPage() {
   const packs = publishedPacks();
   return (
     <div className="bio">
-      <OfferBanner variant="bio" />
+      <OfferBanner />
       <main id="contenu" className="bio__inner">
         <header className="bio__head">
           {/* eslint-disable-next-line @next/next/no-img-element */}

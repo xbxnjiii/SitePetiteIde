@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icon } from "@/components/ui/Icon";
 import { Logo } from "@/components/ui/Logo";
 
 export function SiteHeader() {
@@ -6,8 +7,9 @@ export function SiteHeader() {
     <header className="header">
       <div className="container header__inner">
         <Logo />
-        <Link href="/" className="btn btn--ghost btn--sm">
-          Tous les packs
+        <Link href="/packs" className="header__packs">
+          <Icon name="layers" />
+          <span>Tous les packs</span>
         </Link>
       </div>
     </header>

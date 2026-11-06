@@ -1,5 +1,5 @@
 // ============================================================================
-//  OFFRE DE LANCEMENT — bandeau + code appliqué automatiquement au paiement.
+//  OFFRE DE LANCEMENT — liseré affichant le code (saisi par le client au paiement).
 // ----------------------------------------------------------------------------
 //  1. Créer dans Stripe (mode réel) un coupon du même pourcentage et un code
 //     promotionnel client identique à `code` (avec la même date de fin).
@@ -18,6 +18,3 @@ export const OFFER = {
 };
 
 export const isOfferActive = (now = Date.now()) => OFFER.enabled && now < new Date(OFFER.endsAt).getTime();
-
-/** Événement émis quand le code de l'offre a bien été appliqué par Stripe. */
-export const OFFER_APPLIED_EVENT = "lpi:offer-applied";

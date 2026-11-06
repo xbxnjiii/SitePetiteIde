@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { formatPrice } from "@/lib/format";
-import { OFFER, OFFER_APPLIED_EVENT, isOfferActive } from "@/content/offer";
+import { OFFER } from "@/content/offer";
 import { sourceFromLocation } from "@/lib/source";
 import { STRIPE_PUBLISHABLE_KEY } from "@/lib/stripe-public";
 
@@ -118,18 +118,8 @@ function CheckoutForm({
   // Commande gratuite (code à -100 %) : pas de carte à saisir.
   const isFree = session ? session.total.total.minorUnitsAmount === 0 : false;
 
-  // Offre de lancement : code appliqué automatiquement (une seule tentative, silencieuse).
-  const offerTried = useRef(false);
-  useEffect(() => {
-    if (!session || offerTried.current || !isOfferActive() || session.discountAmounts?.length) return;
-    offerTried.current = true;
-    session.applyPromotionCode(OFFER.code).catch(() => {});
-  }, [session]);
+  // Offre de lancement : le code est saisi par le client (champ « J'ai un code promo »).
   const isOffer = Boolean(discount?.promotionCode && discount.promotionCode.toUpperCase() === OFFER.code.toUpperCase());
-  // Prévient le bandeau de la page : il ne s'affiche que si la réduction est réellement appliquée.
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent(OFFER_APPLIED_EVENT, { detail: isOffer }));
-  }, [isOffer]);
 
   const applyPromo = async (e: React.FormEvent) => {
     e.preventDefault();
