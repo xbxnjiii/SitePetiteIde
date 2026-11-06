@@ -77,7 +77,7 @@ export const packs: Pack[] = [
     tagline: "7 fiches mémo pour réviser les paramètres vitaux.",
     bonus: {
       title: "Fiche spéciale « La Petite IDE »",
-      text: "Introuvable ailleurs : des astuces simples pour mémoriser durablement les valeurs et les retrouver facilement.",
+      text: "Introuvable ailleurs : des astuces d'étudiants pour mémoriser durablement les valeurs et les retrouver facilement.",
     },
     description:
       "Un mémo clair et synthétique pour chaque paramètre vital : valeurs normales, technique de mesure et signes d'alerte. Conçu pour réviser vite et bien, sur téléphone ou imprimé.",
@@ -103,8 +103,8 @@ export const packs: Pack[] = [
     ],
     highlights: [
       "Valeurs normales et signes d'alerte",
-      "Une fiche par constante, l'essentiel en un coup d'œil",
-      "Couleurs et repères visuels pour retenir plus vite",
+      "Une fiche par constante",
+      "Couleurs et repères visuels",
     ],
     files: [
       {
