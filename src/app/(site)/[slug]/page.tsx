@@ -3,11 +3,11 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getPack, publishedPacks } from "@/content/packs";
 import { CheckoutError } from "@/components/shop/CheckoutError";
+import { OfferBanner } from "@/components/shop/OfferBanner";
 import { PackCheckout } from "@/components/shop/PackCheckout";
 import { PackCover } from "@/components/shop/PackCover";
 import { StickyBuyBar } from "@/components/shop/StickyBuyBar";
 import { Icon } from "@/components/ui/Icon";
-import { Price } from "@/components/ui/Price";
 import { SITE, formatPrice } from "@/lib/format";
 import { jsonLd } from "@/lib/seo";
 
@@ -62,6 +62,7 @@ export default async function PackPage({ params }: { params: Params }) {
 
   return (
     <div className="has-sticky-buy sale">
+      <OfferBanner />
       <section className="container sale-main">
         <div className="sale-main__visual">
           {pack.images ? (
@@ -96,10 +97,6 @@ export default async function PackPage({ params }: { params: Params }) {
           ) : null}
 
           <div className="sale-buy" id="acheter" data-buy-anchor="">
-            <div className="sale-buy__price">
-              <Price cents={pack.priceCents} compareAt={pack.compareAtPriceCents} />
-              <span>PDF · accès immédiat</span>
-            </div>
             <Suspense>
               <CheckoutError />
             </Suspense>

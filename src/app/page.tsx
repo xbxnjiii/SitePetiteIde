@@ -1,5 +1,6 @@
 import { publishedPacks } from "@/content/packs";
 import { Footer } from "@/components/layout/Footer";
+import { OfferBanner } from "@/components/shop/OfferBanner";
 import { PackCover } from "@/components/shop/PackCover";
 import { SourceLink } from "@/components/shop/SourceLink";
 import { Icon } from "@/components/ui/Icon";
@@ -31,6 +32,7 @@ export default function BioPage() {
 
         <section aria-labelledby="packs-title" className="bio__section">
           <h2 id="packs-title" className="bio__label">Nos packs de fiches</h2>
+          <OfferBanner variant="bio" />
           <ul className="bio__list">
             {packs.map((p) => (
               <li key={p.slug}>

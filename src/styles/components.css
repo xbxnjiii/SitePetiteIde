@@ -372,3 +372,13 @@ html { scroll-padding-top: calc(var(--header-h) + 12px); }
 .recover--sent { text-align: center; }
 .recover--sent strong { font-family: var(--font-title); font-size: 1.1rem; }
 .recover--sent p { margin: 0; color: var(--c-ink-soft); font-size: 0.92rem; }
+
+/* ===== Offre de lancement =============================================== */
+.offer-banner {
+  display: flex; align-items: center; justify-content: center; gap: 8px; text-align: center;
+  background: linear-gradient(90deg, var(--c-accent) 0%, #f2b9cf 100%); color: var(--c-ink); font-size: 0.86rem; line-height: 1.35;
+}
+.offer-banner strong { font-family: var(--font-title); }
+.offer-banner--page { padding: 9px var(--gutter); }
+.offer-banner--bio { margin: 0 0 12px; padding: 10px 14px; border-radius: var(--r-md); }
+.sale-buy__price .price__old { font-size: 1.1rem; }

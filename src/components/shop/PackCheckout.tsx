@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { formatPrice } from "@/lib/format";
+import { OFFER, isOfferActive } from "@/content/offer";
 import { sourceFromLocation } from "@/lib/source";
 import { STRIPE_PUBLISHABLE_KEY } from "@/lib/stripe-public";
 
@@ -61,8 +62,20 @@ export function PackCheckout({ slug, priceCents }: { slug: string; priceCents: n
     setClientSecret(promise);
   }, [slug]);
 
-  if (failed) return <HostedFallback slug={slug} priceCents={priceCents} />;
-  if (!clientSecret) return <div className="checkout__loading" aria-label="Chargement du paiement" />;
+  if (failed)
+    return (
+      <>
+        <PriceRow priceCents={priceCents} />
+        <HostedFallback slug={slug} priceCents={priceCents} />
+      </>
+    );
+  if (!clientSecret)
+    return (
+      <>
+        <PriceRow priceCents={priceCents} />
+        <div className="checkout__loading" aria-label="Chargement du paiement" />
+      </>
+    );
 
   return (
     <CheckoutElementsProvider stripe={getStripe()} options={{
@@ -104,6 +117,15 @@ function CheckoutForm({
   const totalLabel = session ? session.total.total.amount : formatPrice(priceCents);
   // Commande gratuite (code à -100 %) : pas de carte à saisir.
   const isFree = session ? session.total.total.minorUnitsAmount === 0 : false;
+
+  // Offre de lancement : code appliqué automatiquement (une seule tentative, silencieuse).
+  const offerTried = useRef(false);
+  useEffect(() => {
+    if (!session || offerTried.current || !isOfferActive() || session.discountAmounts?.length) return;
+    offerTried.current = true;
+    session.applyPromotionCode(OFFER.code).catch(() => {});
+  }, [session]);
+  const isOffer = Boolean(discount?.promotionCode && discount.promotionCode.toUpperCase() === OFFER.code.toUpperCase());
 
   const applyPromo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,7 +183,13 @@ function CheckoutForm({
     }
   };
 
-  if (state.type === "error") return <HostedFallback slug={slug} priceCents={priceCents} />;
+  if (state.type === "error")
+    return (
+      <>
+        <PriceRow priceCents={priceCents} />
+        <HostedFallback slug={slug} priceCents={priceCents} />
+      </>
+    );
 
   const consentBox = (where: "page" | "modal") => (
     <>
@@ -190,6 +218,7 @@ function CheckoutForm({
 
   return (
     <div className="checkout">
+      <PriceRow priceCents={priceCents} discountedLabel={discount ? totalLabel : null} />
       {state.type === "loading" || hasWallet === null ? <div className="checkout__loading" aria-label="Chargement du paiement" /> : null}
 
       {/* Un seul bouton de paiement rapide, adapté à l'appareil :
@@ -246,8 +275,8 @@ function CheckoutForm({
       {discount ? (
         <p className="promo-applied">
           <span>
-            Code <strong>{discount.promotionCode ?? discount.displayName}</strong> : −{discount.amount} · Total{" "}
-            <strong>{totalLabel}</strong>
+            {isOffer ? "Offre de lancement" : <>Code <strong>{discount.promotionCode ?? discount.displayName}</strong></>} : −
+            {discount.amount} · Total <strong>{totalLabel}</strong>
           </span>
           <button type="button" className="link-btn" onClick={() => session?.removePromotionCode()}>
             Retirer
@@ -386,4 +415,22 @@ function SourceField() {
   const [src, setSrc] = useState("");
   useEffect(() => setSrc(sourceFromLocation() ?? ""), []);
   return src ? <input type="hidden" name="source" value={src} /> : null;
+}
+
+/** Prix affiché dans le bloc d'achat ; prix normal barré quand une réduction est appliquée. */
+function PriceRow({ priceCents, discountedLabel = null }: { priceCents: number; discountedLabel?: string | null }) {
+  return (
+    <div className="sale-buy__price">
+      <span>
+        <span className="price">{discountedLabel ?? formatPrice(priceCents)}</span>
+        {discountedLabel ? (
+          <s className="price__old">
+            <span className="visually-hidden">au lieu de </span>
+            {formatPrice(priceCents)}
+          </s>
+        ) : null}
+      </span>
+      <span>PDF · accès immédiat</span>
+    </div>
+  );
 }
