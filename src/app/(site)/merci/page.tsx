@@ -51,7 +51,12 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
   }
 
   const expired = order.expiresAt < Date.now() / 1000;
-  const links = expired ? [] : await downloadLinks(env, order);
+  let links: Awaited<ReturnType<typeof downloadLinks>> = [];
+  try {
+    links = expired ? [] : await downloadLinks(env, order);
+  } catch (err) {
+    console.error("merci: liens indisponibles", err instanceof Error ? err.message : err);
+  }
 
   return (
     <Layout pose="bravo">
@@ -60,6 +65,9 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
         Ton <strong>{order.pack.name}</strong> est prêt.
         {order.email ? <> Tu vas aussi recevoir ton lien par email à <strong>{order.email}</strong>.</> : null}
       </p>
+      {!expired && links.length === 0 ? (
+        <p className="notice">Ton lien de téléchargement t&apos;arrive par email dans quelques instants.</p>
+      ) : null}
       {expired ? (
         <p className="notice">Ce lien a expiré. Écris-nous à {SITE.contactEmail} avec ta référence de commande : on te le renvoie.</p>
       ) : (

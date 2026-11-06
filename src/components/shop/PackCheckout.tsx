@@ -229,6 +229,13 @@ function HostedFallback({ slug, priceCents }: { slug: string; priceCents: number
   return (
     <form method="post" action="/api/checkout" className="buy-form">
       <input type="hidden" name="pack" value={slug} />
+      <label className="consent">
+        <input type="checkbox" name="consent" required />
+        <span>
+          J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link> et je veux recevoir mon PDF tout de suite : je renonce à
+          mon droit de rétractation.
+        </span>
+      </label>
       <button type="submit" className="btn btn--primary btn--block btn--buy">
         Je veux le pack · {formatPrice(priceCents)} <Icon name="arrow" />
       </button>

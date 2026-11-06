@@ -19,15 +19,20 @@ export async function POST(request: Request) {
   }
 
   let slug = "";
+  let consent = false;
   if (wantsJson) {
     const body = (await request.json().catch(() => null)) as { pack?: unknown } | null;
     slug = typeof body?.pack === "string" ? body.pack : "";
   } else {
     const form = await request.formData().catch(() => null);
     slug = String(form?.get("pack") ?? "");
+    consent = form?.get("consent") === "on";
   }
   const pack = getPack(slug);
   if (!pack) return wantsJson ? Response.json({ error: "Pack introuvable" }, { status: 404 }) : new Response("Pack introuvable", { status: 404 });
+
+  // Formulaire de secours : la case CGV + renonciation est obligatoire.
+  if (!wantsJson && !consent) return Response.redirect(`${base}/${pack.slug}?erreur=cgv`, 303);
 
   try {
     const session = await createSession(env, base, pack, wantsJson ? "elements" : "hosted_page");
@@ -78,19 +83,12 @@ async function createSession(env: AppEnv, base: string, pack: Pack, uiMode: "ele
     });
   }
 
+  // Page Stripe hébergée (secours) : le consentement a été donné sur notre page.
+  const at = new Date().toISOString();
   return stripe.checkout.sessions.create({
     ...common,
     locale: "fr",
-    ...(isEnabled(env.STRIPE_TOS_CONSENT, true)
-      ? {
-          consent_collection: { terms_of_service: "required" as const },
-          custom_text: {
-            terms_of_service_acceptance: {
-              message: `J'accepte les [CGV](${base}/cgv) et je demande l'accès immédiat au contenu numérique : je reconnais renoncer à mon droit de rétractation.`,
-            },
-          },
-        }
-      : {}),
+    metadata: { ...common.metadata, cgv_acceptees_le: at, renonciation_retractation_le: at },
     success_url: `${base}/merci?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/${pack.slug}`,
   });

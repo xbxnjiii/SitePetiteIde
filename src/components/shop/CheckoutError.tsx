@@ -3,6 +3,7 @@ import { useSearchParams } from "next/navigation";
 
 const MESSAGES: Record<string, string> = {
   paiement: "Le paiement n'a pas pu démarrer. Réessaie dans un instant — si le problème continue, écris-nous.",
+  cgv: "Coche la case d'acceptation des CGV pour continuer.",
   prix: "Ce pack est momentanément indisponible. Réessaie un peu plus tard ou contacte-nous.",
 };
 

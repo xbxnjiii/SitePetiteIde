@@ -16,7 +16,6 @@ export interface AppEnv {
   EMAIL_FROM?: string;
   EMAIL_REPLY_TO?: string;
   STRIPE_AUTOMATIC_TAX?: string;
-  STRIPE_TOS_CONSENT?: string;
   PDF_BUCKET?: R2BucketLike;
 }
 
