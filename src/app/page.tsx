@@ -5,6 +5,7 @@ import { PackCover } from "@/components/shop/PackCover";
 import { QuizCta } from "@/components/shop/QuizCta";
 import { SourceLink } from "@/components/shop/SourceLink";
 import { Icon } from "@/components/ui/Icon";
+import { Mascot } from "@/components/ui/Mascot";
 import { SITE } from "@/lib/format";
 
 export const metadata = { alternates: { canonical: "/" } };
@@ -14,6 +15,7 @@ export default function BioPage() {
   const packs = publishedPacks();
   return (
     <div className="bio">
+      <OfferBanner variant="bio" />
       <main id="contenu" className="bio__inner">
         <header className="bio__head">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -32,7 +34,6 @@ export default function BioPage() {
 
         <section aria-labelledby="packs-title" className="bio__section">
           <h2 id="packs-title" className="visually-hidden">Nos packs de fiches</h2>
-          <OfferBanner variant="bio" />
           {packs.length === 1 ? (
             // Un seul pack : grande carte avec bouton d'achat et accès au quiz (tout tient sur un écran).
             <div className="bio-feature">
@@ -48,7 +49,7 @@ export default function BioPage() {
                   <span className="bio-feature__desc">{packs[0].tagline}</span>
                 </span>
               </SourceLink>
-              <SourceLink href={`/${packs[0].slug}`} className="btn btn--primary btn--block bio-feature__btn">
+              <SourceLink href={`/${packs[0].slug}`} className="btn btn--primary btn--sm bio-feature__btn">
                 Découvrir le pack <Icon name="arrow" />
               </SourceLink>
               <QuizCta className="bio-feature__quiz" />
@@ -79,6 +80,10 @@ export default function BioPage() {
               <QuizCta className="bio__quiz" />
             </>
           )}
+          <div className="bio__soon">
+            <Mascot pose="lecture" className="bio__soon-img" />
+            <p>D&apos;autres packs arrivent bientôt… Suis-nous pour ne rien rater !</p>
+          </div>
         </section>
       </main>
       <Footer social={false} compact />

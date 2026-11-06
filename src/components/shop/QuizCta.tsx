@@ -7,7 +7,7 @@ export function QuizCta({ className = "" }: { className?: string }) {
     <SourceLink href="/quiz-constantes" className={`quiz-link ${className}`}>
       <Icon name="quiz" />
       <span>
-        Pas sûre de toi ? <strong>Quiz gratuit</strong> (2 min)
+        Pas sûre de toi ? <strong>Teste-toi en 2 min !</strong>
       </span>
       <Icon name="arrow" />
     </SourceLink>

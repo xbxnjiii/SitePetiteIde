@@ -28,7 +28,7 @@ export function OfferBanner({ variant = "page" }: { variant?: "page" | "bio" }) 
           </>
         ) : (
           <>
-            <strong>{OFFER.label}</strong> jusqu&apos;au {OFFER.endsLabel} avec le code <strong>{OFFER.code}</strong>
+            <strong>{OFFER.label}</strong> avec le code <strong>{OFFER.code}</strong> · jusqu&apos;au {OFFER.endsLabel}
           </>
         )}
       </span>

@@ -458,3 +458,19 @@ img.bio__avatar { width: 88px; height: 88px; }
 .social--brand a { width: 40px; height: 40px; }
 .social--brand svg { width: 20px; height: 20px; }
 .bio-feature__img { width: 84px; height: 84px; }
+
+/* Liseré d'offre en haut de la page de liens, bouton plus discret, bloc « d'autres packs » compact */
+.offer-banner--bio { margin: 0; padding: 7px var(--gutter); border-radius: 0; font-size: 0.8rem; }
+.bio-feature__btn { justify-self: center; min-height: 42px; padding: 8px 22px; font-size: 0.95rem; }
+.bio__soon { margin-top: 10px; padding: 8px 12px; gap: 10px; }
+.bio__soon-img { width: 44px; }
+.bio__soon p { font-size: 0.82rem; }
+.offer-banner--bio { white-space: nowrap; font-size: 0.78rem; padding: 6px 10px; }
+img.bio__avatar { width: 80px; height: 80px; margin-bottom: 4px; }
+.bio__inner { padding-top: 12px; }
+.bio__soon p { line-height: 1.35; }
+.mini-footer--compact { padding-top: 6px; }
+.bio__head { margin-bottom: 8px; }
+.bio__tagline { margin-bottom: 8px; }
+.bio-feature { gap: 8px; }
+@media (max-width: 360px) { .offer-banner--bio { white-space: normal; } }
