@@ -45,7 +45,7 @@ Carte de test Stripe : `4242 4242 4242 4242`, date future, CVC quelconque.
 ## Mise en production (Cloudflare)
 
 1. **R2** : créer le bucket `la-petite-ide-pdfs` et y déposer `pack-des-constantes/pack-des-constantes.pdf`.
-2. **Worker** : *Workers & Pages → Create → Import a repository* → ce dépôt.
+2. **Worker** : *Workers & Pages → Create → Import a repository* → ce dépôt (Worker nommé `sitepetiteide`, comme dans `wrangler.jsonc`).
    Build : `npx opennextjs-cloudflare build` · Deploy : `npx opennextjs-cloudflare deploy`.
 3. **Secrets** (*Settings → Variables and Secrets*) : `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY`, `DOWNLOAD_TOKEN_SECRET`.
 4. **Stripe** : webhook vers `https://<domaine>/api/webhooks/stripe` (événements `checkout.session.completed`,

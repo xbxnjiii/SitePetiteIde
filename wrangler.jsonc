@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "la-petite-ide",
+  "name": "sitepetiteide",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -10,12 +10,12 @@
   },
   "services": [
     // Auto-référence requise par OpenNext (doit correspondre au nom du Worker)
-    { "binding": "WORKER_SELF_REFERENCE", "service": "la-petite-ide" }
+    { "binding": "WORKER_SELF_REFERENCE", "service": "sitepetiteide" }
   ],
   // Bucket PRIVÉ contenant les PDF vendus (à créer dans Cloudflare → R2 avant le déploiement)
   "r2_buckets": [{ "binding": "PDF_BUCKET", "bucket_name": "la-petite-ide-pdfs" }],
   // Variables non secrètes. Les secrets se règlent dans Cloudflare
-  // (Workers → la-petite-ide → Settings → Variables and Secrets) :
+  // (Workers → sitepetiteide → Settings → Variables and Secrets) :
   //   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, RESEND_API_KEY, DOWNLOAD_TOKEN_SECRET
   "vars": {
     "SITE_URL": "https://lapetiteide.fr",
