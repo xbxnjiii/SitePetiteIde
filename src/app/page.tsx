@@ -1,10 +1,12 @@
-import Link from "next/link";
 import { publishedPacks } from "@/content/packs";
 import { Footer } from "@/components/layout/Footer";
 import { PackCover } from "@/components/shop/PackCover";
+import { SourceLink } from "@/components/shop/SourceLink";
 import { Icon } from "@/components/ui/Icon";
 import { Mascot } from "@/components/ui/Mascot";
 import { SITE } from "@/lib/format";
+
+export const metadata = { alternates: { canonical: "/" } };
 
 // Page d'accueil « lien en bio » (façon Beacons) : une colonne, une action par carte.
 export default function BioPage() {
@@ -32,7 +34,7 @@ export default function BioPage() {
           <ul className="bio__list">
             {packs.map((p) => (
               <li key={p.slug}>
-                <Link href={`/${p.slug}`} className="bio-card">
+                <SourceLink href={`/${p.slug}`} className="bio-card">
                   {p.images ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={p.images.card} alt="" width={800} height={800} className="bio-card__thumb" fetchPriority="high" />
@@ -47,7 +49,7 @@ export default function BioPage() {
                     </span>
                     <span className="bio-card__arrow" aria-hidden="true"><Icon name="arrow" /></span>
                   </span>
-                </Link>
+                </SourceLink>
               </li>
             ))}
           </ul>

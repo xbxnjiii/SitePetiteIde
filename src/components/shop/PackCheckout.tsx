@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { formatPrice } from "@/lib/format";
+import { sourceFromLocation } from "@/lib/source";
 import { STRIPE_PUBLISHABLE_KEY } from "@/lib/stripe-public";
 
 // Paiement intégré à la page de vente (Stripe « Elements » + Checkout Sessions) :
@@ -44,7 +45,7 @@ export function PackCheckout({ slug, priceCents }: { slug: string; priceCents: n
     const promise = fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pack: slug }),
+        body: JSON.stringify({ pack: slug, source: sourceFromLocation() }),
       })
         .then(async (r) => {
           const data = (await r.json()) as { clientSecret?: string };
@@ -289,6 +290,7 @@ function HostedFallback({ slug, priceCents }: { slug: string; priceCents: number
   return (
     <form method="post" action="/api/checkout" className="buy-form">
       <input type="hidden" name="pack" value={slug} />
+      <SourceField />
       <label className="consent">
         <input type="checkbox" name="consent" required />
         <span>
@@ -314,4 +316,11 @@ function usePlatform(): Platform | null {
     setPlatform(/Android/i.test(ua) ? "android" : isApple ? "apple" : "other");
   }, []);
   return platform;
+}
+
+/** Champ caché contenant la provenance de la visite (renseigné dans le navigateur). */
+function SourceField() {
+  const [src, setSrc] = useState("");
+  useEffect(() => setSrc(sourceFromLocation() ?? ""), []);
+  return src ? <input type="hidden" name="source" value={src} /> : null;
 }

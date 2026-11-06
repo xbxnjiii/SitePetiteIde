@@ -21,6 +21,13 @@ export const SITE = {
  */
 export const IS_LIVE = false;
 
+/**
+ * Cloudflare Web Analytics (statistiques de visites anonymes, sans cookie).
+ * Laisser vide si l'injection automatique est activée dans Cloudflare ;
+ * sinon coller ici le « token » du site (Cloudflare → Web Analytics → Manage site → JS snippet).
+ */
+export const CF_WEB_ANALYTICS_TOKEN = "";
+
 /** Informations légales de l'éditeur (mentions légales, CGV, confidentialité). */
 export const LEGAL = {
   owner: "Benjamin MAYER",

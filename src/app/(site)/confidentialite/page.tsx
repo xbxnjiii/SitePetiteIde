@@ -79,7 +79,9 @@ export default function PrivacyPage() {
           content: (
             <p>
               Aucun cookie publicitaire ni de mesure d&apos;audience. Seuls les éléments strictement nécessaires au paiement sécurisé
-              sont utilisés.
+              sont utilisés. Nous mesurons la fréquentation du site avec Cloudflare Web Analytics, de façon anonyme et sans cookie
+              (pages vues, pays, type d&apos;appareil). Si tu arrives sur le site par un lien de nos réseaux, le nom du réseau
+              (ex. « tiktok ») est enregistré avec ta commande, sans aucune autre information.
             </p>
           ),
         },

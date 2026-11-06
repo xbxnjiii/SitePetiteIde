@@ -2,6 +2,7 @@ import type Stripe from "stripe";
 import { getPack, type Pack } from "@/content/packs";
 import { type AppEnv, getEnvAsync, siteUrl } from "@/lib/env";
 import { isAllowedOrigin } from "@/lib/origin";
+import { cleanSource } from "@/lib/source";
 import { isEnabled, priceLookupKey, stripeClient } from "@/lib/stripe";
 
 // POST /api/checkout
@@ -20,13 +21,16 @@ export async function POST(request: Request) {
 
   let slug = "";
   let consent = false;
+  let source: string | null = null;
   if (wantsJson) {
-    const body = (await request.json().catch(() => null)) as { pack?: unknown } | null;
+    const body = (await request.json().catch(() => null)) as { pack?: unknown; source?: unknown } | null;
     slug = typeof body?.pack === "string" ? body.pack : "";
+    source = cleanSource(body?.source);
   } else {
     const form = await request.formData().catch(() => null);
     slug = String(form?.get("pack") ?? "");
     consent = form?.get("consent") === "on";
+    source = cleanSource(form?.get("source"));
   }
   const pack = getPack(slug);
   if (!pack) return wantsJson ? Response.json({ error: "Pack introuvable" }, { status: 404 }) : new Response("Pack introuvable", { status: 404 });
@@ -35,7 +39,7 @@ export async function POST(request: Request) {
   if (!wantsJson && !consent) return Response.redirect(`${base}/${pack.slug}?erreur=cgv`, 303);
 
   try {
-    const session = await createSession(env, base, pack, wantsJson ? "elements" : "hosted_page");
+    const session = await createSession(env, base, pack, wantsJson ? "elements" : "hosted_page", source);
     if (wantsJson) return Response.json({ clientSecret: session.client_secret });
     return Response.redirect(session.url!, 303);
   } catch (err) {
@@ -49,7 +53,13 @@ export async function POST(request: Request) {
 
 class PriceMismatch extends Error {}
 
-async function createSession(env: AppEnv, base: string, pack: Pack, uiMode: "elements" | "hosted_page"): Promise<Stripe.Checkout.Session> {
+async function createSession(
+  env: AppEnv,
+  base: string,
+  pack: Pack,
+  uiMode: "elements" | "hosted_page",
+  source: string | null,
+): Promise<Stripe.Checkout.Session> {
   const stripe = stripeClient(env);
   // Le prix vient de Stripe (jamais du navigateur), et doit correspondre au prix affiché.
   const { data } = await stripe.prices.list({ lookup_keys: [priceLookupKey(pack.slug)], active: true, limit: 1 });
@@ -71,8 +81,9 @@ async function createSession(env: AppEnv, base: string, pack: Pack, uiMode: "ele
     automatic_tax: { enabled: isEnabled(env.STRIPE_AUTOMATIC_TAX, false) },
     billing_address_collection: "auto" as const,
     customer_creation: "if_required" as const,
-    metadata: { pack: pack.slug },
-    payment_intent_data: { metadata: { pack: pack.slug }, description: pack.name },
+    // « provenance » : réseau d'origine de la visite (?src=tiktok, ?src=insta…), visible dans Stripe.
+    metadata: { pack: pack.slug, provenance: source ?? "direct" },
+    payment_intent_data: { metadata: { pack: pack.slug, provenance: source ?? "direct" }, description: pack.name },
   };
 
   if (uiMode === "elements") {

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fredoka, Inter, Nunito_Sans } from "next/font/google";
-import { IS_LIVE, SITE } from "@/lib/format";
+import { CF_WEB_ANALYTICS_TOKEN, IS_LIVE, SITE } from "@/lib/format";
 import "@/styles/tokens.css";
 import "@/styles/base.css";
 import "@/styles/components.css";
@@ -26,6 +26,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <a href="#contenu" className="skip-link">Aller au contenu</a>
         {children}
+        {CF_WEB_ANALYTICS_TOKEN ? (
+          <script
+            defer
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon={JSON.stringify({ token: CF_WEB_ANALYTICS_TOKEN })}
+          />
+        ) : null}
       </body>
     </html>
   );
