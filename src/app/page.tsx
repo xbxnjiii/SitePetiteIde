@@ -44,11 +44,6 @@ export default function BioPage() {
                       {p.badge ? <span className="badge badge--pink">{p.badge}</span> : null}
                       <span className="bio-card__name">{p.name}</span>
                       <span className="bio-card__desc">{p.tagline}</span>
-                      {p.bonus ? (
-                        <span className="bonus-chip">
-                          <Icon name="gift" /> + 1 fiche bonus incluse
-                        </span>
-                      ) : null}
                     </span>
                     <span className="bio-card__arrow" aria-hidden="true"><Icon name="arrow" /></span>
                   </span>

@@ -76,8 +76,8 @@ export const packs: Pack[] = [
     promise: "7 fiches mémo ultra-visuelles pour réviser l'essentiel, sans rien de superflu.",
     tagline: "7 fiches mémo pour réviser les paramètres vitaux.",
     bonus: {
-      title: "Fiche bonus : la méthode pour mieux apprendre",
-      text: "Des astuces simples pour mémoriser durablement les valeurs et les retrouver facilement le jour J.",
+      title: "Fiche spéciale « La Petite IDE »",
+      text: "Introuvable ailleurs : des astuces simples pour mémoriser durablement les valeurs et les retrouver facilement.",
     },
     description:
       "Un mémo clair et synthétique pour chaque paramètre vital : valeurs normales, technique de mesure et signes d'alerte. Conçu pour réviser vite et bien, sur téléphone ou imprimé.",
@@ -86,12 +86,12 @@ export const packs: Pack[] = [
     tone: "pink",
     images: {
       card: "/img/packs/pack-constantes-v2-carre.webp",
-      sale: "/img/packs/pack-constantes-v2-detail.webp",
+      sale: "/img/packs/pack-constantes-v3-detail.webp",
       saleSize: [1100, 1100],
       og: "/img/packs/pack-constantes-v2-og.jpg",
-      alt: "Pack Mémos : Constantes — 7 fiches mémo sur les paramètres vitaux et 1 fiche bonus",
+      alt: "Pack Mémos : Constantes — 8 fiches : fréquence cardiaque, fréquence respiratoire, température, tension artérielle, glycémie, saturation (SpO2), diurèse et une fiche bonus pour mieux apprendre",
     },
-    // Liste indicative (non affichée sur le site) — 7e fiche à compléter.
+    // Liste des fiches (non affichée sur le site : le visuel détaillé la présente).
     items: [
       { title: "Fréquence cardiaque", icon: "heart", description: "Normes, prise de pouls, tachycardie et bradycardie." },
       { title: "Fréquence respiratoire", icon: "lungs", description: "Compter, observer, repérer une détresse respiratoire." },
@@ -99,6 +99,7 @@ export const packs: Pack[] = [
       { title: "Tension artérielle", icon: "gauge", description: "Mesure pas à pas et erreurs fréquentes à éviter." },
       { title: "Glycémie capillaire", icon: "drop", description: "Le geste, les valeurs repères, hypo et hyperglycémie." },
       { title: "Saturation (SpO2)", icon: "lungs", description: "Pose de l'oxymètre, interprétation et limites." },
+      { title: "Diurèse", icon: "drop", description: "Surveillance des urines, valeurs repères et signes d'alerte." },
     ],
     highlights: [
       "Valeurs normales et signes d'alerte",
