@@ -637,14 +637,6 @@ img.bio__avatar { width: 128px; height: 128px; }
 .qz-intro { background: #fff; border: 1px solid var(--c-line); border-radius: 28px; padding: 16px; box-shadow: var(--shadow-md); }
 .qz-intro__kicker { margin: 0 0 12px; text-align: center; font-family: var(--font-title); font-weight: 800; font-size: 1.05rem; }
 
-/* Page des thèmes */
-.qz-theme { background: #fff; border: 1px solid var(--c-line); border-radius: 28px; padding: 16px; box-shadow: var(--shadow-md); margin-bottom: 14px; }
-.qz-theme h2 { font-size: 1.25rem; margin: 0 0 12px; text-align: center; }
-.qz-soon { text-align: center; }
-.qz-soon p { margin: 6px 0 8px; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c-ink-soft); }
-.qz-soon div { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-.qz-soon div > span { padding: 7px 12px; border-radius: var(--r-pill); background: #fff; border: 1px dashed var(--c-primary-light); font-size: 0.85rem; color: var(--c-ink-soft); }
-
 /* Jeu */
 .qz-play { display: grid; gap: 12px; }
 .qz-bar { display: flex; align-items: center; gap: 10px; }
@@ -708,11 +700,6 @@ img.bio__avatar { width: 128px; height: 128px; }
 .qz-result__title { margin: 0; font-size: 1.35rem; }
 .qz-stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .qz-stats span { padding: 6px 11px; border-radius: var(--r-pill); background: var(--c-bg); border: 1px solid var(--c-line); font-size: 0.82rem; font-weight: 600; }
-.qz-review { background: var(--c-accent-50); border-radius: 18px; padding: 12px; }
-.qz-review__title { margin: 0 0 8px; font-weight: 800; font-size: 0.9rem; }
-.qz-review__chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
-.qz-review__chips span { padding: 5px 10px; border-radius: var(--r-pill); background: #fff; font-size: 0.8rem; }
-.qz-review__chips b { color: var(--c-accent-dark); }
 .qz-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .qz-actions button {
   display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 6px; border-radius: 18px; cursor: pointer;
@@ -759,8 +746,6 @@ img.bio__avatar { width: 128px; height: 128px; }
 .qz-pack__hook { font-size: 0.74rem; font-weight: 800; color: var(--c-accent-dark); line-height: 1.25; }
 .qz-pack__body strong { font-family: var(--font-title); font-size: 1rem; line-height: 1.2; }
 .qz-pack__meta { font-size: 0.76rem; color: var(--c-ink-soft); }
-.qz-pack__buy { flex: none; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.qz-pack__price { font-family: var(--font-title); font-weight: 800; font-size: 1.05rem; }
 .qz-pack__go { display: inline-flex; align-items: center; gap: 3px; padding: 7px 11px; border-radius: var(--r-pill); background: var(--c-primary); color: #fff; font-weight: 800; font-size: 0.8rem; }
 .qz-pack__go svg { width: 13px; height: 13px; }
 
@@ -782,3 +767,24 @@ img.bio__avatar { width: 128px; height: 128px; }
 .qz-actions { grid-template-columns: repeat(2, 1fr); }
 @keyframes qz-glow { 0%, 100% { box-shadow: 0 12px 28px rgb(78 122 199 / 22%); } 50% { box-shadow: 0 12px 34px rgb(78 122 199 / 40%); } }
 @media (prefers-reduced-motion: reduce) { .qz-pack { animation: none; } }
+
+/* ===== Liste des thèmes de quiz ========================================= */
+.qz-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.qz-row { display: flex; align-items: center; gap: 12px; padding: 12px; background: #fff; border: 1px solid var(--c-line); border-radius: 20px; box-shadow: var(--shadow-sm); }
+.qz-row__emoji { flex: none; width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; font-size: 1.6rem; background: linear-gradient(135deg, var(--c-primary-50), var(--c-accent-50)); }
+.qz-row__text { display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 1.3; }
+.qz-row__text strong { font-family: var(--font-title); font-size: 1rem; }
+.qz-row__text span { font-size: 0.8rem; color: var(--c-ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qz-row__modes { flex: none; display: flex; flex-direction: column; gap: 6px; }
+.qz-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 84px; padding: 7px 12px; border-radius: var(--r-pill); text-decoration: none; font-weight: 800; font-size: 0.82rem; color: #fff; transition: transform 0.12s var(--ease); }
+.qz-pill:active { transform: scale(0.95); }
+.qz-pill--flash { background: var(--c-primary); }
+.qz-pill--pros { background: #d77ba0; }
+.qz-row--soon { background: rgb(255 255 255 / 55%); box-shadow: none; border-style: dashed; }
+.qz-row--soon .qz-row__emoji { filter: grayscale(1); opacity: 0.6; }
+.qz-row--soon .qz-row__text { opacity: 0.6; }
+.qz-row__soon { flex: none; padding: 6px 12px; border-radius: var(--r-pill); background: var(--c-primary-50); color: var(--c-primary-dark); font-size: 0.75rem; font-weight: 800; }
+@media (min-width: 560px) { .qz-row__modes { flex-direction: row; } .qz-row { padding: 14px 16px; } }
+.qz-list { grid-template-columns: minmax(0, 1fr); }
+.qz-row { min-width: 0; }
+.qz-head p { font-size: 0.9rem; }

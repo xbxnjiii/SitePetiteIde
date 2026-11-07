@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { quizzes } from "@/content/quiz";
-import { ModePicker } from "@/components/shop/Quiz";
+import Link from "next/link";
+import { QUIZ_MODES, quizzes } from "@/content/quiz";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 
 export const metadata: Metadata = {
@@ -9,39 +9,47 @@ export const metadata: Metadata = {
   alternates: { canonical: "/quiz" },
 };
 
-// Page des thèmes : chaque thème disponible propose ses deux formats ; les suivants sont annoncés.
+// Liste compacte des thèmes : une ligne par thème avec ses deux formats (lisible même avec beaucoup de thèmes).
 export default function QuizHubPage() {
-  const available = quizzes.filter((q) => q.status === "available");
-  const soon = quizzes.filter((q) => q.status === "soon");
+  const sorted = [...quizzes].sort((a, b) => (a.status === b.status ? 0 : a.status === "available" ? -1 : 1));
   return (
     <div className="container qz-page">
       <header className="qz-head">
         <Breadcrumb items={[{ label: "Quiz" }]} />
         <h1>Quiz 🧠</h1>
-        <p>Choisis ton thème, lance-toi, partage ton score.</p>
+        <p>
+          ⚡ Flash : {QUIZ_MODES.flash.count} questions · 🏆 Pros : {QUIZ_MODES.pros.count} questions
+        </p>
       </header>
 
-      {available.map((t) => (
-        <section key={t.slug} className="qz-theme" aria-labelledby={`t-${t.slug}`}>
-          <h2 id={`t-${t.slug}`}>
-            <span aria-hidden="true">{t.emoji}</span> {t.title}
-          </h2>
-          <ModePicker themeSlug={t.slug} />
-        </section>
-      ))}
-
-      {soon.length ? (
-        <section className="qz-soon" aria-label="Thèmes à venir">
-          <p>Bientôt</p>
-          <div>
-            {soon.map((t) => (
-              <span key={t.slug}>
-                <span aria-hidden="true">{t.emoji}</span> {t.title}
+      <ul className="qz-list">
+        {sorted.map((t) => {
+          const soon = t.status !== "available";
+          return (
+            <li key={t.slug} className={soon ? "qz-row qz-row--soon" : "qz-row"}>
+              <span className="qz-row__emoji" aria-hidden="true">
+                {t.emoji}
               </span>
-            ))}
-          </div>
-        </section>
-      ) : null}
+              <span className="qz-row__text">
+                <strong>{t.title}</strong>
+                <span>{t.description}</span>
+              </span>
+              {soon ? (
+                <span className="qz-row__soon">Bientôt</span>
+              ) : (
+                <span className="qz-row__modes">
+                  <Link href={`/quiz/${t.slug}?mode=flash`} className="qz-pill qz-pill--flash" aria-label={`${t.title} : Flash Quiz`}>
+                    ⚡ Flash
+                  </Link>
+                  <Link href={`/quiz/${t.slug}?mode=pros`} className="qz-pill qz-pill--pros" aria-label={`${t.title} : Quiz des Pros`}>
+                    🏆 Pros
+                  </Link>
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

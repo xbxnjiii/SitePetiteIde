@@ -2,9 +2,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
-import { QUIZ_MODES, TOPICS, type QuizMode, type QuizQuestion, type QuizTheme, type Topic, quizVerdict } from "@/content/quiz";
+import { QUIZ_MODES, type QuizMode, type QuizQuestion, type QuizTheme, type Topic, quizVerdict } from "@/content/quiz";
 import { getPack } from "@/content/packs";
-import { formatPrice } from "@/lib/format";
 
 /** Tire `n` questions au hasard (mélange de Fisher-Yates). */
 function draw(all: QuizQuestion[], n: number): QuizQuestion[] {
@@ -273,10 +272,6 @@ function Result({
     }
   };
 
-  // Regroupe les erreurs par fiche du pack.
-  const counts = new Map<Topic, number>();
-  missed.forEach((t) => counts.set(t, (counts.get(t) ?? 0) + 1));
-  const review = [...counts.entries()].sort((a, b) => b[1] - a[1]);
 
   return (
     <div className="qz-result">
@@ -302,19 +297,6 @@ function Result({
         <span>🔥 série de {bestStreak}</span>
       </div>
 
-      {theme.packSlug && review.length ? (
-        <div className="qz-review">
-          <p className="qz-review__title">📌 À revoir dans le pack</p>
-          <div className="qz-review__chips">
-            {review.map(([t, n]) => (
-              <span key={t}>
-                {TOPICS[t]} <b>×{n}</b>
-              </span>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
       {pack ? (
         <Link href={`/${pack.slug}?src=quiz`} className="qz-pack">
           {pack.images ? (
@@ -323,18 +305,15 @@ function Result({
           ) : null}
           <span className="qz-pack__body">
             <span className="qz-pack__hook">
-              {review.length ? "Corrige tes erreurs ✨" : "Garde ce niveau ✨"}
+              {missed.length ? "Corrige tes erreurs ✨" : "Garde ce niveau ✨"}
             </span>
             <strong>{pack.name}</strong>
             <span className="qz-pack__meta">
               {pack.items.length} fiches{pack.bonus ? " + bonus" : ""}
             </span>
           </span>
-          <span className="qz-pack__buy">
-            <span className="qz-pack__price">{formatPrice(pack.priceCents)}</span>
-            <span className="qz-pack__go">
-              Voir <Icon name="arrow" />
-            </span>
+          <span className="qz-pack__go">
+            Voir <Icon name="arrow" />
           </span>
         </Link>
       ) : null}
@@ -361,7 +340,7 @@ function Result({
         </button>
         <button type="button" onClick={challenge}>
           <span aria-hidden="true">⚔️</span>
-          {copied ? "Lien copié" : "Défier une amie"}
+          {copied ? "Lien copié" : "Défier un ami"}
         </button>
       </div>
 
