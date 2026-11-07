@@ -110,20 +110,36 @@ export default async function PackPage({ params }: { params: Params }) {
         </div>
       </section>
 
-      {pack.images ? (
-        <section className="container sale-preview" aria-labelledby="apercu-title">
-          <h2 id="apercu-title">Ce que contient le pack</h2>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={pack.images.sale}
-            alt={pack.images.alt}
-            width={pack.images.saleSize[0]}
-            height={pack.images.saleSize[1]}
-            className="sale-preview__img"
-            loading="lazy"
-          />
-        </section>
-      ) : null}
+      <section className="container sale-content" aria-labelledby="contenu-title">
+        <h2 id="contenu-title">Dans le pack</h2>
+        <ul className="sale-tiles">
+          {pack.items.map((item) => (
+            <li key={item.title} className="sale-tile">
+              <span className="sale-tile__icon" aria-hidden="true">
+                <Icon name={item.icon} />
+              </span>
+              <span className="sale-tile__text">
+                <strong>{item.title}</strong>
+                <span>{item.description}</span>
+              </span>
+            </li>
+          ))}
+          {pack.bonus ? (
+            <li className="sale-tile sale-tile--bonus">
+              <span className="sale-tile__icon" aria-hidden="true">
+                <Icon name="gift" />
+              </span>
+              <span className="sale-tile__text">
+                <strong>Fiche bonus</strong>
+                <span>Pour mieux apprendre</span>
+              </span>
+            </li>
+          ) : null}
+        </ul>
+        <p className="sale-content__total">
+          {pack.items.length + (pack.bonus ? 1 : 0)} fiches PDF · lisibles sur téléphone ou à imprimer
+        </p>
+      </section>
 
       <section className="container sale-faq" aria-labelledby="faq-title">
         <h2 id="faq-title">Questions fréquentes</h2>

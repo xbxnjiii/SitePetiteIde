@@ -93,13 +93,13 @@ export const packs: Pack[] = [
     },
     // Liste des fiches (non affichée sur le site : le visuel détaillé la présente).
     items: [
-      { title: "Fréquence cardiaque", icon: "heart", description: "Normes, prise de pouls, tachycardie et bradycardie." },
-      { title: "Fréquence respiratoire", icon: "lungs", description: "Compter, observer, repérer une détresse respiratoire." },
-      { title: "Température", icon: "thermo", description: "Méthodes de prise, valeurs repères, conduite à tenir." },
-      { title: "Tension artérielle", icon: "gauge", description: "Mesure pas à pas et erreurs fréquentes à éviter." },
-      { title: "Glycémie capillaire", icon: "drop", description: "Le geste, les valeurs repères, hypo et hyperglycémie." },
-      { title: "Saturation (SpO2)", icon: "lungs", description: "Pose de l'oxymètre, interprétation et limites." },
-      { title: "Diurèse", icon: "drop", description: "Surveillance des urines, valeurs repères et signes d'alerte." },
+      { title: "Fréquence cardiaque", icon: "heart", description: "Normes et alertes" },
+      { title: "Fréquence respiratoire", icon: "lungs", description: "Compter, observer" },
+      { title: "Température", icon: "thermo", description: "Fièvre, hypothermie" },
+      { title: "Tension artérielle", icon: "gauge", description: "Mesure et repères" },
+      { title: "Glycémie", icon: "drop", description: "Hypo, hyper" },
+      { title: "Saturation (SpO2)", icon: "lungs", description: "Valeurs et limites" },
+      { title: "Diurèse", icon: "note", description: "Volumes à connaître" },
     ],
     highlights: [
       "Valeurs normales et signes d'alerte",
