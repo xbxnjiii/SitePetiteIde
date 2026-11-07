@@ -83,8 +83,10 @@ Secrets du Worker (*Settings → Variables and Secrets*) : `STRIPE_SECRET_KEY` (
 - **Paiement** : adresse de livraison et frais de port demandés dans le paiement Stripe ; métadonnée `format=papier`.
 - **Après paiement** : email au client (confirmation + adresse + PDF offert) et alerte « commande à préparer »
   envoyée à `ORDERS_NOTIFY_TO` (par défaut `EMAIL_REPLY_TO`).
-- **Expédition** : page **`/admin`** (identifiant au choix, mot de passe = secret `ADMIN_PASSWORD`, 12 caractères minimum) :
-  liste des commandes à expédier, adresse à copier, saisie du numéro de suivi ⇒ email « Tes fiches sont en route » au client.
+- **Suivi des commandes** : page **`/admin`** (identifiant au choix, mot de passe = secret `ADMIN_PASSWORD`, 12 caractères minimum) :
+  résumé du mois, onglets À expédier / Expédiées / Ventes, recherche, étiquettes d'adresse à imprimer, retard signalé
+  après 2 jours ouvrés, numéro de suivi ⇒ email « Tes fiches sont en route » (corrigeable), lien vers le paiement Stripe.
+  Code : `src/app/admin/` (`route.ts` actions, `data.ts` lecture Stripe, `view.ts` affichage).
 
 ## Éléments provisoires
 
