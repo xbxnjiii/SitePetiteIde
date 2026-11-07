@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { quizzes } from "@/content/quiz";
 import { ModePicker } from "@/components/shop/Quiz";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
-import { Icon } from "@/components/ui/Icon";
 
 export const metadata: Metadata = {
   title: "Quiz gratuits pour étudiants infirmiers",
@@ -10,43 +9,39 @@ export const metadata: Metadata = {
   alternates: { canonical: "/quiz" },
 };
 
-// Page de choix du thème : chaque thème disponible ouvre son quiz.
+// Page des thèmes : chaque thème disponible propose ses deux formats ; les suivants sont annoncés.
 export default function QuizHubPage() {
+  const available = quizzes.filter((q) => q.status === "available");
+  const soon = quizzes.filter((q) => q.status === "soon");
   return (
-    <div className="container legal">
-      <header className="legal__head contact__head">
+    <div className="container qz-page">
+      <header className="qz-head">
         <Breadcrumb items={[{ label: "Quiz" }]} />
-        <h1>Teste tes connaissances 🧠</h1>
-        <p className="legal__intro">Choisis ton thème et ton format : Flash Quiz en 2 min, ou le Quiz des Pros.</p>
+        <h1>Quiz 🧠</h1>
+        <p>Choisis ton thème, lance-toi, partage ton score.</p>
       </header>
-      <ul className="quiz-themes">
-        {quizzes.map((t) => (
-          <li key={t.slug}>
-            {t.status === "available" ? (
-              <div className="quiz-theme quiz-theme--open">
-                <div className="quiz-theme__row">
-                  <span className="quiz-theme__icon"><Icon name={t.icon} /></span>
-                  <span className="quiz-theme__text">
-                    <strong>{t.title}</strong>
-                    <span>{t.description}</span>
-                  </span>
-                </div>
-                <ModePicker themeSlug={t.slug} />
-              </div>
-            ) : (
-              <div className="quiz-theme quiz-theme--soon" aria-disabled="true">
-                <span className="quiz-theme__icon"><Icon name={t.icon} /></span>
-                <span className="quiz-theme__text">
-                  <strong>{t.title}</strong>
-                  <span>{t.description}</span>
-                </span>
-                <span className="quiz-theme__soon">Bientôt</span>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
-      <p className="contact__tip">À titre de révision : suis toujours les protocoles de ton service.</p>
+
+      {available.map((t) => (
+        <section key={t.slug} className="qz-theme" aria-labelledby={`t-${t.slug}`}>
+          <h2 id={`t-${t.slug}`}>
+            <span aria-hidden="true">{t.emoji}</span> {t.title}
+          </h2>
+          <ModePicker themeSlug={t.slug} />
+        </section>
+      ))}
+
+      {soon.length ? (
+        <section className="qz-soon" aria-label="Thèmes à venir">
+          <p>Bientôt</p>
+          <div>
+            {soon.map((t) => (
+              <span key={t.slug}>
+                <span aria-hidden="true">{t.emoji}</span> {t.title}
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

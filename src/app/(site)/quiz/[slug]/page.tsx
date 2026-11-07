@@ -26,16 +26,15 @@ export default async function QuizThemePage({ params }: { params: Params }) {
   const theme = getQuiz((await params).slug);
   if (!theme) notFound();
   return (
-    <div className="container legal">
-      <header className="legal__head contact__head">
+    <div className="container qz-page">
+      <header className="qz-head">
         <Breadcrumb items={[{ label: "Quiz", href: "/quiz" }, { label: theme.title }]} />
-        <h1>Quiz : {theme.title.toLowerCase()} 🧠</h1>
-        <p className="legal__intro">Flash Quiz pour réviser en 2 min, ou Quiz des Pros pour viser le sans-faute.</p>
+        <h1>
+          <span aria-hidden="true">{theme.emoji}</span> {theme.title}
+        </h1>
       </header>
       <Quiz theme={theme} />
-      <p className="contact__tip">
-        Valeurs de référence chez l&apos;adulte, à titre de révision : suis toujours les protocoles de ton service.
-      </p>
+      <p className="qz-disclaimer">Valeurs de référence chez l&apos;adulte, à titre de révision : suis toujours les protocoles de ton service.</p>
     </div>
   );
 }

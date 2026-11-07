@@ -405,6 +405,8 @@ export interface QuizTheme {
   title: string;
   description: string;
   icon: QuizIcon;
+  /** Emoji du thème (titres et tuiles). */
+  emoji: string;
   /** "available" = jouable ; "soon" = affiché comme « bientôt ». */
   status: "available" | "soon";
   questions: QuizQuestion[];
@@ -416,6 +418,7 @@ export interface QuizTheme {
 export const quizzes: QuizTheme[] = [
   {
     slug: "constantes",
+    emoji: "🫀",
     title: "Les constantes",
     description: "FC, FR, température, TA, SpO2, glycémie, diurèse",
     icon: "heart",
@@ -424,9 +427,9 @@ export const quizzes: QuizTheme[] = [
     packSlug: QUIZ_PACK_SLUG,
     packName: "Pack Mémos : Constantes",
   },
-  { slug: "pathologies", title: "Les pathologies", description: "Les grandes pathologies à connaître", icon: "book", status: "soon", questions: [] },
-  { slug: "arret-cardiaque", title: "L'arrêt cardiaque", description: "Reconnaître et agir", icon: "lungs", status: "soon", questions: [] },
-  { slug: "diabete", title: "Le diabète", description: "Glycémie, traitements, complications", icon: "drop", status: "soon", questions: [] },
+  { slug: "pathologies", emoji: "🩺", title: "Les pathologies", description: "Les grandes pathologies à connaître", icon: "book", status: "soon", questions: [] },
+  { slug: "arret-cardiaque", emoji: "🚑", title: "L'arrêt cardiaque", description: "Reconnaître et agir", icon: "lungs", status: "soon", questions: [] },
+  { slug: "diabete", emoji: "🩸", title: "Le diabète", description: "Glycémie, traitements, complications", icon: "drop", status: "soon", questions: [] },
 ];
 
 export const getQuiz = (slug: string) => quizzes.find((q) => q.slug === slug && q.status === "available");
