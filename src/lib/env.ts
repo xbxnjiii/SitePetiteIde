@@ -4,6 +4,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 /** Sous-ensemble de l'API R2 utilisé par le site (évite un fichier de types généré). */
 export interface R2BucketLike {
   get(key: string): Promise<{ body: ReadableStream; size: number } | null>;
+  head(key: string): Promise<{ size: number } | null>;
 }
 
 /** Variables et secrets du Worker (wrangler.jsonc "vars" + `wrangler secret put`). */

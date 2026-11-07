@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!pack) return {};
   return {
     title: pack.name,
-    description: `${pack.promise} ${formatPrice(pack.priceCents)}, PDF reçu par email${pack.print ? ", ou en fiches papier livrées" : ""}.`,
+    description: `${pack.promise} ${formatPrice(pack.priceCents)}, fiches numériques (PDF ou images) reçues par email${pack.print ? ", ou en fiches papier livrées" : ""}.`,
     alternates: { canonical: `/${pack.slug}` },
     openGraph: {
       title: pack.name,
@@ -41,15 +41,15 @@ const faqFor = (pack: Pack) => [
   pack.print
     ? {
         q: "Comment je reçois mon pack ?",
-        a: `En PDF : juste après le paiement, bouton de téléchargement immédiat et lien par email (valable 30 jours). En papier : ${SHIPPING.dispatch.toLowerCase()} par ${SHIPPING.name} (${formatPrice(SHIPPING.priceCents)}), avec le PDF offert tout de suite.`,
+        a: `En numérique (PDF et images) : juste après le paiement, bouton de téléchargement immédiat et lien par email (valable 30 jours). En papier : ${SHIPPING.dispatch.toLowerCase()} par ${SHIPPING.name} (${formatPrice(SHIPPING.priceCents)}), avec le PDF offert tout de suite.`,
       }
     : { q: "Comment je reçois mon pack ?", a: "Juste après le paiement : bouton de téléchargement immédiat et lien envoyé par email (valable 30 jours)." },
   pack.print
     ? {
         q: "C'est un format papier ?",
-        a: `Les deux au choix ! En PDF, ou en fiches papier (${pack.print.specs.join(", ").toLowerCase()}) livrées en ${SHIPPING.zone}, avec le PDF offert.`,
+        a: `Les deux au choix ! En numérique (PDF et images), ou en fiches papier (${pack.print.specs.join(", ").toLowerCase()}) livrées en ${SHIPPING.zone}, avec le PDF offert.`,
       }
-    : { q: "C'est un format papier ?", a: "Non, un PDF. Garde-le sur ton téléphone ou imprime-le." },
+    : { q: "C'est un format papier ?", a: "Non, numérique : tu reçois le PDF (idéal pour imprimer) et les fiches en images (idéal sur téléphone)." },
   pack.print
     ? {
         q: "Et si les fiches sont améliorées ?",
@@ -159,7 +159,7 @@ export default async function PackPage({ params }: { params: Params }) {
         </ul>
         <p className="sale-content__total">
           {pack.items.length + (pack.bonus ? 1 : 0)} fiches ·{" "}
-          {pack.print ? "en PDF ou en papier" : "PDF lisible sur téléphone ou à imprimer"}
+          {pack.print ? "en numérique (PDF ou image) ou en papier" : "en PDF et en images, sur téléphone ou à imprimer"}
         </p>
 
         {pack.print ? (

@@ -13,6 +13,8 @@ interface OrderEmail {
   amountCents: number;
   reference: string;
   links: DownloadLink[];
+  /** Page « Mes fiches en images » (pratique sur téléphone). */
+  imagesUrl?: string | null;
   expiresAt: number;
   idempotencyKey: string;
   /** Commande papier : adresse de livraison (le PDF est offert). */
@@ -28,7 +30,12 @@ export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey">): st
         <a href="${esc(l.url)}" style="display:block;background:#4E7AC7;color:#ffffff;text-decoration:none;font-weight:700;font-size:17px;line-height:22px;text-align:center;padding:16px 20px;border-radius:14px;font-family:${font}">
           Télécharger mon PDF</a></td></tr>`,
     )
-    .join("");
+    .join("") +
+    (o.imagesUrl
+      ? `<tr><td style="padding:0 0 10px">
+        <a href="${esc(o.imagesUrl)}" style="display:block;background:#EEF3FB;color:#3A63AB;text-decoration:none;font-weight:700;font-size:16px;line-height:22px;text-align:center;padding:15px 20px;border-radius:14px;font-family:${font}">
+          📱 Voir mes fiches en images</a></td></tr>`
+      : "");
   return `<!doctype html>
 <html lang="fr"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -55,7 +62,7 @@ export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey">): st
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${buttons}</table>
     </td></tr>
     <tr><td style="padding:6px 22px 24px;font-family:${font};font-size:13px;line-height:20px;color:#5B6784">
-      Lien valable jusqu'au ${until}. Pense à enregistrer le PDF sur ton téléphone.<br>
+      Liens valables jusqu'au ${until}. Pense à enregistrer tes fiches sur ton téléphone.<br>
       Lien perdu ou expiré ? <a href="${esc(SITE.url)}/retrouver-mon-achat" style="color:#4E7AC7">Retrouver mon achat</a>
     </td></tr>
     <tr><td style="padding:16px 22px 22px;border-top:1px solid #E3E8F2;font-family:${font};font-size:14px;line-height:21px;color:#2D3A5A">
@@ -92,6 +99,7 @@ export function orderEmailText(o: Omit<OrderEmail, "to" | "idempotencyKey">): st
     "",
     ...print,
     ...o.links.map((l) => `- ${l.label} : ${l.url}`),
+    ...(o.imagesUrl ? [`- Mes fiches en images (pour téléphone) : ${o.imagesUrl}`] : []),
     "",
     `Commande ${o.reference} · ${formatPrice(o.amountCents)}`,
     `Lien valable ${SITE.downloadDays} jours. Une question ? Réponds à cet email.`,
@@ -126,6 +134,8 @@ export async function sendOrderEmail(env: AppEnv, o: OrderEmail): Promise<void> 
 }
 
 export interface RecoveryItem {
+  /** Texte du bouton (défaut : « Télécharger · nom du pack »). */
+  label?: string;
   packName: string;
   reference: string;
   url: string;
@@ -139,7 +149,7 @@ export function recoveryEmailHtml(items: RecoveryItem[], expiresAt: number): str
     .map(
       (i) => `<tr><td style="padding:0 0 12px">
         <a href="${esc(i.url)}" style="display:block;background:#4E7AC7;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;line-height:21px;text-align:center;padding:15px 18px;border-radius:14px;font-family:${font}">
-          Télécharger · ${esc(i.packName)}</a>
+          ${esc(i.label ?? `Télécharger · ${i.packName}`)}</a>
         <p style="margin:6px 0 0;font-family:${font};font-size:12px;color:#9AA6C2;text-align:center">Commande ${esc(i.reference)}</p>
       </td></tr>`,
     )
@@ -158,7 +168,7 @@ export function recoveryEmailHtml(items: RecoveryItem[], expiresAt: number): str
     </td></tr>
     <tr><td style="padding:0 22px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table></td></tr>
     <tr><td style="padding:4px 22px 24px;font-family:${font};font-size:13px;line-height:20px;color:#5B6784">
-      Liens valables jusqu'au ${until}. Pense à enregistrer tes PDF.<br>
+      Liens valables jusqu'au ${until}. Pense à enregistrer tes fiches.<br>
       Tu n'es pas à l'origine de cette demande ? Ignore simplement cet email.
     </td></tr>
   </table>
@@ -180,7 +190,7 @@ export async function sendRecoveryEmail(env: AppEnv, to: string, items: Recovery
       reply_to: env.EMAIL_REPLY_TO ?? SITE.contactEmail,
       subject: "Tes fiches La Petite IDE 💙",
       html: recoveryEmailHtml(items, expiresAt),
-      text: ["Voici tes fiches :", ...items.map((i) => `- ${i.packName} (${i.reference}) : ${i.url}`), "", "— La Petite IDE"].join("\n"),
+      text: ["Voici tes fiches :", ...items.map((i) => `- ${i.label ?? i.packName} (${i.reference}) : ${i.url}`), "", "— La Petite IDE"].join("\n"),
     }),
   });
   // 409 = même clé d'idempotence déjà utilisée (envoi déjà fait dans l'heure) : pas une erreur.

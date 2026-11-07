@@ -30,7 +30,7 @@ const FAQ = [
   },
   {
     q: "Sur quels appareils puis-je lire les fiches ?",
-    a: "Les fichiers sont au format PDF : ils se lisent sur téléphone, tablette et ordinateur, et peuvent être imprimés.",
+    a: "Tu reçois tes fiches en PDF (pratique sur ordinateur et pour imprimer) et en images (pratique sur téléphone : enregistre-les dans tes Photos).",
   },
   {
     q: "Mon téléchargement ne marche pas depuis TikTok ou Instagram",

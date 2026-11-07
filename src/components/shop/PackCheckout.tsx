@@ -21,7 +21,7 @@ import { STRIPE_PUBLISHABLE_KEY } from "@/lib/stripe-public";
 //  - Apple Pay / Google Pay s'affichent automatiquement sur les appareils compatibles ;
 //  - paiement par carte dans un formulaire sur la page ;
 //  - secours : bouton vers la page de paiement hébergée par Stripe si le chargement échoue ;
-//  - choix du format : PDF seul, ou fiches papier (livrées, PDF offert).
+//  - choix du format : numérique (PDF + images), ou fiches papier (livrées, numérique offert).
 
 // Une seule instance Stripe par clé publique. La clé vient du serveur (configuration du Worker),
 // avec la clé intégrée au build en secours.
@@ -83,7 +83,7 @@ function FormatPicker({
   onChange: (f: PackFormat) => void;
 }) {
   const options: { id: PackFormat; title: string; price: string; note: string; disabled?: boolean }[] = [
-    { id: "pdf", title: "PDF", price: formatPrice(pdfCents), note: "Accès immédiat" },
+    { id: "pdf", title: "Numérique (PDF ou image)", price: formatPrice(pdfCents), note: "Accès immédiat" },
     {
       id: "papier",
       title: "Papier + PDF offert",
@@ -433,7 +433,7 @@ function CheckoutForm({
         <CardModal onClose={() => setShowCard(false)} title={isFree ? "Commande gratuite" : `Payer ${totalLabel}`}>
           <form className="checkout__card" onSubmit={onCardSubmit}>
             <label className="checkout__label" htmlFor={`email-${slug}`}>
-              Ton email <span>{isPrint ? "(confirmation, suivi et PDF offert)" : "(pour recevoir ton PDF)"}</span>
+              Ton email <span>{isPrint ? "(confirmation, suivi et fiches numériques offertes)" : "(pour recevoir tes fiches)"}</span>
             </label>
             <input
               id={`email-${slug}`}
@@ -548,8 +548,8 @@ function ConsentText({ format }: { format: PackFormat }) {
     </span>
   ) : (
     <span>
-      J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link> et renonce à mon droit de rétractation pour recevoir le PDF
-      immédiatement.
+      J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link> et renonce à mon droit de rétractation pour recevoir mes
+      fiches immédiatement.
     </span>
   );
 }
@@ -575,7 +575,13 @@ function PriceRow({
           </s>
         ) : null}
       </span>
-      <span>{format === "papier" ? `+ ${formatPrice(SHIPPING.priceCents)} de livraison` : "PDF · accès immédiat"}</span>
+      {format === "papier" ? (
+        <span>+ {formatPrice(SHIPPING.priceCents)} de livraison</span>
+      ) : (
+        <span className="sale-buy__format">
+          <Icon name="download" /> Numérique (PDF ou image)
+        </span>
+      )}
     </div>
   );
 }

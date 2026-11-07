@@ -1,6 +1,6 @@
 import { sendRecoveryEmail, type RecoveryItem } from "@/lib/email";
 import { getEnvAsync, siteUrl } from "@/lib/env";
-import { downloadLinks, getOrder, orderReference } from "@/lib/orders";
+import { downloadLinks, getOrder, imagesLink, orderReference } from "@/lib/orders";
 import { isAllowedOrigin } from "@/lib/origin";
 import { stripeClient } from "@/lib/stripe";
 
@@ -28,6 +28,8 @@ export async function POST(request: Request) {
       if (!order?.paid || order.revoked || !order.pack) continue;
       const links = await downloadLinks(env, order, Math.max(expiresAt, order.expiresAt));
       for (const l of links) items.push({ packName: order.pack.name, reference: orderReference(s.id), url: l.url });
+      const images = await imagesLink(env, order, Math.max(expiresAt, order.expiresAt));
+      if (images) items.push({ label: `📱 En images · ${order.pack.name}`, packName: order.pack.name, reference: orderReference(s.id), url: images });
     }
     if (items.length) {
       // Au plus un email par heure et par adresse (clé d'idempotence Resend).

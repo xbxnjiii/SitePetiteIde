@@ -728,3 +728,15 @@ a.quiz-theme:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); 
 .gallery__dot--on::before { width: 22px; background: var(--c-primary); }
 @media (hover: hover) and (pointer: fine) { .gallery__nav { display: grid; } }
 @media (min-width: 900px) { .sale-main__visual:has(.gallery) { max-width: 460px; } }
+/* ===== Mes fiches en images ============================================= */
+.fiches-page { max-width: 560px; }
+.fiches__tip { font-size: 0.88rem; color: var(--c-ink-soft); background: #fff; border: 1px solid var(--c-line); border-radius: var(--r-md); padding: 10px 14px; text-align: left; }
+.fiches__tip svg { width: 16px; height: 16px; vertical-align: -3px; color: var(--c-primary); }
+.fiches { list-style: none; margin: 16px 0; padding: 0; display: grid; gap: 16px; }
+.fiches__item { background: #fff; border: 1px solid var(--c-line); border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+.fiches__item img { display: block; width: 100%; height: auto; background: var(--c-bg); -webkit-touch-callout: default; }
+.fiches__bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; font-weight: 600; font-size: 0.92rem; text-align: left; }
+.fiches__pdf { margin-top: 8px; }
+.thanks__links .btn--secondary { white-space: normal; }
+.sale-buy__format { display: inline-flex; align-items: center; gap: 5px; }
+.sale-buy__format svg { width: 15px; height: 15px; color: var(--c-primary); }

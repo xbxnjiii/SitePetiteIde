@@ -6,7 +6,7 @@ import { Mascot, type MascotPose } from "@/components/ui/Mascot";
 import { SHIPPING } from "@/content/shipping";
 import { getEnvAsync } from "@/lib/env";
 import { SITE } from "@/lib/format";
-import { downloadLinks, getOrder, orderReference } from "@/lib/orders";
+import { downloadLinks, getOrder, imagesLink, orderReference } from "@/lib/orders";
 import { stripeClient } from "@/lib/stripe";
 
 export const metadata: Metadata = { title: "Merci pour ta commande", robots: { index: false } };
@@ -53,8 +53,10 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
 
   const expired = order.expiresAt < Date.now() / 1000;
   let links: Awaited<ReturnType<typeof downloadLinks>> = [];
+  let images: string | null = null;
   try {
     links = expired ? [] : await downloadLinks(env, order);
+    images = expired ? null : await imagesLink(env, order);
   } catch (err) {
     console.error("merci: liens indisponibles", err instanceof Error ? err.message : err);
   }
@@ -101,6 +103,11 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
               <Icon name="download" /> Télécharger · {l.label}
             </a>
           ))}
+          {images ? (
+            <a href={images} className="btn btn--secondary btn--block">
+              📱 Mes fiches en images (pour téléphone)
+            </a>
+          ) : null}
         </div>
       )}
       <p className="thanks__tip">

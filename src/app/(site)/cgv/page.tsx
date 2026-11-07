@@ -37,7 +37,7 @@ export default function CgvPage() {
           content: (
             <>
               <p>
-                Les packs sont proposés en deux formats : des fichiers PDF à usage strictement personnel, ou des fiches imprimées
+                Les packs sont proposés en deux formats : des fiches numériques (PDF et images) à usage strictement personnel, ou des fiches imprimées
                 (« format papier ») livrées à domicile, accompagnées du PDF offert. Leurs caractéristiques essentielles (contenu, format,
                 finition) sont décrites sur chaque page de vente.
               </p>

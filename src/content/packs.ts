@@ -84,6 +84,11 @@ export interface Pack {
   files: PackFile[];
   /** Version papier. Sans ce champ, le pack n'existe qu'en PDF. */
   print?: PrintEdition;
+  /**
+   * Version « images » (une image PNG/JPG par fiche, pratique sur téléphone), livrée avec le PDF.
+   * Affichées sur la page /mes-fiches ; une image absente du bucket R2 est simplement masquée.
+   */
+  imageFiles?: PackFile[];
   /** Caractéristiques affichées (pages, format…). Laisser vide si inconnu. */
   pageCount?: number;
   /** Statut : seuls les packs "published" sont visibles et achetables. */
@@ -155,6 +160,21 @@ export const packs: Pack[] = [
         ? { src: "/img/packs/papier-illustration-preprod.webp", width: 623, height: 653, alt: "Exemple de fiches papier (illustration)" }
         : undefined,
     },
+    // Images à déposer dans le bucket R2 « la-petite-ide-pdfs », sous ces clés exactes.
+    imageFiles: [
+      ["01-frequence-cardiaque", "Fréquence cardiaque"],
+      ["02-frequence-respiratoire", "Fréquence respiratoire"],
+      ["03-temperature", "Température"],
+      ["04-tension-arterielle", "Tension artérielle"],
+      ["05-glycemie", "Glycémie"],
+      ["06-saturation", "Saturation (SpO2)"],
+      ["07-diurese", "Diurèse"],
+      ["08-fiche-bonus", "Fiche bonus"],
+    ].map(([name, label]) => ({
+      key: `pack-des-constantes/images/${name}.png`,
+      downloadName: `La-Petite-IDE-Constantes-${name}.png`,
+      label,
+    })),
     status: "published",
   },
 ];
