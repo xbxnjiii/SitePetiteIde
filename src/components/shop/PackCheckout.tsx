@@ -1,18 +1,27 @@
 "use client";
 import { loadStripe, type Appearance, type StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
-import { CheckoutElementsProvider, ExpressCheckoutElement, PaymentElement, useCheckoutElements } from "@stripe/react-stripe-js/checkout";
+import {
+  CheckoutElementsProvider,
+  ExpressCheckoutElement,
+  PaymentElement,
+  ShippingAddressElement,
+  useCheckoutElements,
+} from "@stripe/react-stripe-js/checkout";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { formatPrice } from "@/lib/format";
 import { OFFER } from "@/content/offer";
+import type { PackFormat, PrintEdition } from "@/content/packs";
+import { SHIPPING, isDeliverable } from "@/content/shipping";
 import { sourceFromLocation } from "@/lib/source";
 import { STRIPE_PUBLISHABLE_KEY } from "@/lib/stripe-public";
 
 // Paiement intégré à la page de vente (Stripe « Elements » + Checkout Sessions) :
 //  - Apple Pay / Google Pay s'affichent automatiquement sur les appareils compatibles ;
 //  - paiement par carte dans un formulaire sur la page ;
-//  - secours : bouton vers la page de paiement hébergée par Stripe si le chargement échoue.
+//  - secours : bouton vers la page de paiement hébergée par Stripe si le chargement échoue ;
+//  - choix du format : PDF seul, ou fiches papier (livrées, PDF offert).
 
 let stripePromise: ReturnType<typeof loadStripe> | null = null;
 const getStripe = () => (stripePromise ??= loadStripe(STRIPE_PUBLISHABLE_KEY, { locale: "fr" }));
@@ -35,7 +44,92 @@ const appearance: Appearance = {
   },
 };
 
-export function PackCheckout({ slug, priceCents }: { slug: string; priceCents: number }) {
+const NOT_DELIVERABLE = "On livre seulement en France métropolitaine (Corse comprise) pour le moment.";
+
+/** Bloc d'achat : choix du format (si le pack existe en papier), puis paiement. */
+export function PackCheckout({ slug, priceCents, print }: { slug: string; priceCents: number; print?: PrintEdition | null }) {
+  const [format, setFormat] = useState<PackFormat>("pdf");
+  return (
+    <>
+      {print ? <FormatPicker slug={slug} pdfCents={priceCents} print={print} value={format} onChange={setFormat} /> : null}
+      {/* Une session de paiement par format : changer de format recrée la session. */}
+      <PackCheckoutSession
+        key={format}
+        slug={slug}
+        format={format}
+        priceCents={format === "papier" && print ? print.priceCents : priceCents}
+        showPrice={!print}
+      />
+    </>
+  );
+}
+
+function FormatPicker({
+  slug,
+  pdfCents,
+  print,
+  value,
+  onChange,
+}: {
+  slug: string;
+  pdfCents: number;
+  print: PrintEdition;
+  value: PackFormat;
+  onChange: (f: PackFormat) => void;
+}) {
+  const options: { id: PackFormat; title: string; price: string; note: string; disabled?: boolean }[] = [
+    { id: "pdf", title: "PDF", price: formatPrice(pdfCents), note: "Accès immédiat" },
+    {
+      id: "papier",
+      title: "Papier + PDF offert",
+      price: formatPrice(print.priceCents),
+      note: print.soldOut ? "Bientôt de retour" : `+ ${formatPrice(SHIPPING.priceCents)} de livraison`,
+      disabled: print.soldOut,
+    },
+  ];
+  return (
+    <fieldset className="formats">
+      <legend className="visually-hidden">Choisis ton format</legend>
+      <div className="formats__grid">
+        {options.map((o) => (
+          <label key={o.id} className={["format", value === o.id ? "format--on" : "", o.disabled ? "format--off" : ""].join(" ")}>
+            <input
+              type="radio"
+              name={`format-${slug}`}
+              value={o.id}
+              checked={value === o.id}
+              disabled={o.disabled}
+              onChange={() => onChange(o.id)}
+            />
+            <span className="format__title">
+              <Icon name={o.id === "pdf" ? "download" : "gift"} /> {o.title}
+            </span>
+            <span className="format__price">{o.price}</span>
+            <span className="format__note">{o.note}</span>
+          </label>
+        ))}
+      </div>
+      {value === "papier" ? (
+        <p className="formats__details">
+          {print.details}. {SHIPPING.dispatch} par {SHIPPING.name} · {SHIPPING.zone}.
+        </p>
+      ) : null}
+    </fieldset>
+  );
+}
+
+function PackCheckoutSession({
+  slug,
+  format,
+  priceCents,
+  showPrice,
+}: {
+  slug: string;
+  format: PackFormat;
+  priceCents: number;
+  /** `false` quand le choix du format affiche déjà les prix (le prix n'est alors rappelé qu'en cas de réduction). */
+  showPrice: boolean;
+}) {
   const [failed, setFailed] = useState(false);
   const clientSecretRef = useRef<string | null>(null);
 
@@ -46,7 +140,7 @@ export function PackCheckout({ slug, priceCents }: { slug: string; priceCents: n
     const promise = fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pack: slug, source: sourceFromLocation() }),
+        body: JSON.stringify({ pack: slug, format, source: sourceFromLocation() }),
       })
         .then(async (r) => {
           const data = (await r.json()) as { clientSecret?: string };
@@ -60,19 +154,19 @@ export function PackCheckout({ slug, priceCents }: { slug: string; priceCents: n
         });
     promise.catch(() => {}); // l'erreur est gérée par l'état « failed »
     setClientSecret(promise);
-  }, [slug]);
+  }, [slug, format]);
 
   if (failed)
     return (
       <>
-        <PriceRow priceCents={priceCents} />
-        <HostedFallback slug={slug} priceCents={priceCents} />
+        {showPrice ? <PriceRow priceCents={priceCents} format={format} /> : null}
+        <HostedFallback slug={slug} format={format} priceCents={priceCents} />
       </>
     );
   if (!clientSecret)
     return (
       <>
-        <PriceRow priceCents={priceCents} />
+        {showPrice ? <PriceRow priceCents={priceCents} format={format} /> : null}
         <div className="checkout__loading" aria-label="Chargement du paiement" />
       </>
     );
@@ -82,20 +176,27 @@ export function PackCheckout({ slug, priceCents }: { slug: string; priceCents: n
         clientSecret,
         elementsOptions: { appearance },
         // France par défaut : pas de champ « code postal » à remplir.
-        defaultValues: { billingAddress: { address: { country: "FR" } } },
+        defaultValues: {
+          billingAddress: { address: { country: "FR" } },
+          ...(format === "papier" ? { shippingAddress: { address: { country: "FR" } } } : {}),
+        },
       }}>
-      <CheckoutForm slug={slug} priceCents={priceCents} clientSecretRef={clientSecretRef} />
+      <CheckoutForm slug={slug} format={format} priceCents={priceCents} showPrice={showPrice} clientSecretRef={clientSecretRef} />
     </CheckoutElementsProvider>
   );
 }
 
 function CheckoutForm({
   slug,
+  format,
   priceCents,
+  showPrice,
   clientSecretRef,
 }: {
   slug: string;
+  format: PackFormat;
   priceCents: number;
+  showPrice: boolean;
   clientSecretRef: React.RefObject<string | null>;
 }) {
   const state = useCheckoutElements();
@@ -112,9 +213,14 @@ function CheckoutForm({
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoBusy, setPromoBusy] = useState(false);
 
+  const isPrint = format === "papier";
   const session = state.type === "success" ? state.checkout : null;
   const discount = session?.discountAmounts?.[0] ?? null;
   const totalLabel = session ? session.total.total.amount : formatPrice(priceCents);
+  // Prix des fiches après réduction, hors frais de port (affiché à la place du prix barré).
+  const itemsAfterDiscount = session
+    ? formatPrice(session.total.total.minorUnitsAmount - session.total.shippingRate.minorUnitsAmount)
+    : formatPrice(priceCents);
   // Commande gratuite (code à -100 %) : pas de carte à saisir.
   const isFree = session ? session.total.total.minorUnitsAmount === 0 : false;
 
@@ -150,6 +256,11 @@ function CheckoutForm({
 
   const onExpressConfirm = async (event: StripeExpressCheckoutElementConfirmEvent) => {
     if (state.type !== "success") return event.paymentFailed({ reason: "fail" });
+    // Outre-mer refusé (l'adresse elle-même reste obligatoire côté Stripe).
+    if (isPrint && event.shippingAddress?.address?.postal_code && !isDeliverable(event.shippingAddress.address)) {
+      setMessage(NOT_DELIVERABLE);
+      return event.paymentFailed({ reason: "address_unserviceable", message: NOT_DELIVERABLE });
+    }
     try {
       await recordConsent();
       const result = await state.checkout.confirm({ expressCheckoutConfirmEvent: event });
@@ -163,6 +274,11 @@ function CheckoutForm({
   const onCardSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (state.type !== "success" || !requireConsent()) return;
+    const shipTo = state.checkout.shippingAddress?.address;
+    if (isPrint && shipTo?.postal_code && !isDeliverable(shipTo)) {
+      setMessage(NOT_DELIVERABLE);
+      return;
+    }
     setBusy(true);
     setMessage(null);
     try {
@@ -180,8 +296,8 @@ function CheckoutForm({
   if (state.type === "error")
     return (
       <>
-        <PriceRow priceCents={priceCents} />
-        <HostedFallback slug={slug} priceCents={priceCents} />
+        {showPrice ? <PriceRow priceCents={priceCents} format={format} /> : null}
+        <HostedFallback slug={slug} format={format} priceCents={priceCents} />
       </>
     );
 
@@ -197,10 +313,7 @@ function CheckoutForm({
             if (e.target.checked) setConsentError(false);
           }}
         />
-        <span>
-          J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link> et renonce à mon droit de rétractation pour recevoir le
-          PDF immédiatement.
-        </span>
+        <ConsentText format={format} />
       </label>
       {consentError && !consent ? (
         <p className="checkout__hint" role="alert">
@@ -212,7 +325,7 @@ function CheckoutForm({
 
   return (
     <div className="checkout">
-      <PriceRow priceCents={priceCents} discountedLabel={discount ? totalLabel : null} />
+      {showPrice || discount ? <PriceRow priceCents={priceCents} format={format} discountedLabel={discount ? itemsAfterDiscount : null} /> : null}
       {state.type === "loading" || hasWallet === null ? <div className="checkout__loading" aria-label="Chargement du paiement" /> : null}
 
       {/* Un seul bouton de paiement rapide, adapté à l'appareil :
@@ -250,7 +363,7 @@ function CheckoutForm({
         <button type="button" className="btn btn--primary btn--block btn--buy" onClick={() => setShowCard(true)} disabled={state.type !== "success"}>
           {isFree ? (
             <>
-              <Icon name="download" /> Recevoir mes fiches
+              {isPrint ? <Icon name="gift" /> : <Icon name="download" />} {isPrint ? "Commander mes fiches" : "Recevoir mes fiches"}
             </>
           ) : (
             <>
@@ -311,7 +424,7 @@ function CheckoutForm({
         <CardModal onClose={() => setShowCard(false)} title={isFree ? "Commande gratuite" : `Payer ${totalLabel}`}>
           <form className="checkout__card" onSubmit={onCardSubmit}>
             <label className="checkout__label" htmlFor={`email-${slug}`}>
-              Ton email <span>(pour recevoir ton PDF)</span>
+              Ton email <span>{isPrint ? "(confirmation, suivi et PDF offert)" : "(pour recevoir ton PDF)"}</span>
             </label>
             <input
               id={`email-${slug}`}
@@ -324,6 +437,14 @@ function CheckoutForm({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+            {isPrint ? (
+              <div className="checkout__shipping">
+                <p className="checkout__label">
+                  Adresse de livraison <span>({SHIPPING.zone})</span>
+                </p>
+                <ShippingAddressElement options={{ fields: { phone: "never" } }} />
+              </div>
+            ) : null}
             {isFree ? null : <PaymentElement options={{ layout: "tabs", fields: { billingDetails: { email: "never" } } }} />}
             {consentBox("modal")}
             {message ? (
@@ -332,7 +453,7 @@ function CheckoutForm({
               </p>
             ) : null}
             <button type="submit" className="btn btn--primary btn--block btn--buy" disabled={busy || state.type !== "success"}>
-              {busy ? "Un instant…" : isFree ? "Recevoir mes fiches" : `Payer ${totalLabel}`}
+              {busy ? "Un instant…" : isFree ? (isPrint ? "Commander mes fiches" : "Recevoir mes fiches") : `Payer ${totalLabel}`}
             </button>
             <p className="checkout__trust">
               <Icon name="shield" /> Paiement sécurisé par Stripe
@@ -372,20 +493,18 @@ function CardModal({ title, onClose, children }: { title: string; onClose: () =>
 }
 
 /** Secours : bouton classique vers la page de paiement Stripe (fonctionne sans JavaScript). */
-function HostedFallback({ slug, priceCents }: { slug: string; priceCents: number }) {
+function HostedFallback({ slug, format, priceCents }: { slug: string; format: PackFormat; priceCents: number }) {
   return (
     <form method="post" action="/api/checkout" className="buy-form">
       <input type="hidden" name="pack" value={slug} />
+      <input type="hidden" name="format" value={format} />
       <SourceField />
       <label className="consent">
         <input type="checkbox" name="consent" required />
-        <span>
-          J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link> et renonce à mon droit de rétractation pour recevoir le
-          PDF immédiatement.
-        </span>
+        <ConsentText format={format} />
       </label>
       <button type="submit" className="btn btn--primary btn--block btn--buy">
-        Je veux le pack · {formatPrice(priceCents)} <Icon name="arrow" />
+        {format === "papier" ? "Commander mes fiches" : "Je veux le pack"} · {formatPrice(priceCents)} <Icon name="arrow" />
       </button>
     </form>
   );
@@ -411,8 +530,31 @@ function SourceField() {
   return src ? <input type="hidden" name="source" value={src} /> : null;
 }
 
+/** Texte de la case à cocher : renonciation à la rétractation pour le PDF seulement. */
+function ConsentText({ format }: { format: PackFormat }) {
+  return format === "papier" ? (
+    <span>
+      J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link>. Le PDF offert est envoyé tout de suite ; tu disposes de 14
+      jours à réception des fiches papier pour te rétracter.
+    </span>
+  ) : (
+    <span>
+      J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link> et renonce à mon droit de rétractation pour recevoir le PDF
+      immédiatement.
+    </span>
+  );
+}
+
 /** Prix affiché dans le bloc d'achat ; prix normal barré quand une réduction est appliquée. */
-function PriceRow({ priceCents, discountedLabel = null }: { priceCents: number; discountedLabel?: string | null }) {
+function PriceRow({
+  priceCents,
+  format,
+  discountedLabel = null,
+}: {
+  priceCents: number;
+  format: PackFormat;
+  discountedLabel?: string | null;
+}) {
   return (
     <div className="sale-buy__price">
       <span>
@@ -424,7 +566,7 @@ function PriceRow({ priceCents, discountedLabel = null }: { priceCents: number; 
           </s>
         ) : null}
       </span>
-      <span>PDF · accès immédiat</span>
+      <span>{format === "papier" ? `+ ${formatPrice(SHIPPING.priceCents)} de livraison` : "PDF · accès immédiat"}</span>
     </div>
   );
 }

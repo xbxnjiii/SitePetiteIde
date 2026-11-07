@@ -1,13 +1,15 @@
 import Stripe from "stripe";
-import { sendOrderEmail } from "@/lib/email";
-import { getEnvAsync, requireVar } from "@/lib/env";
+import { sendOrderEmail, sendPrintOrderNotice } from "@/lib/email";
+import { getEnvAsync, requireVar, siteUrl } from "@/lib/env";
 import { downloadLinks, getOrder, orderReference } from "@/lib/orders";
 import { stripeClient } from "@/lib/stripe";
 
-// Webhook Stripe : SEULE source de confirmation du paiement pour l'envoi de l'email.
+// Webhook Stripe : SEULE source de confirmation du paiement pour l'envoi des emails
+// (client, et pour le papier : alerte « commande à préparer »).
 // Événements à activer dans Stripe : checkout.session.completed,
 // checkout.session.async_payment_succeeded.
 const SENT_FLAG = "lpi_email_sent_at";
+const NOTICE_FLAG = "lpi_notice_sent_at";
 
 export async function POST(request: Request) {
   const env = await getEnvAsync();
@@ -46,31 +48,57 @@ export async function POST(request: Request) {
     return Response.json({ received: true, status: "email manquant" });
   }
 
-  // 3. Idempotence : ne jamais envoyer deux fois l'email pour un même paiement.
+  // 3. Idempotence : chaque email n'est envoyé qu'une fois par paiement (marqueurs sur le PaymentIntent).
   const pi = order.session.payment_intent as Stripe.PaymentIntent | null;
-  if (pi?.metadata?.[SENT_FLAG]) return Response.json({ received: true, status: "déjà envoyé" });
-
-  // 4. Envoi de l'email de livraison (en cas d'échec : 500 ⇒ Stripe réessaie plus tard).
-  try {
-    await sendOrderEmail(env, {
-      to: order.email,
-      packName: order.pack.name,
-      amountCents: order.session.amount_total ?? 0,
-      reference: orderReference(order.session.id),
-      links: await downloadLinks(env, order),
-      expiresAt: order.expiresAt,
-      idempotencyKey: `order-email-${order.session.id}`,
-    });
-  } catch (err) {
-    console.error("webhook: échec de l'envoi de l'email", err instanceof Error ? err.message : err);
-    return new Response("Échec de l'envoi de l'email", { status: 500 });
-  }
-
-  if (pi) {
-    await stripe.paymentIntents.update(pi.id, { metadata: { [SENT_FLAG]: new Date().toISOString() } }).catch((err) =>
-      console.warn("webhook: marquage de l'envoi impossible", err instanceof Error ? err.message : err),
+  const mark = async (flag: string) => {
+    if (!pi) return;
+    await stripe.paymentIntents.update(pi.id, { metadata: { [flag]: new Date().toISOString() } }).catch((err) =>
+      console.warn("webhook: marquage impossible", flag, err instanceof Error ? err.message : err),
     );
+  };
+  const reference = orderReference(order.session.id);
+  const isPrint = order.format === "papier";
+
+  // 4. Email au client : PDF (et, pour le papier, confirmation + adresse). Échec ⇒ 500 ⇒ Stripe réessaie.
+  if (!pi?.metadata?.[SENT_FLAG]) {
+    try {
+      await sendOrderEmail(env, {
+        to: order.email,
+        packName: order.pack.name,
+        amountCents: order.session.amount_total ?? 0,
+        reference,
+        links: await downloadLinks(env, order),
+        expiresAt: order.expiresAt,
+        idempotencyKey: `order-email-${order.session.id}`,
+        shippingLines: isPrint ? (order.shipping?.lines ?? []) : undefined,
+      });
+    } catch (err) {
+      console.error("webhook: échec de l'envoi de l'email", err instanceof Error ? err.message : err);
+      return new Response("Échec de l'envoi de l'email", { status: 500 });
+    }
+    await mark(SENT_FLAG);
   }
-  console.log("webhook: commande livrée", orderReference(order.session.id), order.pack.slug);
-  return Response.json({ received: true, status: "email envoyé" });
+
+  // 5. Papier : alerte « commande à préparer » pour La Petite IDE.
+  if (isPrint && !pi?.metadata?.[NOTICE_FLAG]) {
+    try {
+      await sendPrintOrderNotice(env, {
+        reference,
+        packName: order.pack.name,
+        amountCents: order.session.amount_total ?? 0,
+        customerEmail: order.email,
+        shippingLines: order.shipping?.lines ?? ["⚠️ Adresse absente : voir Stripe"],
+        deliverable: order.shipping?.deliverable ?? false,
+        adminUrl: `${siteUrl(env)}/admin`,
+        sessionId: order.session.id,
+      });
+    } catch (err) {
+      console.error("webhook: échec de l'alerte commande papier", err instanceof Error ? err.message : err);
+      return new Response("Échec de l'alerte commande papier", { status: 500 });
+    }
+    await mark(NOTICE_FLAG);
+  }
+
+  console.log("webhook: commande traitée", reference, order.pack.slug, order.format);
+  return Response.json({ received: true, status: "emails envoyés" });
 }

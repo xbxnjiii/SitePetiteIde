@@ -1,15 +1,28 @@
 import "server-only";
 import type Stripe from "stripe";
-import { getPack, type Pack } from "@/content/packs";
+import { getPack, parseFormat, type Pack, type PackFormat } from "@/content/packs";
+import { isDeliverable } from "@/content/shipping";
 import { SITE } from "./format";
 import { type AppEnv, requireVar, siteUrl } from "./env";
 import { signDownloadToken } from "./download-token";
 
 // Les commandes ne sont stockées QUE chez Stripe : c'est la source de vérité.
 
+export interface ShippingInfo {
+  name: string;
+  /** Adresse sur plusieurs lignes, prête à recopier sur l'enveloppe. */
+  lines: string[];
+  /** `false` si l'adresse est hors France métropolitaine (à vérifier avant l'envoi). */
+  deliverable: boolean;
+}
+
 export interface Order {
   session: Stripe.Checkout.Session;
   pack: Pack | undefined;
+  /** « papier » : fiches à expédier (PDF offert) ; « pdf » : PDF seul. */
+  format: PackFormat;
+  /** Adresse de livraison (papier uniquement). */
+  shipping: ShippingInfo | null;
   /** Paiement confirmé par Stripe. */
   paid: boolean;
   /** Remboursé ou contesté : accès aux fichiers coupé. */
@@ -32,6 +45,8 @@ export async function getOrder(stripe: Stripe, sessionId: string): Promise<Order
   return {
     session,
     pack: getPack(session.metadata?.pack ?? ""),
+    format: parseFormat(session.metadata?.format),
+    shipping: shippingInfo(session),
     paid: session.status === "complete" && (session.payment_status === "paid" || session.payment_status === "no_payment_required"),
     revoked: Boolean(charge?.refunded || charge?.disputed),
     expiresAt: session.created + SITE.downloadDays * 24 * 3600,
@@ -53,6 +68,19 @@ export async function downloadLinks(env: AppEnv, order: Order, expiresAt: number
       url: `${siteUrl(env)}/telecharger?t=${await signDownloadToken({ s: order.session.id, f: index, e: expiresAt }, secret)}`,
     })),
   );
+}
+
+/** Adresse de livraison saisie dans le paiement (null pour un achat PDF). */
+export function shippingInfo(session: Stripe.Checkout.Session): ShippingInfo | null {
+  const d = session.collected_information?.shipping_details;
+  if (!d?.address) return null;
+  const a = d.address;
+  const cityLine = [a.postal_code, a.city].filter(Boolean).join(" ");
+  return {
+    name: d.name ?? "",
+    lines: [d.name, a.line1, a.line2, cityLine, a.country === "FR" ? "France" : a.country].filter((l): l is string => Boolean(l)),
+    deliverable: isDeliverable(a),
+  };
 }
 
 /** Référence lisible pour le client et le support (fin de l'identifiant Stripe). */

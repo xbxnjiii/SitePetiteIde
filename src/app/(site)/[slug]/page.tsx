@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { getPack, publishedPacks } from "@/content/packs";
+import { getPack, publishedPacks, type Pack } from "@/content/packs";
+import { SHIPPING } from "@/content/shipping";
 import { CheckoutError } from "@/components/shop/CheckoutError";
 import { OfferBanner } from "@/components/shop/OfferBanner";
 import { PackCheckout } from "@/components/shop/PackCheckout";
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!pack) return {};
   return {
     title: pack.name,
-    description: `${pack.promise} ${formatPrice(pack.priceCents)}, PDF reçu par email.`,
+    description: `${pack.promise} ${formatPrice(pack.priceCents)}, PDF reçu par email${pack.print ? ", ou en fiches papier livrées" : ""}.`,
     alternates: { canonical: `/${pack.slug}` },
     openGraph: {
       title: pack.name,
@@ -35,10 +36,25 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   };
 }
 
-const FAQ = [
-  { q: "Comment je reçois mon pack ?", a: "Juste après le paiement : bouton de téléchargement immédiat et lien envoyé par email (valable 30 jours)." },
-  { q: "C'est un format papier ?", a: "Non, un PDF. Garde-le sur ton téléphone ou imprime-le." },
-  { q: "Et si les fiches sont améliorées ?", a: "Les mises à jour sont gratuites : tu reçois la nouvelle version des fiches que tu as achetées." },
+const faqFor = (pack: Pack) => [
+  pack.print
+    ? {
+        q: "Comment je reçois mon pack ?",
+        a: `En PDF : juste après le paiement, bouton de téléchargement immédiat et lien par email (valable 30 jours). En papier : ${SHIPPING.dispatch.toLowerCase()} par ${SHIPPING.name} (${formatPrice(SHIPPING.priceCents)}), avec le PDF offert tout de suite.`,
+      }
+    : { q: "Comment je reçois mon pack ?", a: "Juste après le paiement : bouton de téléchargement immédiat et lien envoyé par email (valable 30 jours)." },
+  pack.print
+    ? {
+        q: "C'est un format papier ?",
+        a: `Les deux au choix ! En PDF, ou en fiches papier (${pack.print.details.toLowerCase()}) livrées en ${SHIPPING.zone}, avec le PDF offert.`,
+      }
+    : { q: "C'est un format papier ?", a: "Non, un PDF. Garde-le sur ton téléphone ou imprime-le." },
+  pack.print
+    ? {
+        q: "Et si les fiches sont améliorées ?",
+        a: "Les mises à jour du PDF sont gratuites : tu reçois la nouvelle version, même si tu as pris le format papier.",
+      }
+    : { q: "Et si les fiches sont améliorées ?", a: "Les mises à jour sont gratuites : tu reçois la nouvelle version des fiches que tu as achetées." },
   { q: "Je n'ai pas reçu l'email", a: "Regarde dans tes spams. Sinon, va sur la page « Retrouver mon achat » (en bas de page) : tes liens te sont renvoyés." },
 ];
 
@@ -105,7 +121,7 @@ export default async function PackPage({ params }: { params: Params }) {
             <Suspense>
               <CheckoutError />
             </Suspense>
-            <PackCheckout slug={pack.slug} priceCents={pack.priceCents} />
+            <PackCheckout slug={pack.slug} priceCents={pack.priceCents} print={pack.print ?? null} />
           </div>
         </div>
       </section>
@@ -128,7 +144,7 @@ export default async function PackPage({ params }: { params: Params }) {
       <section className="container sale-faq" aria-labelledby="faq-title">
         <h2 id="faq-title">Questions fréquentes</h2>
         <div className="faq">
-          {FAQ.map((f) => (
+          {faqFor(pack).map((f) => (
             <details key={f.q}>
               <summary>{f.q}</summary>
               <p>{f.a}</p>

@@ -37,6 +37,19 @@ export interface PackImages {
   alt: string;
 }
 
+/** Format choisi à l'achat : PDF seul, ou fiches papier avec le PDF offert. */
+export type PackFormat = "pdf" | "papier";
+
+/** Version papier d'un pack (expédiée, avec le PDF offert). */
+export interface PrintEdition {
+  /** Prix TTC des fiches papier, hors frais de port (voir src/content/shipping.ts). */
+  priceCents: number;
+  /** Caractéristiques affichées sous le choix du format (format, papier, finition…). */
+  details: string;
+  /** `true` : affiché « Bientôt de retour » et non achetable. */
+  soldOut?: boolean;
+}
+
 export interface Pack {
   slug: string;
   name: string;
@@ -60,8 +73,10 @@ export interface Pack {
   bonus?: { title: string; text: string };
   /** 3 points forts courts, affichés sous le titre de la page de vente. */
   highlights: string[];
-  /** Fichiers livrés après paiement. */
+  /** Fichiers livrés après paiement (aussi offerts avec la version papier). */
   files: PackFile[];
+  /** Version papier. Sans ce champ, le pack n'existe qu'en PDF. */
+  print?: PrintEdition;
   /** Caractéristiques affichées (pages, format…). Laisser vide si inconnu. */
   pageCount?: number;
   /** Statut : seuls les packs "published" sont visibles et achetables. */
@@ -113,9 +128,23 @@ export const packs: Pack[] = [
         label: "Pack Mémos : Constantes (PDF)",
       },
     ],
+    // ⚠️ Prix et caractéristiques PROVISOIRES, à valider par La Petite IDE.
+    print: {
+      priceCents: 990,
+      details: "8 fiches A6 cartonnées et plastifiées, coins arrondis",
+    },
     status: "published",
   },
 ];
 
 export const publishedPacks = () => packs.filter((p) => p.status === "published");
 export const getPack = (slug: string) => publishedPacks().find((p) => p.slug === slug);
+
+/** Prix TTC d'un format (hors frais de port pour le papier). */
+export const formatPriceCents = (pack: Pack, format: PackFormat) =>
+  format === "papier" && pack.print ? pack.print.priceCents : pack.priceCents;
+
+/** Le format papier est-il achetable pour ce pack ? */
+export const canBuyPrint = (pack: Pack) => Boolean(pack.print && !pack.print.soldOut);
+
+export const parseFormat = (v: unknown): PackFormat => (v === "papier" ? "papier" : "pdf");

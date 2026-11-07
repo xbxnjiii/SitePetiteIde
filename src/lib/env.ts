@@ -16,6 +16,10 @@ export interface AppEnv {
   EMAIL_FROM?: string;
   EMAIL_REPLY_TO?: string;
   STRIPE_AUTOMATIC_TAX?: string;
+  /** Adresse qui reçoit les commandes papier à préparer (défaut : EMAIL_REPLY_TO). */
+  ORDERS_NOTIFY_TO?: string;
+  /** Mot de passe de la page /admin (secret). Sans lui, la page est fermée. */
+  ADMIN_PASSWORD?: string;
   PDF_BUCKET?: R2BucketLike;
 }
 

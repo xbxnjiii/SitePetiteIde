@@ -73,7 +73,18 @@ Réglages du Worker (*Settings → Build*) :
 
 Secrets du Worker (*Settings → Variables and Secrets*) : `STRIPE_SECRET_KEY` (**sk_test_…**), `STRIPE_WEBHOOK_SECRET`
 (webhook **de test** vers `https://preprod.lapetiteide.fr/api/webhooks/stripe`), `RESEND_API_KEY`, `DOWNLOAD_TOKEN_SECRET`
-(différent de la production). Produits en mode test : `npm run stripe:sync` avec une clé `sk_test_…`.
+(différent de la production), `ADMIN_PASSWORD` (page `/admin`). Produits en mode test : `npm run stripe:sync` avec une clé `sk_test_…`.
+
+## Format papier (fiches imprimées + PDF offert)
+
+- **Catalogue** : champ `print` d'un pack dans `src/content/packs.ts` (prix, caractéristiques, `soldOut: true` pour une rupture).
+  Après modification du prix : `npm run stripe:sync` (crée le produit « … — fiches papier », clé de prix `<slug>-papier`).
+- **Livraison** : `src/content/shipping.ts` (3,99 €, France métropolitaine, délais). Les adresses d'outre-mer (97…, 98…) sont refusées.
+- **Paiement** : adresse de livraison et frais de port demandés dans le paiement Stripe ; métadonnée `format=papier`.
+- **Après paiement** : email au client (confirmation + adresse + PDF offert) et alerte « commande à préparer »
+  envoyée à `ORDERS_NOTIFY_TO` (par défaut `EMAIL_REPLY_TO`).
+- **Expédition** : page **`/admin`** (identifiant au choix, mot de passe = secret `ADMIN_PASSWORD`, 12 caractères minimum) :
+  liste des commandes à expédier, adresse à copier, saisie du numéro de suivi ⇒ email « Tes fiches sont en route » au client.
 
 ## Éléments provisoires
 

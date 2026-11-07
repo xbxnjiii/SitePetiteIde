@@ -4,7 +4,8 @@ import { isAllowedOrigin } from "@/lib/origin";
 
 // POST /api/checkout/consent {clientSecret}
 // Enregistre sur la Checkout Session (avant paiement) que l'acheteur a coché :
-// « J'accepte les CGV, je demande l'accès immédiat et je renonce à mon droit de rétractation ».
+//  - PDF    : « J'accepte les CGV, je demande l'accès immédiat et je renonce à mon droit de rétractation ».
+//  - papier : « J'accepte les CGV » (le droit de rétractation de 14 jours s'applique aux fiches papier).
 export async function POST(request: Request) {
   const env = await getEnvAsync();
   const origin = request.headers.get("origin");
@@ -22,8 +23,11 @@ export async function POST(request: Request) {
     // On n'accepte que le secret exact de cette session (preuve que l'appel vient du navigateur de l'acheteur).
     if (session.client_secret !== secret || session.status !== "open") return Response.json({ error: "session" }, { status: 400 });
     const at = new Date().toISOString();
+    const isPrint = session.metadata?.format === "papier";
     await stripe.checkout.sessions.update(sessionId, {
-      metadata: { ...session.metadata, cgv_acceptees_le: at, renonciation_retractation_le: at },
+      metadata: isPrint
+        ? { ...session.metadata, cgv_acceptees_le: at }
+        : { ...session.metadata, cgv_acceptees_le: at, renonciation_retractation_le: at },
     });
     return Response.json({ ok: true });
   } catch (err) {

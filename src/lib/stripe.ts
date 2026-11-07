@@ -11,8 +11,8 @@ export function stripeClient(env: AppEnv) {
   });
 }
 
-/** La clé de recherche Stripe d'un pack = son slug (voir scripts/stripe-sync.mjs). */
-export const priceLookupKey = (slug: string) => slug;
+/** Clé de recherche Stripe du prix : le slug (PDF) ou « slug-papier » (voir scripts/stripe-sync.mts). */
+export const priceLookupKey = (slug: string, format: "pdf" | "papier" = "pdf") => (format === "papier" ? `${slug}-papier` : slug);
 
 export function isEnabled(v: string | undefined, fallback: boolean) {
   if (v === undefined || v === "") return fallback;

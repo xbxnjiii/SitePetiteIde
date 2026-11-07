@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
+import { SHIPPING } from "@/content/shipping";
+import { formatPrice } from "@/lib/format";
 import { jsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Questions fréquentes",
-  description: "Paiement, téléchargement, formats, rétractation : toutes les réponses à tes questions sur La Petite IDE.",
+  description: "Paiement, téléchargement, livraison, formats, rétractation : toutes les réponses à tes questions sur La Petite IDE.",
   alternates: { canonical: "/faq" },
 };
 
@@ -35,12 +37,24 @@ const FAQ = [
     a: "Les navigateurs intégrés aux applications bloquent parfois les téléchargements. Ouvre la page dans Safari ou Chrome (menu « … » puis « Ouvrir dans le navigateur »), ou utilise le lien reçu par email.",
   },
   {
+    q: "Les fiches existent-elles en papier ?",
+    a: `Oui, pour les packs qui l'indiquent : tu choisis « Papier + PDF offert » sur la page du pack. Les fiches sont livrées chez toi en ${SHIPPING.zone}, et tu reçois le PDF tout de suite.`,
+  },
+  {
+    q: "Combien coûte la livraison et en combien de temps ?",
+    a: `${formatPrice(SHIPPING.priceCents)} par commande, par ${SHIPPING.name}. ${SHIPPING.dispatch}, puis compte ${SHIPPING.estimate.min} à ${SHIPPING.estimate.max} jours ouvrés. Tu reçois le numéro de suivi par email.`,
+  },
+  {
+    q: "Livrez-vous à l'étranger ou en outre-mer ?",
+    a: "Pas encore : la livraison est possible en France métropolitaine (Corse comprise) uniquement. Le PDF, lui, est disponible partout.",
+  },
+  {
     q: "Quels moyens de paiement acceptez-vous ?",
     a: "Carte bancaire, Apple Pay ou Google Pay, via notre prestataire sécurisé Stripe. Nous n'avons jamais accès à tes données bancaires.",
   },
   {
     q: "Puis-je être remboursé·e ?",
-    a: "S'agissant de contenus numériques fournis immédiatement, tu renonces à ton droit de rétractation lorsque tu demandes l'accès immédiat aux fichiers lors de la commande. En cas de problème avec un fichier, contacte-nous : on trouvera une solution.",
+    a: "Pour le PDF : s'agissant d'un contenu numérique fourni immédiatement, tu renonces à ton droit de rétractation lorsque tu demandes l'accès immédiat aux fichiers. Pour les fiches papier : tu as 14 jours après réception pour changer d'avis (voir les CGV). Dans tous les cas, en cas de problème, contacte-nous : on trouvera une solution.",
   },
   {
     q: "Puis-je partager mes fiches ?",
