@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
   try {
     const session = await createSession(env, base, pack, format, wantsJson ? "elements" : "hosted_page", source);
-    if (wantsJson) return Response.json({ clientSecret: session.client_secret });
+    if (wantsJson) return Response.json({ clientSecret: session.client_secret, publishableKey: publishableKey(env) });
     return Response.redirect(session.url!, 303);
   } catch (err) {
     const code = err instanceof PriceMismatch ? "prix" : "paiement";
@@ -59,6 +59,18 @@ export async function POST(request: Request) {
 }
 
 class PriceMismatch extends Error {}
+
+/** Clé publique du Worker ; refusée si elle n'est pas du même mode (test/live) que la clé secrète. */
+function publishableKey(env: AppEnv): string | undefined {
+  const pk = env.STRIPE_PUBLISHABLE_KEY;
+  if (!pk) return undefined;
+  const secretIsTest = (env.STRIPE_SECRET_KEY ?? "").startsWith("sk_test_");
+  if (secretIsTest !== pk.startsWith("pk_test_")) {
+    console.error("checkout: STRIPE_PUBLISHABLE_KEY et STRIPE_SECRET_KEY ne sont pas du même mode (test/live)");
+    return undefined;
+  }
+  return pk;
+}
 
 async function createSession(
   env: AppEnv,

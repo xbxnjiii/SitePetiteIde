@@ -13,6 +13,8 @@ export interface AppEnv {
   RESEND_API_KEY?: string;
   DOWNLOAD_TOKEN_SECRET?: string;
   SITE_URL?: string;
+  /** Clé publique Stripe (wrangler.jsonc), envoyée au navigateur avec la session de paiement. */
+  STRIPE_PUBLISHABLE_KEY?: string;
   EMAIL_FROM?: string;
   EMAIL_REPLY_TO?: string;
   STRIPE_AUTOMATIC_TAX?: string;

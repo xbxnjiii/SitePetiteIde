@@ -23,8 +23,13 @@ import { STRIPE_PUBLISHABLE_KEY } from "@/lib/stripe-public";
 //  - secours : bouton vers la page de paiement hébergée par Stripe si le chargement échoue ;
 //  - choix du format : PDF seul, ou fiches papier (livrées, PDF offert).
 
-let stripePromise: ReturnType<typeof loadStripe> | null = null;
-const getStripe = () => (stripePromise ??= loadStripe(STRIPE_PUBLISHABLE_KEY, { locale: "fr" }));
+// Une seule instance Stripe par clé publique. La clé vient du serveur (configuration du Worker),
+// avec la clé intégrée au build en secours.
+const stripeByKey = new Map<string, ReturnType<typeof loadStripe>>();
+const getStripe = (key: string = STRIPE_PUBLISHABLE_KEY) => {
+  if (!stripeByKey.has(key)) stripeByKey.set(key, loadStripe(key, { locale: "fr" }));
+  return stripeByKey.get(key)!;
+};
 
 const appearance: Appearance = {
   theme: "stripe",
@@ -134,26 +139,31 @@ function PackCheckoutSession({
   const clientSecretRef = useRef<string | null>(null);
 
   const [clientSecret, setClientSecret] = useState<Promise<string> | null>(null);
+  const [stripe, setStripe] = useState<ReturnType<typeof loadStripe> | null>(null);
 
   // La session de paiement est créée une seule fois, dans le navigateur, au chargement du bloc.
   useEffect(() => {
-    const promise = fetch("/api/checkout", {
+    const response = fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pack: slug, format, source: sourceFromLocation() }),
       })
         .then(async (r) => {
-          const data = (await r.json()) as { clientSecret?: string };
+          const data = (await r.json()) as { clientSecret?: string; publishableKey?: string };
           if (!r.ok || !data.clientSecret) throw new Error("checkout");
           clientSecretRef.current = data.clientSecret;
-          return data.clientSecret;
+          return { clientSecret: data.clientSecret, publishableKey: data.publishableKey };
         })
         .catch((e) => {
           setFailed(true);
           throw e;
         });
+    const promise = response.then((d) => d.clientSecret);
+    const stripeInstance = response.then((d) => getStripe(d.publishableKey));
     promise.catch(() => {}); // l'erreur est gérée par l'état « failed »
+    stripeInstance.catch(() => {});
     setClientSecret(promise);
+    setStripe(stripeInstance);
   }, [slug, format]);
 
   if (failed)
@@ -163,7 +173,7 @@ function PackCheckoutSession({
         <HostedFallback slug={slug} format={format} priceCents={priceCents} />
       </>
     );
-  if (!clientSecret)
+  if (!clientSecret || !stripe)
     return (
       <>
         {showPrice ? <PriceRow priceCents={priceCents} format={format} /> : null}
@@ -172,14 +182,13 @@ function PackCheckoutSession({
     );
 
   return (
-    <CheckoutElementsProvider stripe={getStripe()} options={{
+    <CheckoutElementsProvider stripe={stripe} options={{
         clientSecret,
         elementsOptions: { appearance },
         // France par défaut : pas de champ « code postal » à remplir.
-        defaultValues: {
-          billingAddress: { address: { country: "FR" } },
-          ...(format === "papier" ? { shippingAddress: { address: { country: "FR" } } } : {}),
-        },
+        // (Pas d'adresse de livraison par défaut : Stripe exige alors une adresse complète.
+        //  La session n'autorise que la France, le pays est donc déjà fixé.)
+        defaultValues: { billingAddress: { address: { country: "FR" } } },
       }}>
       <CheckoutForm slug={slug} format={format} priceCents={priceCents} showPrice={showPrice} clientSecretRef={clientSecretRef} />
     </CheckoutElementsProvider>
@@ -442,7 +451,7 @@ function CheckoutForm({
                 <p className="checkout__label">
                   Adresse de livraison <span>({SHIPPING.zone})</span>
                 </p>
-                <ShippingAddressElement options={{ fields: { phone: "never" } }} />
+                <ShippingAddressElement />
               </div>
             ) : null}
             {isFree ? null : <PaymentElement options={{ layout: "tabs", fields: { billingDetails: { email: "never" } } }} />}
