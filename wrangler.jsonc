@@ -23,5 +23,28 @@
     "EMAIL_REPLY_TO": "contact@lapetiteide.fr",
     "STRIPE_AUTOMATIC_TAX": "false"
   },
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+
+  // ==========================================================================
+  //  PRÉPROD — https://preprod.lapetiteide.fr (Stripe en mode TEST)
+  //  Déployée avec `--env preprod`. Les secrets se règlent sur le Worker
+  //  sitepetiteide-preprod (clés Stripe sk_test_…, webhook de test, etc.).
+  //  ⚠️ Dans un environnement Wrangler, vars / services / r2_buckets ne sont
+  //  PAS hérités : tout est redéclaré ci-dessous.
+  // ==========================================================================
+  "env": {
+    "preprod": {
+      "name": "sitepetiteide-preprod",
+      "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "sitepetiteide-preprod" }],
+      // Même bucket que la production : la préprod ne fait que lire les PDF.
+      "r2_buckets": [{ "binding": "PDF_BUCKET", "bucket_name": "la-petite-ide-pdfs" }],
+      "vars": {
+        "SITE_URL": "https://preprod.lapetiteide.fr",
+        "EMAIL_FROM": "La Petite IDE (préprod) <commandes@lapetiteide.fr>",
+        "EMAIL_REPLY_TO": "contact@lapetiteide.fr",
+        "STRIPE_AUTOMATIC_TAX": "false"
+      },
+      "observability": { "enabled": true }
+    }
+  }
 }

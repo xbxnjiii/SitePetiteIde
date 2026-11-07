@@ -55,7 +55,25 @@ Carte de test Stripe : `4242 4242 4242 4242`, date future, CVC quelconque.
 5. **Apple Pay / Google Pay** : enregistrer `lapetiteide.fr` et `www.lapetiteide.fr` dans Stripe **en mode live**
    (*Paramètres → Moyens de paiement → Domaines*). Déjà fait en mode test.
 6. **Clé publique** : remplacer la clé `pk_test_…` par `pk_live_…` dans `src/lib/stripe-public.ts`.
-7. **Lancement** : `IS_LIVE = true` dans `src/lib/format.ts` (retire le bandeau test, autorise l'indexation).
+7. **Lancement** : `LAUNCHED = true` dans `src/lib/format.ts` (autorise l'indexation).
+
+## Préprod (preprod.lapetiteide.fr)
+
+Branche Git **`preprod`** → Worker **`sitepetiteide-preprod`** (Stripe en mode **test**, non indexé, sans statistiques).
+La configuration est dans `wrangler.jsonc` → `env.preprod`.
+
+Réglages du Worker (*Settings → Build*) :
+
+| Réglage | Valeur |
+|---|---|
+| Branche de production | `preprod` |
+| Commande de build | `npx opennextjs-cloudflare build --env preprod` |
+| Commande de déploiement | `npx opennextjs-cloudflare deploy --env preprod` |
+| Variables **de build** | `NEXT_PUBLIC_SITE_ENV=preprod` · `NEXT_PUBLIC_SITE_URL=https://preprod.lapetiteide.fr` · `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_…` |
+
+Secrets du Worker (*Settings → Variables and Secrets*) : `STRIPE_SECRET_KEY` (**sk_test_…**), `STRIPE_WEBHOOK_SECRET`
+(webhook **de test** vers `https://preprod.lapetiteide.fr/api/webhooks/stripe`), `RESEND_API_KEY`, `DOWNLOAD_TOKEN_SECRET`
+(différent de la production). Produits en mode test : `npm run stripe:sync` avec une clé `sk_test_…`.
 
 ## Éléments provisoires
 
