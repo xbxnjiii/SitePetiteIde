@@ -8,6 +8,9 @@
 //  ⚠️ Textes provisoires à relire et valider par La Petite IDE.
 // ============================================================================
 
+/** Préprod (variable de build, voir src/lib/format.ts). Pas d'import : ce fichier est aussi lu par scripts/stripe-sync.mts. */
+const IS_PREPROD = process.env.NEXT_PUBLIC_SITE_ENV === "preprod";
+
 export type IconName = "heart" | "lungs" | "thermo" | "gauge" | "drop" | "layers" | "note" | "syringe" | "book";
 export type Tone = "blue" | "sky" | "pink";
 
@@ -134,6 +137,12 @@ export const packs: Pack[] = [
     print: {
       priceCents: 990,
       specs: ["Format A6", "Carton épais", "Plastifiées", "Coins arrondis"],
+      // ⚠️ Photo d'ILLUSTRATION provisoire (ce ne sont pas nos fiches) : affichée en PRÉPROD UNIQUEMENT.
+      //    À remplacer par une vraie photo des fiches Constantes, puis supprimer
+      //    public/img/packs/papier-illustration-preprod.webp avant la mise en production.
+      photo: IS_PREPROD
+        ? { src: "/img/packs/papier-illustration-preprod.webp", width: 400, height: 419, alt: "Exemple de fiches papier (illustration)" }
+        : undefined,
     },
     status: "published",
   },
