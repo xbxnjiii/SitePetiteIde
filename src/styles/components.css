@@ -661,3 +661,22 @@ a.quiz-theme:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); 
   background: #fff; border: 1px solid var(--c-line); border-radius: var(--r-md); font-size: 0.92rem;
 }
 .thanks p svg { width: 18px; height: 18px; vertical-align: -3px; color: var(--c-accent-dark); }
+
+/* ===== Contenu du pack (tuiles) ========================================= */
+.sale-content { max-width: 760px; padding-top: 36px; }
+.sale-content h2 { font-size: 1.3rem; text-align: center; margin-bottom: 14px; }
+.sale-tiles { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.sale-tile { display: flex; align-items: center; gap: 10px; padding: 10px; background: #fff; border: 1px solid var(--c-line); border-radius: 16px; }
+.sale-tile__icon { flex: none; width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--c-primary-50); color: var(--c-primary); }
+.sale-tile:nth-child(even) .sale-tile__icon { background: var(--c-accent-50); color: var(--c-accent-dark); }
+.sale-tile__icon svg { width: 19px; height: 19px; }
+.sale-tile__text { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.sale-tile__text strong { font-family: var(--font-title); font-size: 0.88rem; }
+.sale-tile__text span { font-size: 0.76rem; color: var(--c-ink-soft); }
+.sale-tile--bonus { background: linear-gradient(135deg, #fcf0f5 0%, #eef3fb 100%); border: 1px dashed var(--c-accent); }
+.sale-tile--bonus .sale-tile__icon { background: var(--c-accent) !important; color: #fff !important; }
+.sale-content__total { margin: 12px 0 0; text-align: center; font-size: 0.82rem; color: var(--c-ink-soft); }
+@media (min-width: 700px) {
+  .sale-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .sale-tile { flex-direction: column; text-align: center; padding: 14px 10px; }
+}
