@@ -59,7 +59,7 @@ Carte de test Stripe : `4242 4242 4242 4242`, date future, CVC quelconque.
 
 ## Préprod (preprod.lapetiteide.fr)
 
-Branche Git **`preprod`** → Worker **`sitepetiteide-preprod`** (Stripe en mode **test**, non indexé, sans statistiques).
+Branche Git **`preprod`** → Worker **`preprodlapetiteide`** (Stripe en mode **test**, non indexé, sans statistiques).
 La configuration est dans `wrangler.jsonc` → `env.preprod`.
 
 Réglages du Worker (*Settings → Build*) :
