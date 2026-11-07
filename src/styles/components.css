@@ -680,3 +680,21 @@ a.quiz-theme:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); 
   .sale-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .sale-tile { flex-direction: column; text-align: center; padding: 14px 10px; }
 }
+
+/* ===== Version papier (page de vente) =================================== */
+.paper-spec {
+  display: flex; align-items: flex-start; gap: 14px; margin-top: 16px; padding: 14px 16px;
+  background: #fff; border: 1px solid var(--c-line); border-radius: 18px;
+}
+.paper-spec__icon { flex: none; width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--c-accent-50); color: var(--c-accent-dark); }
+.paper-spec__icon svg { width: 22px; height: 22px; }
+.paper-spec__photo { flex: none; width: 96px; height: 96px; object-fit: cover; border-radius: 14px; background: var(--c-bg); }
+.paper-spec__body { min-width: 0; }
+.paper-spec__title { margin: 0 0 6px; font-family: var(--font-title); font-weight: 800; font-size: 0.98rem; }
+.paper-spec__chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.paper-spec__chips li { font-size: 0.76rem; font-weight: 600; padding: 3px 10px; border-radius: var(--r-pill); background: var(--c-primary-50); color: var(--c-primary-dark); }
+.paper-spec__note { margin: 8px 0 0; font-size: 0.78rem; color: var(--c-ink-soft); }
+@media (min-width: 700px) {
+  .paper-spec { padding: 16px 20px; align-items: center; }
+  .paper-spec--photo .paper-spec__photo { width: 120px; height: 120px; }
+}

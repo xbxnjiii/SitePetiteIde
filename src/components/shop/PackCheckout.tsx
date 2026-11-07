@@ -116,7 +116,7 @@ function FormatPicker({
       </div>
       {value === "papier" ? (
         <p className="formats__details">
-          {print.details}. {SHIPPING.dispatch} par {SHIPPING.name} · {SHIPPING.zone}.
+          {print.specs.join(" · ")}. {SHIPPING.dispatch} · {SHIPPING.zoneShort}.
         </p>
       ) : null}
     </fieldset>

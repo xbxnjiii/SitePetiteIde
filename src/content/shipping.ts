@@ -13,6 +13,7 @@ export const SHIPPING = {
   /** Délai de livraison estimé après expédition (jours ouvrés), affiché par Stripe. */
   estimate: { min: 3, max: 6 },
   zone: "France métropolitaine (Corse comprise)",
+  zoneShort: "France métropolitaine",
   /** Codes postaux refusés : outre-mer (97…, 98…). */
   excludedPostalPrefixes: ["97", "98"],
 };

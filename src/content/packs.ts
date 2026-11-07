@@ -44,8 +44,10 @@ export type PackFormat = "pdf" | "papier";
 export interface PrintEdition {
   /** Prix TTC des fiches papier, hors frais de port (voir src/content/shipping.ts). */
   priceCents: number;
-  /** Caractéristiques affichées sous le choix du format (format, papier, finition…). */
-  details: string;
+  /** Caractéristiques courtes (2 à 4 mots chacune), affichées en pastilles : format, papier, finition… */
+  specs: string[];
+  /** Photo des fiches papier (dans public/). Uniquement une photo des VRAIES fiches La Petite IDE. */
+  photo?: { src: string; width: number; height: number; alt: string };
   /** `true` : affiché « Bientôt de retour » et non achetable. */
   soldOut?: boolean;
 }
@@ -131,7 +133,7 @@ export const packs: Pack[] = [
     // ⚠️ Prix et caractéristiques PROVISOIRES, à valider par La Petite IDE.
     print: {
       priceCents: 990,
-      details: "8 fiches A6 cartonnées et plastifiées, coins arrondis",
+      specs: ["Format A6", "Carton épais", "Plastifiées", "Coins arrondis"],
     },
     status: "published",
   },

@@ -46,7 +46,7 @@ const faqFor = (pack: Pack) => [
   pack.print
     ? {
         q: "C'est un format papier ?",
-        a: `Les deux au choix ! En PDF, ou en fiches papier (${pack.print.details.toLowerCase()}) livrées en ${SHIPPING.zone}, avec le PDF offert.`,
+        a: `Les deux au choix ! En PDF, ou en fiches papier (${pack.print.specs.join(", ").toLowerCase()}) livrées en ${SHIPPING.zone}, avec le PDF offert.`,
       }
     : { q: "C'est un format papier ?", a: "Non, un PDF. Garde-le sur ton téléphone ou imprime-le." },
   pack.print
@@ -153,8 +153,40 @@ export default async function PackPage({ params }: { params: Params }) {
           ) : null}
         </ul>
         <p className="sale-content__total">
-          {pack.items.length + (pack.bonus ? 1 : 0)} fiches PDF · lisibles sur téléphone ou à imprimer
+          {pack.items.length + (pack.bonus ? 1 : 0)} fiches ·{" "}
+          {pack.print ? "en PDF ou en papier" : "PDF lisible sur téléphone ou à imprimer"}
         </p>
+
+        {pack.print ? (
+          <div className={pack.print.photo ? "paper-spec paper-spec--photo" : "paper-spec"}>
+            {pack.print.photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={pack.print.photo.src}
+                alt={pack.print.photo.alt}
+                width={pack.print.photo.width}
+                height={pack.print.photo.height}
+                className="paper-spec__photo"
+                loading="lazy"
+              />
+            ) : (
+              <span className="paper-spec__icon" aria-hidden="true">
+                <Icon name="note" />
+              </span>
+            )}
+            <div className="paper-spec__body">
+              <p className="paper-spec__title">Version papier</p>
+              <ul className="paper-spec__chips">
+                {pack.print.specs.map((s) => (
+                  <li key={s}>{s}</li>
+                ))}
+              </ul>
+              <p className="paper-spec__note">
+                PDF offert · Livraison {formatPrice(SHIPPING.priceCents)} · {SHIPPING.dispatch.toLowerCase()}
+              </p>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       <section className="container sale-faq" aria-labelledby="faq-title">
