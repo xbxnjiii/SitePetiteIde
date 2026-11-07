@@ -37,6 +37,11 @@ export async function POST(request: Request) {
   const order = await getOrder(stripe, (event.data.object as Stripe.Checkout.Session).id);
   if (!order) return new Response("Session introuvable", { status: 500 }); // Stripe réessaiera
   if (!order.paid) return Response.json({ received: true, status: "paiement en attente" });
+  // Soutien volontaire : rien à livrer (le reçu est envoyé par Stripe).
+  if (order.session.metadata?.kind === "tip") {
+    console.log("webhook: soutien reçu", order.session.amount_total);
+    return Response.json({ received: true, status: "soutien" });
+  }
   if (!order.pack) {
     console.error("webhook: pack inconnu", order.session.metadata);
     return Response.json({ received: true, status: "pack inconnu" });

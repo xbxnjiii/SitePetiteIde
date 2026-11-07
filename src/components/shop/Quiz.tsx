@@ -3,7 +3,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Mascot } from "@/components/ui/Mascot";
-import { QUIZ_MODES, type QuizMode, type QuizQuestion, type QuizTheme, quizVerdict } from "@/content/quiz";
+import { makeScoreCard, shareScoreCard } from "@/lib/score-card";
+import { QuizLeaderboard } from "./QuizLeaderboard";
+import { QUIZ_MODES, TOPICS, type QuizMode, type QuizQuestion, type QuizTheme, type Topic, quizVerdict } from "@/content/quiz";
 
 /** Tire `n` questions au hasard (mélange de Fisher-Yates). */
 function draw(all: QuizQuestion[], n: number): QuizQuestion[] {
@@ -59,6 +61,11 @@ export function Quiz({ theme }: { theme: QuizTheme }) {
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [missed, setMissed] = useState<Topic[]>([]);
+  const [answers, setAnswers] = useState<{ q: number; a: number }[]>([]);
+  const [startedAt, setStartedAt] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const [cardState, setCardState] = useState<"idle" | "busy" | "downloaded">("idle");
 
   const start = (m: QuizMode) => {
     // Tirage côté navigateur uniquement (évite un écart entre le rendu serveur et le navigateur).
@@ -69,6 +76,10 @@ export function Quiz({ theme }: { theme: QuizTheme }) {
     setScore(0);
     setDone(false);
     setCopied(false);
+    setMissed([]);
+    setAnswers([]);
+    setStartedAt(Date.now());
+    setCardState("idle");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -84,6 +95,7 @@ export function Quiz({ theme }: { theme: QuizTheme }) {
       <div className="quiz quiz--start">
         <h2>Choisis ton format</h2>
         <ModePicker onPick={start} />
+        <QuizLeaderboard theme={theme.slug} mode="pros" />
       </div>
     );
   }
@@ -95,11 +107,16 @@ export function Quiz({ theme }: { theme: QuizTheme }) {
   const choose = (i: number) => {
     if (picked !== null) return;
     setPicked(i);
+    setAnswers((list) => [...list, { q: theme.questions.indexOf(q), a: i }]);
     if (i === q.answer) setScore((s) => s + 1);
+    else if (q.topic) setMissed((m) => [...m, q.topic!]);
   };
 
   const next = () => {
-    if (index + 1 >= total) setDone(true);
+    if (index + 1 >= total) {
+      setElapsed(Date.now() - startedAt);
+      setDone(true);
+    }
     else {
       setIndex(index + 1);
       setPicked(null);
@@ -120,6 +137,17 @@ export function Quiz({ theme }: { theme: QuizTheme }) {
     }
   };
 
+  const shareImage = async () => {
+    setCardState("busy");
+    try {
+      const blob = await makeScoreCard({ score, total, mode: label, theme: theme.title });
+      const r = await shareScoreCard(blob, `J'ai eu ${score}/${total} au ${label} de La Petite IDE 👀 lapetiteide.fr/quiz`);
+      setCardState(r === "downloaded" ? "downloaded" : "idle");
+    } catch {
+      setCardState("idle"); // partage annulé
+    }
+  };
+
   if (done) {
     const verdict = quizVerdict(score, total);
     return (
@@ -132,14 +160,21 @@ export function Quiz({ theme }: { theme: QuizTheme }) {
         </p>
         <h2>{verdict.title}</h2>
         <p className="quiz__verdict">{verdict.text}</p>
+        {theme.packSlug && missed.length ? <Review missed={missed} /> : null}
         {theme.packSlug ? (
           <Link href={`/${theme.packSlug}?src=quiz`} className="btn btn--primary btn--block btn--buy">
             Découvrir le {theme.packName}
           </Link>
         ) : null}
-        <button type="button" className="btn btn--secondary btn--sm quiz__share" onClick={share}>
-          {copied ? "Lien copié ✓" : "Défier une amie"}
-        </button>
+        <div className="quiz__actions">
+          <button type="button" className="btn btn--secondary btn--sm" onClick={shareImage} disabled={cardState === "busy"}>
+            {cardState === "busy" ? "Création…" : cardState === "downloaded" ? "Image enregistrée ✓" : "📸 Partager mon score"}
+          </button>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={share}>
+            {copied ? "Lien copié ✓" : "Défier une amie"}
+          </button>
+        </div>
+        <QuizLeaderboard theme={theme.slug} mode={mode} result={{ answers, ms: elapsed }} />
         <div className="quiz__replay">
           <p>Rejouer :</p>
           <ModePicker onPick={start} current={mode} />
@@ -183,6 +218,28 @@ export function Quiz({ theme }: { theme: QuizTheme }) {
           </button>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/** Correction personnalisée : fiches du pack correspondant aux erreurs. */
+function Review({ missed }: { missed: Topic[] }) {
+  const counts = new Map<Topic, number>();
+  missed.forEach((t) => counts.set(t, (counts.get(t) ?? 0) + 1));
+  const list = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  return (
+    <div className="quiz-review">
+      <p className="quiz-review__title">📌 À revoir dans le pack</p>
+      <ul>
+        {list.map(([t, n]) => (
+          <li key={t}>
+            <span>Fiche « {TOPICS[t]} »</span>
+            <span className="quiz-review__count">
+              {n} erreur{n > 1 ? "s" : ""}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

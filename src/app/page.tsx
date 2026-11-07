@@ -5,6 +5,7 @@ import { PackCover } from "@/components/shop/PackCover";
 import { type BlockVariant, PackQuizBlock } from "@/components/shop/PackQuizBlock";
 import { QuizCta } from "@/components/shop/QuizCta";
 import { SourceLink } from "@/components/shop/SourceLink";
+import { TipBlock } from "@/components/shop/TipBlock";
 import { Icon } from "@/components/ui/Icon";
 import { Mascot } from "@/components/ui/Mascot";
 import { SITE } from "@/lib/format";
@@ -71,6 +72,7 @@ export default function BioPage() {
             <p>D&apos;autres packs arrivent bientôt… Suis-nous pour ne rien rater !</p>
           </div>
         </section>
+        <TipBlock />
       </main>
       <Footer social={false} compact />
     </div>
