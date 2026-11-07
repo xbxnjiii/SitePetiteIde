@@ -655,7 +655,6 @@ a.quiz-theme:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); 
 .format__badge { font-size: 0.68rem; font-weight: 700; padding: 1px 8px; border-radius: var(--r-pill); background: var(--c-accent-50); color: var(--c-accent-dark); }
 .format__title svg { width: 16px; height: 16px; flex: none; color: var(--c-primary); }
 .format__note { font-size: 0.78rem; color: var(--c-ink-soft); }
-.format__more { margin-top: 4px; font-size: 0.74rem; line-height: 1.4; color: var(--c-ink-soft); }
 .format__price { font-family: var(--font-title); font-weight: 800; font-size: 1.1rem; line-height: 1.25; color: var(--c-ink); white-space: nowrap; }
 .checkout__shipping { display: grid; gap: 8px; }
 .checkout__shipping .checkout__label { margin: 4px 0 0; }

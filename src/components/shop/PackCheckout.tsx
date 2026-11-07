@@ -82,7 +82,7 @@ function FormatPicker({
   value: PackFormat;
   onChange: (f: PackFormat) => void;
 }) {
-  const options: { id: PackFormat; title: string; badge?: string; price: string; note: string; more?: string; disabled?: boolean }[] = [
+  const options: { id: PackFormat; title: string; badge?: string; price: string; note: string; disabled?: boolean }[] = [
     { id: "pdf", title: "Numérique", price: formatPrice(pdfCents), note: "PDF ou image · accès immédiat" },
     {
       id: "papier",
@@ -90,7 +90,6 @@ function FormatPicker({
       badge: "+ numérique offert",
       price: formatPrice(print.priceCents),
       note: print.soldOut ? "Bientôt de retour" : `Livré chez toi · + ${formatPrice(SHIPPING.priceCents)} de port`,
-      more: print.specs.join(" · "),
       disabled: print.soldOut,
     },
   ];
@@ -114,7 +113,6 @@ function FormatPicker({
               {o.badge ? <span className="format__badge">{o.badge}</span> : null}
             </span>
             <span className="format__note">{o.note}</span>
-            {o.more && value === o.id ? <span className="format__more">{o.more}</span> : null}
           </span>
           <span className="format__price">{o.price}</span>
         </label>
