@@ -5,7 +5,7 @@ export const formatPrice = (cents: number) => euro.format(cents / 100);
 export const SITE = {
   name: "La Petite IDE",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://lapetiteide.fr",
-  description: "Fiches mémo et packs de révision pour les étudiants en soins infirmiers. Paiement sécurisé, PDF reçu par email.",
+  description: "Fiches mémo et packs de révision pour les étudiants en soins infirmiers. Paiement sécurisé, fiches en PDF et en images reçues par email, ou en format papier.",
   social: {
     tiktok: "https://www.tiktok.com/@lapetiteide.fr",
     instagram: "https://www.instagram.com/lapetiteide.fr",

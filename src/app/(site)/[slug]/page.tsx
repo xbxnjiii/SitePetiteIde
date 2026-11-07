@@ -41,19 +41,19 @@ const faqFor = (pack: Pack) => [
   pack.print
     ? {
         q: "Comment je reçois mon pack ?",
-        a: `En numérique (PDF et images) : juste après le paiement, bouton de téléchargement immédiat et lien par email (valable 30 jours). En papier : ${SHIPPING.dispatch.toLowerCase()} par ${SHIPPING.name} (${formatPrice(SHIPPING.priceCents)}), avec le PDF offert tout de suite.`,
+        a: `En numérique (PDF et images) : juste après le paiement, bouton de téléchargement immédiat et lien par email (valable 30 jours). En papier : ${SHIPPING.dispatch.toLowerCase()} par ${SHIPPING.name} (${formatPrice(SHIPPING.priceCents)}), avec les fiches numériques offertes tout de suite.`,
       }
     : { q: "Comment je reçois mon pack ?", a: "Juste après le paiement : bouton de téléchargement immédiat et lien envoyé par email (valable 30 jours)." },
   pack.print
     ? {
         q: "C'est un format papier ?",
-        a: `Les deux au choix ! En numérique (PDF et images), ou en fiches papier (${pack.print.specs.join(", ").toLowerCase()}) livrées en ${SHIPPING.zone}, avec le PDF offert.`,
+        a: `Les deux au choix ! En numérique (PDF et images), ou en fiches papier (${pack.print.specs.join(", ").toLowerCase()}) livrées en ${SHIPPING.zone}, avec la version numérique offerte.`,
       }
     : { q: "C'est un format papier ?", a: "Non, numérique : tu reçois le PDF (idéal pour imprimer) et les fiches en images (idéal sur téléphone)." },
   pack.print
     ? {
         q: "Et si les fiches sont améliorées ?",
-        a: "Les mises à jour du PDF sont gratuites : tu reçois la nouvelle version, même si tu as pris le format papier.",
+        a: "Les mises à jour de la version numérique sont gratuites : tu reçois la nouvelle version, même si tu as pris le format papier.",
       }
     : { q: "Et si les fiches sont améliorées ?", a: "Les mises à jour sont gratuites : tu reçois la nouvelle version des fiches que tu as achetées." },
   { q: "Je n'ai pas reçu l'email", a: "Regarde dans tes spams. Sinon, va sur la page « Retrouver mon achat » (en bas de page) : tes liens te sont renvoyés." },
@@ -187,7 +187,7 @@ export default async function PackPage({ params }: { params: Params }) {
                 ))}
               </ul>
               <p className="paper-spec__note">
-                PDF offert · Livraison {formatPrice(SHIPPING.priceCents)} · {SHIPPING.dispatch.toLowerCase()}
+                Numérique offert · Livraison {formatPrice(SHIPPING.priceCents)} · {SHIPPING.dispatch.toLowerCase()}
               </p>
             </div>
           </div>

@@ -42,7 +42,7 @@ const entries = packs.flatMap((pack) => [
           productId: `lpi-${pack.slug}-papier`,
           lookupKey: `${pack.slug}-papier`,
           name: `${pack.name} — fiches papier`,
-          description: `${pack.print.specs.join(", ")}. PDF offert.`,
+          description: `${pack.print.specs.join(", ")}. Version numérique (PDF et images) offerte.`,
           // Biens physiques (taux normal). À confirmer avec le comptable.
           taxCode: "txcd_99999999",
           priceCents: pack.print.priceCents,

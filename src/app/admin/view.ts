@@ -34,7 +34,7 @@ const STATUS_BADGE: Record<ReturnType<typeof statusOf>, string> = {
   late: `<span class="badge badge--late">En retard</span>`,
   shipped: `<span class="badge badge--ok">Expédiée</span>`,
   refunded: `<span class="badge badge--muted">Remboursée</span>`,
-  pdf: `<span class="badge badge--pdf">PDF</span>`,
+  pdf: `<span class="badge badge--pdf">Numérique</span>`,
 };
 
 function hiddenFields(o: AdminOrder, tab: Tab, q: string) {

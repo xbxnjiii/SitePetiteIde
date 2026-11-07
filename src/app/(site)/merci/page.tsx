@@ -80,7 +80,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
             </address>
           ) : null}
           <p>
-            <Icon name="gift" /> En attendant, ton <strong>PDF offert</strong> est déjà prêt :
+            <Icon name="gift" /> En attendant, tes <strong>fiches numériques offertes</strong> sont déjà prêtes :
           </p>
         </>
       ) : (

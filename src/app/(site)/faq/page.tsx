@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 const FAQ = [
   {
     q: "Comment je reçois mes fichiers ?",
-    a: "Dès que ton paiement est validé, tes PDF sont disponibles au téléchargement sur la page de confirmation. Tu reçois aussi un email avec tes liens de téléchargement.",
+    a: "Dès que ton paiement est validé, tes fiches sont disponibles sur la page de confirmation, en PDF et en images. Tu reçois aussi un email avec tes liens.",
   },
   {
     q: "Je n'ai pas reçu l'email, que faire ?",
@@ -22,7 +22,7 @@ const FAQ = [
   },
   {
     q: "Combien de temps mon lien est-il valable ?",
-    a: "Ton lien personnel est valable 30 jours après l'achat. Pense à enregistrer le PDF sur ton téléphone ou ton ordinateur.",
+    a: "Ton lien personnel est valable 30 jours après l'achat. Pense à enregistrer tes fiches sur ton téléphone ou ton ordinateur.",
   },
   {
     q: "Dois-je créer un compte ?",
@@ -38,7 +38,7 @@ const FAQ = [
   },
   {
     q: "Les fiches existent-elles en papier ?",
-    a: `Oui, pour les packs qui l'indiquent : tu choisis « Papier + PDF offert » sur la page du pack. Les fiches sont livrées chez toi en ${SHIPPING.zone}, et tu reçois le PDF tout de suite.`,
+    a: `Oui, pour les packs qui l'indiquent : tu choisis « Papier + numérique offert » sur la page du pack. Les fiches sont livrées chez toi en ${SHIPPING.zone}, et tu reçois la version numérique (PDF et images) tout de suite.`,
   },
   {
     q: "Combien coûte la livraison et en combien de temps ?",
@@ -46,7 +46,7 @@ const FAQ = [
   },
   {
     q: "Livrez-vous à l'étranger ou en outre-mer ?",
-    a: "Pas encore : la livraison est possible en France métropolitaine (Corse comprise) uniquement. Le PDF, lui, est disponible partout.",
+    a: "Pas encore : la livraison est possible en France métropolitaine (Corse comprise) uniquement. La version numérique, elle, est disponible partout.",
   },
   {
     q: "Quels moyens de paiement acceptez-vous ?",
@@ -54,7 +54,7 @@ const FAQ = [
   },
   {
     q: "Puis-je être remboursé·e ?",
-    a: "Pour le PDF : s'agissant d'un contenu numérique fourni immédiatement, tu renonces à ton droit de rétractation lorsque tu demandes l'accès immédiat aux fichiers. Pour les fiches papier : tu as 14 jours après réception pour changer d'avis (voir les CGV). Dans tous les cas, en cas de problème, contacte-nous : on trouvera une solution.",
+    a: "Pour la version numérique : s'agissant d'un contenu numérique fourni immédiatement, tu renonces à ton droit de rétractation lorsque tu demandes l'accès immédiat aux fichiers. Pour les fiches papier : tu as 14 jours après réception pour changer d'avis (voir les CGV). Dans tous les cas, en cas de problème, contacte-nous : on trouvera une solution.",
   },
   {
     q: "Puis-je partager mes fiches ?",

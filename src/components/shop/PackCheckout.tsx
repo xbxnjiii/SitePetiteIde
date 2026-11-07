@@ -86,7 +86,7 @@ function FormatPicker({
     { id: "pdf", title: "Numérique (PDF ou image)", price: formatPrice(pdfCents), note: "Accès immédiat" },
     {
       id: "papier",
-      title: "Papier + PDF offert",
+      title: "Papier + numérique offert",
       price: formatPrice(print.priceCents),
       note: print.soldOut ? "Bientôt de retour" : `+ ${formatPrice(SHIPPING.priceCents)} de livraison`,
       disabled: print.soldOut,
@@ -543,7 +543,7 @@ function SourceField() {
 function ConsentText({ format }: { format: PackFormat }) {
   return format === "papier" ? (
     <span>
-      J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link>. Le PDF offert est envoyé tout de suite ; tu disposes de 14
+      J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link>. Les fiches numériques offertes sont envoyées tout de suite ; tu disposes de 14
       jours à réception des fiches papier pour te rétracter.
     </span>
   ) : (

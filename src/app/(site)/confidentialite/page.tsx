@@ -40,7 +40,7 @@ export default function PrivacyPage() {
           title: "Pourquoi ces données",
           content: (
             <ul>
-              <li>Traiter ta commande, t&apos;envoyer tes fichiers et, pour le papier, expédier tes fiches (exécution du contrat).</li>
+              <li>Traiter ta commande, t&apos;envoyer tes fiches numériques et, pour le papier, expédier tes fiches (exécution du contrat).</li>
               <li>Tenir la comptabilité (obligation légale).</li>
             </ul>
           ),

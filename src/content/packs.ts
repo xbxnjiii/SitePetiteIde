@@ -122,7 +122,7 @@ export const packs: Pack[] = [
           width: 1100,
           height: 733,
           alt: "Aperçu flouté des fiches du pack Constantes",
-          label: "Aperçu PDF",
+          label: "Aperçu des fiches",
         },
       ],
       alt: "Pack Mémos : Constantes — 8 fiches : fréquence cardiaque, fréquence respiratoire, température, tension artérielle, glycémie, saturation (SpO2), diurèse et une fiche bonus pour mieux apprendre",

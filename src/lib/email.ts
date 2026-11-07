@@ -43,7 +43,7 @@ export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey">): st
 <title>${o.shippingLines ? "Ta commande est confirmée" : `Ton ${esc(o.packName)} est prêt`}</title>
 </head>
 <body style="margin:0;padding:0;background:#F8F9FC;-webkit-text-size-adjust:100%">
-<div style="display:none;max-height:0;overflow:hidden">${o.shippingLines ? "Tes fiches papier arrivent, et ton PDF offert est déjà prêt." : "Ton PDF est prêt à télécharger."}</div>
+<div style="display:none;max-height:0;overflow:hidden">${o.shippingLines ? "Tes fiches papier arrivent, et ta version numérique offerte est déjà prête." : "Tes fiches sont prêtes, en PDF et en images."}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F9FC">
 <tr><td align="center" style="padding:24px 12px">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;background:#ffffff;border-radius:20px">
@@ -54,7 +54,7 @@ export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey">): st
         o.shippingLines
           ? `<p style="margin:0 0 16px;font-size:16px;line-height:24px;color:#5B6784">Tes fiches papier <strong style="color:#2D3A5A">${esc(o.packName)}</strong> sont en préparation. ${esc(SHIPPING.dispatch)}, en ${esc(SHIPPING.name)} : tu recevras un email avec le numéro de suivi.</p>
       <p style="margin:0 0 18px;padding:12px 14px;background:#F8F9FC;border-radius:12px;font-size:14px;line-height:21px;color:#2D3A5A"><strong>Livraison</strong><br>${o.shippingLines.map(esc).join("<br>")}</p>
-      <p style="margin:0 0 16px;font-size:16px;line-height:24px;color:#5B6784">En attendant, ton <strong style="color:#2D3A5A">PDF offert</strong> est déjà prêt 🎁</p>`
+      <p style="margin:0 0 16px;font-size:16px;line-height:24px;color:#5B6784">En attendant, tes <strong style="color:#2D3A5A">fiches numériques offertes</strong> sont déjà prêtes 🎁</p>`
           : `<p style="margin:0 0 22px;font-size:16px;line-height:24px;color:#5B6784">Ton <strong style="color:#2D3A5A">${esc(o.packName)}</strong> est prêt.</p>`
       }
     </td></tr>
@@ -74,9 +74,9 @@ export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey">): st
     ${
       o.shippingLines
         ? `Tu disposes de 14 jours à réception des fiches papier pour exercer ton droit de rétractation (<a href="${esc(SITE.url)}/cgv" style="color:#9AA6C2">CGV</a>).
-    PDF offert réservé à un usage personnel.`
+    Fiches numériques réservées à un usage personnel.`
         : `Tu as demandé l'accès immédiat à ce contenu numérique et renoncé à ton droit de rétractation (<a href="${esc(SITE.url)}/cgv" style="color:#9AA6C2">CGV</a>).
-    Fichier réservé à un usage personnel.`
+    Fiches réservées à un usage personnel.`
     }
   </p>
 </td></tr></table>
@@ -91,7 +91,7 @@ export function orderEmailText(o: Omit<OrderEmail, "to" | "idempotencyKey">): st
         "Livraison :",
         ...o.shippingLines,
         "",
-        "En attendant, ton PDF offert est déjà prêt :",
+        "En attendant, tes fiches numériques offertes sont déjà prêtes :",
       ]
     : [`Ton ${o.packName} est prêt. Télécharge-le ici :`];
   return [

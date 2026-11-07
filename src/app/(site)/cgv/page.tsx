@@ -12,7 +12,7 @@ export default function CgvPage() {
   return (
     <LegalPage
       title="Conditions générales de vente"
-      intro="Elles s'appliquent à tout achat de fiches PDF ou papier sur lapetiteide.fr."
+      intro="Elles s'appliquent à tout achat de fiches numériques (PDF et images) ou papier sur lapetiteide.fr."
       updatedAt={LEGAL.updatedAt}
       toc
       sections={[
@@ -38,11 +38,11 @@ export default function CgvPage() {
             <>
               <p>
                 Les packs sont proposés en deux formats : des fiches numériques (PDF et images) à usage strictement personnel, ou des fiches imprimées
-                (« format papier ») livrées à domicile, accompagnées du PDF offert. Leurs caractéristiques essentielles (contenu, format,
+                (« format papier ») livrées à domicile, accompagnées de la version numérique offerte. Leurs caractéristiques essentielles (contenu, format,
                 finition) sont décrites sur chaque page de vente.
               </p>
               <p>
-                Les mises à jour ultérieures des PDF achetés ou offerts sont fournies gratuitement au client. Les fiches papier
+                Les mises à jour ultérieures des fiches numériques achetées ou offertes sont fournies gratuitement au client. Les fiches papier
                 correspondent à la version en vigueur au moment de l&apos;expédition et ne font pas l&apos;objet d&apos;une
                 réimpression lors des mises à jour.
               </p>
@@ -77,8 +77,8 @@ export default function CgvPage() {
           content: (
             <>
               <p>
-                <strong>PDF.</strong> Les fichiers sont accessibles immédiatement après confirmation du paiement, sur la page de
-                confirmation et par email, via un lien de téléchargement personnel valable {SITE.downloadDays} jours. De nouveaux liens
+                <strong>Numérique.</strong> Les fiches sont accessibles immédiatement après confirmation du paiement, en PDF et en images, sur la page de
+                confirmation et par email, via des liens personnels valables {SITE.downloadDays} jours. De nouveaux liens
                 peuvent être obtenus à tout moment depuis la page « <Link href="/retrouver-mon-achat">Retrouver mon achat</Link> ». Il
                 appartient au client d&apos;enregistrer les fichiers sur son appareil.
               </p>
@@ -87,7 +87,7 @@ export default function CgvPage() {
                 {SHIPPING.name} ({formatPrice(SHIPPING.priceCents)}). {SHIPPING.dispatch} après confirmation du paiement ; délai de
                 livraison indicatif de {SHIPPING.estimate.min} à {SHIPPING.estimate.max} jours ouvrés après l&apos;expédition. Un
                 numéro de suivi est envoyé par email. En cas de retard important, de colis perdu ou endommagé, écris-nous à {mail} :
-                les fiches sont renvoyées ou remboursées. Le PDF offert est envoyé immédiatement, comme pour un achat PDF.
+                les fiches sont renvoyées ou remboursées. La version numérique offerte est envoyée immédiatement, comme pour un achat numérique.
               </p>
             </>
           ),
@@ -98,7 +98,7 @@ export default function CgvPage() {
           content: (
             <>
               <p>
-                <strong>PDF.</strong> Conformément à l&apos;article L221-28 13° du Code de la consommation, le droit de rétractation ne
+                <strong>Numérique.</strong> Conformément à l&apos;article L221-28 13° du Code de la consommation, le droit de rétractation ne
                 peut être exercé pour un contenu numérique fourni immédiatement, après accord préalable exprès du client et
                 renoncement exprès à ce droit. En cochant la case prévue avant le paiement, le client demande l&apos;accès immédiat
                 aux fichiers et reconnaît perdre son droit de rétractation.
@@ -110,7 +110,7 @@ export default function CgvPage() {
                 <a href="#formulaire-retractation">formulaire de rétractation</a> ci-dessous. Les fiches sont à renvoyer dans les 14
                 jours suivant cette demande, en bon état ; les frais de retour sont à la charge du client. Le remboursement, frais de
                 livraison initiaux compris, intervient dans les 14 jours suivant la demande, et au plus tard à réception des fiches
-                retournées. Le PDF offert reste acquis au client.
+                retournées. La version numérique offerte reste acquise au client.
               </p>
             </>
           ),
