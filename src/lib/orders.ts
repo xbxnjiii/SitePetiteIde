@@ -55,5 +55,12 @@ export async function downloadLinks(env: AppEnv, order: Order, expiresAt: number
   );
 }
 
+/** Lien vers la page « Mes fiches en images » (null si le pack n'a pas de version images). */
+export async function imagesLink(env: AppEnv, order: Order, expiresAt: number = order.expiresAt): Promise<string | null> {
+  if (!order.pack?.imageFiles?.length || !order.paid || order.revoked) return null;
+  const token = await signDownloadToken({ s: order.session.id, f: 0, e: expiresAt, t: "gal" }, requireVar(env, "DOWNLOAD_TOKEN_SECRET"));
+  return `${siteUrl(env)}/mes-fiches?t=${token}`;
+}
+
 /** Référence lisible pour le client et le support (fin de l'identifiant Stripe). */
 export const orderReference = (sessionId: string) => `LPI-${sessionId.slice(-8).toUpperCase()}`;

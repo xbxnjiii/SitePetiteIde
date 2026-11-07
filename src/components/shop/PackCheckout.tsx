@@ -198,8 +198,8 @@ function CheckoutForm({
           }}
         />
         <span>
-          J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link> et renonce à mon droit de rétractation pour recevoir le
-          PDF immédiatement.
+          J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link> et renonce à mon droit de rétractation pour recevoir mes
+          fiches immédiatement.
         </span>
       </label>
       {consentError && !consent ? (
@@ -311,7 +311,7 @@ function CheckoutForm({
         <CardModal onClose={() => setShowCard(false)} title={isFree ? "Commande gratuite" : `Payer ${totalLabel}`}>
           <form className="checkout__card" onSubmit={onCardSubmit}>
             <label className="checkout__label" htmlFor={`email-${slug}`}>
-              Ton email <span>(pour recevoir ton PDF)</span>
+              Ton email <span>(pour recevoir tes fiches)</span>
             </label>
             <input
               id={`email-${slug}`}
@@ -380,8 +380,8 @@ function HostedFallback({ slug, priceCents }: { slug: string; priceCents: number
       <label className="consent">
         <input type="checkbox" name="consent" required />
         <span>
-          J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link> et renonce à mon droit de rétractation pour recevoir le
-          PDF immédiatement.
+          J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link> et renonce à mon droit de rétractation pour recevoir mes
+          fiches immédiatement.
         </span>
       </label>
       <button type="submit" className="btn btn--primary btn--block btn--buy">
@@ -424,7 +424,9 @@ function PriceRow({ priceCents, discountedLabel = null }: { priceCents: number; 
           </s>
         ) : null}
       </span>
-      <span>PDF · accès immédiat</span>
+      <span className="sale-buy__format">
+        <Icon name="download" /> Numérique (PDF ou image)
+      </span>
     </div>
   );
 }

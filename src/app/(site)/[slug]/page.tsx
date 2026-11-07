@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!pack) return {};
   return {
     title: pack.name,
-    description: `${pack.promise} ${formatPrice(pack.priceCents)}, PDF reçu par email.`,
+    description: `${pack.promise} ${formatPrice(pack.priceCents)}, fiches numériques (PDF ou images) reçues par email.`,
     alternates: { canonical: `/${pack.slug}` },
     openGraph: {
       title: pack.name,
@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
 const FAQ = [
   { q: "Comment je reçois mon pack ?", a: "Juste après le paiement : bouton de téléchargement immédiat et lien envoyé par email (valable 30 jours)." },
-  { q: "C'est un format papier ?", a: "Non, un PDF. Garde-le sur ton téléphone ou imprime-le." },
+  { q: "C'est un format papier ?", a: "Non, numérique : tu reçois le PDF (idéal pour imprimer) et les fiches en images (idéal sur téléphone)." },
   { q: "Et si les fiches sont améliorées ?", a: "Les mises à jour sont gratuites : tu reçois la nouvelle version des fiches que tu as achetées." },
   { q: "Je n'ai pas reçu l'email", a: "Regarde dans tes spams. Sinon, va sur la page « Retrouver mon achat » (en bas de page) : tes liens te sont renvoyés." },
 ];
@@ -135,7 +135,7 @@ export default async function PackPage({ params }: { params: Params }) {
           ) : null}
         </ul>
         <p className="sale-content__total">
-          {pack.items.length + (pack.bonus ? 1 : 0)} fiches PDF · lisibles sur téléphone ou à imprimer
+          {pack.items.length + (pack.bonus ? 1 : 0)} fiches · en PDF et en images, sur téléphone ou à imprimer
         </p>
       </section>
 

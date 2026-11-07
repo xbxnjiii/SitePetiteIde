@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import { sendOrderEmail } from "@/lib/email";
 import { getEnvAsync, requireVar } from "@/lib/env";
-import { downloadLinks, getOrder, orderReference } from "@/lib/orders";
+import { downloadLinks, getOrder, imagesLink, orderReference } from "@/lib/orders";
 import { stripeClient } from "@/lib/stripe";
 
 // Webhook Stripe : SEULE source de confirmation du paiement pour l'envoi de l'email.
@@ -58,6 +58,7 @@ export async function POST(request: Request) {
       amountCents: order.session.amount_total ?? 0,
       reference: orderReference(order.session.id),
       links: await downloadLinks(env, order),
+      imagesUrl: await imagesLink(env, order),
       expiresAt: order.expiresAt,
       idempotencyKey: `order-email-${order.session.id}`,
     });

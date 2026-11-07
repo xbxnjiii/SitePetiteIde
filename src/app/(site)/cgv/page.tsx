@@ -35,7 +35,7 @@ export default function CgvPage() {
           title: "Produits",
           content: (
             <p>
-              Les produits sont des fichiers PDF à usage strictement personnel. Leurs caractéristiques essentielles (contenu, format)
+              Les produits sont des fiches numériques, fournies en PDF et en images, à usage strictement personnel. Leurs caractéristiques essentielles (contenu, format)
               sont décrites sur chaque page de vente. Les mises à jour ultérieures des fiches achetées sont fournies
               gratuitement au client.
             </p>
