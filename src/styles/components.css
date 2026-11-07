@@ -636,24 +636,27 @@ a.quiz-theme:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); 
   .bio__inner { max-width: 680px; }
 }
 
-/* ===== Choix du format (PDF / papier) =================================== */
-.formats { border: 0; margin: 0 0 14px; padding: 0; min-width: 0; }
-.formats__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+/* ===== Choix du format (numérique / papier) ============================ */
+.formats { border: 0; margin: 0 0 14px; padding: 0; min-width: 0; display: grid; gap: 8px; }
 .format {
-  position: relative; display: grid; gap: 2px; align-content: start; padding: 12px; cursor: pointer;
-  border: 1.5px solid var(--c-line); border-radius: var(--r-md); background: #fff;
-  transition: border-color 0.2s var(--ease), background-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  position: relative; display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 12px;
+  padding: 12px 14px; cursor: pointer; border: 1.5px solid var(--c-line); border-radius: var(--r-md); background: #fff;
+  transition: border-color 0.2s var(--ease), background-color 0.2s var(--ease);
 }
 .format input { position: absolute; opacity: 0; pointer-events: none; }
 .format:hover { border-color: var(--c-primary-light); }
-.format--on, .format--on:hover { border-color: var(--c-primary); background: var(--c-primary-50); box-shadow: 0 0 0 3px var(--c-primary-50); }
+.format--on, .format--on:hover { border-color: var(--c-primary); background: var(--c-primary-50); }
 .format:has(input:focus-visible) { outline: 2px solid var(--c-primary); outline-offset: 2px; }
 .format--off { cursor: not-allowed; opacity: 0.55; }
-.format__title { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.9rem; line-height: 1.25; color: var(--c-ink); }
+.format__radio { margin-top: 1px; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--c-primary-light); background: #fff; transition: border 0.15s; }
+.format--on .format__radio { border: 6px solid var(--c-primary); }
+.format__main { display: grid; gap: 1px; min-width: 0; }
+.format__title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-weight: 700; font-size: 0.95rem; line-height: 1.4; color: var(--c-ink); }
+.format__badge { font-size: 0.68rem; font-weight: 700; padding: 1px 8px; border-radius: var(--r-pill); background: var(--c-accent-50); color: var(--c-accent-dark); }
 .format__title svg { width: 16px; height: 16px; flex: none; color: var(--c-primary); }
-.format__price { font-family: var(--font-title); font-weight: 800; font-size: 1.15rem; color: var(--c-ink); }
-.format__note { font-size: 0.76rem; color: var(--c-ink-soft); }
-.formats__details { margin: 8px 2px 0; font-size: 0.8rem; line-height: 1.45; color: var(--c-ink-soft); }
+.format__note { font-size: 0.78rem; color: var(--c-ink-soft); }
+.format__more { margin-top: 4px; font-size: 0.74rem; line-height: 1.4; color: var(--c-ink-soft); }
+.format__price { font-family: var(--font-title); font-weight: 800; font-size: 1.1rem; line-height: 1.25; color: var(--c-ink); white-space: nowrap; }
 .checkout__shipping { display: grid; gap: 8px; }
 .checkout__shipping .checkout__label { margin: 4px 0 0; }
 .thanks__address {

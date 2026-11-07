@@ -82,43 +82,43 @@ function FormatPicker({
   value: PackFormat;
   onChange: (f: PackFormat) => void;
 }) {
-  const options: { id: PackFormat; title: string; price: string; note: string; disabled?: boolean }[] = [
-    { id: "pdf", title: "Numérique (PDF ou image)", price: formatPrice(pdfCents), note: "Accès immédiat" },
+  const options: { id: PackFormat; title: string; badge?: string; price: string; note: string; more?: string; disabled?: boolean }[] = [
+    { id: "pdf", title: "Numérique", price: formatPrice(pdfCents), note: "PDF ou image · accès immédiat" },
     {
       id: "papier",
-      title: "Papier + numérique offert",
+      title: "Papier",
+      badge: "+ numérique offert",
       price: formatPrice(print.priceCents),
-      note: print.soldOut ? "Bientôt de retour" : `+ ${formatPrice(SHIPPING.priceCents)} de livraison`,
+      note: print.soldOut ? "Bientôt de retour" : `Livré chez toi · + ${formatPrice(SHIPPING.priceCents)} de port`,
+      more: print.specs.join(" · "),
       disabled: print.soldOut,
     },
   ];
   return (
     <fieldset className="formats">
       <legend className="visually-hidden">Choisis ton format</legend>
-      <div className="formats__grid">
-        {options.map((o) => (
-          <label key={o.id} className={["format", value === o.id ? "format--on" : "", o.disabled ? "format--off" : ""].join(" ")}>
-            <input
-              type="radio"
-              name={`format-${slug}`}
-              value={o.id}
-              checked={value === o.id}
-              disabled={o.disabled}
-              onChange={() => onChange(o.id)}
-            />
+      {options.map((o) => (
+        <label key={o.id} className={["format", value === o.id ? "format--on" : "", o.disabled ? "format--off" : ""].join(" ")}>
+          <input
+            type="radio"
+            name={`format-${slug}`}
+            value={o.id}
+            checked={value === o.id}
+            disabled={o.disabled}
+            onChange={() => onChange(o.id)}
+          />
+          <span className="format__radio" aria-hidden="true" />
+          <span className="format__main">
             <span className="format__title">
               <Icon name={o.id === "pdf" ? "download" : "gift"} /> {o.title}
+              {o.badge ? <span className="format__badge">{o.badge}</span> : null}
             </span>
-            <span className="format__price">{o.price}</span>
             <span className="format__note">{o.note}</span>
-          </label>
-        ))}
-      </div>
-      {value === "papier" ? (
-        <p className="formats__details">
-          {print.specs.join(" · ")}. {SHIPPING.dispatch} · {SHIPPING.zoneShort}.
-        </p>
-      ) : null}
+            {o.more && value === o.id ? <span className="format__more">{o.more}</span> : null}
+          </span>
+          <span className="format__price">{o.price}</span>
+        </label>
+      ))}
     </fieldset>
   );
 }
@@ -543,8 +543,7 @@ function SourceField() {
 function ConsentText({ format }: { format: PackFormat }) {
   return format === "papier" ? (
     <span>
-      J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link>. Les fiches numériques offertes sont envoyées tout de suite ; tu disposes de 14
-      jours à réception des fiches papier pour te rétracter.
+      J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link>. Numérique envoyé tout de suite ; 14 jours pour te rétracter après réception du papier.
     </span>
   ) : (
     <span>
