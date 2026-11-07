@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const FAQ = [
   {
     q: "Comment je reçois mes fichiers ?",
-    a: "Dès que ton paiement est validé, tes PDF sont disponibles au téléchargement sur la page de confirmation. Tu reçois aussi un email avec tes liens de téléchargement.",
+    a: "Dès que ton paiement est validé, tes fiches sont disponibles sur la page de confirmation, en PDF et en images. Tu reçois aussi un email avec tes liens.",
   },
   {
     q: "Je n'ai pas reçu l'email, que faire ?",
@@ -20,7 +20,7 @@ const FAQ = [
   },
   {
     q: "Combien de temps mon lien est-il valable ?",
-    a: "Ton lien personnel est valable 30 jours après l'achat. Pense à enregistrer le PDF sur ton téléphone ou ton ordinateur.",
+    a: "Ton lien personnel est valable 30 jours après l'achat. Pense à enregistrer tes fiches sur ton téléphone ou ton ordinateur.",
   },
   {
     q: "Dois-je créer un compte ?",

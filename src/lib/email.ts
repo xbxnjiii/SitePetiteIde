@@ -40,7 +40,7 @@ export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey">): st
 <title>Ton ${esc(o.packName)} est prêt</title>
 </head>
 <body style="margin:0;padding:0;background:#F8F9FC;-webkit-text-size-adjust:100%">
-<div style="display:none;max-height:0;overflow:hidden">Ton PDF est prêt à télécharger.</div>
+<div style="display:none;max-height:0;overflow:hidden">Tes fiches sont prêtes, en PDF et en images.</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F9FC">
 <tr><td align="center" style="padding:24px 12px">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:460px;background:#ffffff;border-radius:20px">
@@ -63,7 +63,7 @@ export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey">): st
   </table>
   <p style="max-width:460px;margin:14px auto 0;font-family:${font};font-size:11px;line-height:16px;color:#9AA6C2">
     Tu as demandé l'accès immédiat à ce contenu numérique et renoncé à ton droit de rétractation (<a href="${esc(SITE.url)}/cgv" style="color:#9AA6C2">CGV</a>).
-    Fichier réservé à un usage personnel.
+    Fiches réservées à un usage personnel.
   </p>
 </td></tr></table>
 </body></html>`;

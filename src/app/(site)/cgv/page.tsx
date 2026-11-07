@@ -11,7 +11,7 @@ export default function CgvPage() {
   return (
     <LegalPage
       title="Conditions générales de vente"
-      intro="Elles s'appliquent à tout achat de fiches PDF sur lapetiteide.fr."
+      intro="Elles s'appliquent à tout achat de fiches numériques (PDF et images) sur lapetiteide.fr."
       updatedAt={LEGAL.updatedAt}
       toc
       sections={[
@@ -62,8 +62,8 @@ export default function CgvPage() {
           title: "Livraison",
           content: (
             <p>
-              Les fichiers sont accessibles immédiatement après confirmation du paiement, sur la page de confirmation et par email, via
-              un lien de téléchargement personnel valable {SITE.downloadDays} jours. De nouveaux liens peuvent être obtenus à tout moment
+              Les fiches sont accessibles immédiatement après confirmation du paiement, en PDF et en images, sur la page de confirmation
+              et par email, via des liens personnels valables {SITE.downloadDays} jours. De nouveaux liens peuvent être obtenus à tout moment
               depuis la page « <Link href="/retrouver-mon-achat">Retrouver mon achat</Link> ». Il appartient au client d&apos;enregistrer
               les fichiers sur son appareil.
             </p>

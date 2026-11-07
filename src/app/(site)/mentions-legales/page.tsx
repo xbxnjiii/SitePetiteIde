@@ -48,7 +48,7 @@ export default function LegalNoticePage() {
           title: "Propriété intellectuelle",
           content: (
             <p>
-              L&apos;ensemble des contenus du site et des fichiers vendus (textes, illustrations, mascotte, logo, PDF) est la propriété
+              L&apos;ensemble des contenus du site et des fichiers vendus (textes, illustrations, mascotte, logo, fiches en PDF et en images) est la propriété
               exclusive de {LEGAL.tradeName}. Toute reproduction, diffusion ou revente, totale ou partielle, sans autorisation écrite
               est interdite.
             </p>
