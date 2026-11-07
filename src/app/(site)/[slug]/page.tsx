@@ -136,7 +136,6 @@ export default async function PackPage({ params }: { params: Params }) {
               </span>
               <span className="sale-tile__text">
                 <strong>{item.title}</strong>
-                <span>{item.description}</span>
               </span>
             </li>
           ))}
@@ -147,7 +146,6 @@ export default async function PackPage({ params }: { params: Params }) {
               </span>
               <span className="sale-tile__text">
                 <strong>Fiche bonus</strong>
-                <span>Pour mieux apprendre</span>
               </span>
             </li>
           ) : null}
