@@ -57,6 +57,15 @@ Carte de test Stripe : `4242 4242 4242 4242`, date future, CVC quelconque.
 6. **Clé publique** : `STRIPE_PUBLISHABLE_KEY` dans `wrangler.jsonc` (`pk_live_…` en production, `pk_test_…` en préprod).
 7. **Lancement** : `LAUNCHED = true` dans `src/lib/format.ts` (autorise l'indexation).
 
+## Branches et mises en ligne
+
+| Branche | Site | Rôle |
+|---|---|---|
+| `main` | lapetiteide.fr (Worker `sitepetiteide`) | Production : uniquement ce qui a été validé en préprod |
+| `preprod` | preprod.lapetiteide.fr (Worker `preprodlapetiteide`) | Essais : tout changement passe d'abord ici |
+
+Circuit : modification sur `preprod` → vérification sur preprod.lapetiteide.fr → fusion de `preprod` dans `main`.
+
 ## Préprod (preprod.lapetiteide.fr)
 
 Branche Git **`preprod`** → Worker **`preprodlapetiteide`** (Stripe en mode **test**, non indexé, sans statistiques).
@@ -69,7 +78,7 @@ Réglages du Worker (*Settings → Build*) :
 | Branche de production | `preprod` |
 | Commande de build | `npx opennextjs-cloudflare build --env preprod` |
 | Commande de déploiement | `npx opennextjs-cloudflare deploy --env preprod` |
-| Variables **de build** | `NEXT_PUBLIC_SITE_ENV=preprod` · `NEXT_PUBLIC_SITE_URL=https://preprod.lapetiteide.fr` |
+| Variables de build | aucune : la préprod est détectée par la branche Git (`WORKERS_CI_BRANCH=preprod`) |
 
 Secrets du Worker (*Settings → Variables and Secrets*) : `STRIPE_SECRET_KEY` (**sk_test_…**), `STRIPE_WEBHOOK_SECRET`
 (webhook **de test** vers `https://preprod.lapetiteide.fr/api/webhooks/stripe`), `RESEND_API_KEY`, `DOWNLOAD_TOKEN_SECRET`
@@ -86,7 +95,9 @@ Secrets du Worker (*Settings → Variables and Secrets*) : `STRIPE_SECRET_KEY` (
 - **Suivi des commandes** : page **`/admin`** (identifiant au choix, mot de passe = secret `ADMIN_PASSWORD`, 12 caractères minimum) :
   résumé du mois, onglets À expédier / Expédiées / Ventes, recherche, étiquettes d'adresse à imprimer, retard signalé
   après 2 jours ouvrés, numéro de suivi ⇒ email « Tes fiches sont en route » (corrigeable), lien vers le paiement Stripe.
-  Code : `src/app/admin/` (`route.ts` actions, `data.ts` lecture Stripe, `view.ts` affichage).
+  Onglet **Outils** : export comptable du mois (CSV pour le livre des recettes) et envoi d'une **mise à jour**
+  (nouveaux liens PDF + images à tous les acheteurs d'un pack, après avoir remplacé les fichiers dans R2 ; test d'abord).
+  Code : `src/app/admin/` (`route.ts` actions, `data.ts` lecture Stripe, `view.ts` affichage, `export.ts` CSV).
 
 ## Éléments provisoires
 

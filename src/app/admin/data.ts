@@ -1,6 +1,6 @@
 import type Stripe from "stripe";
 import { getPack, parseFormat, type PackFormat } from "@/content/packs";
-import { orderReference, shippingInfo } from "@/lib/orders";
+import { type Order, orderFromSession, orderReference, shippingInfo } from "@/lib/orders";
 
 // Lecture des commandes pour la page /admin. Tout vient de Stripe (aucune base de données) :
 // l'état « expédiée » et le numéro de suivi sont des métadonnées du PaymentIntent.
@@ -30,6 +30,8 @@ export interface AdminOrder {
   shippedAt: string | null;
   tracking: string | null;
   refunded: boolean;
+  /** Montant remboursé (centimes), remboursement partiel compris. */
+  refundedCents: number;
   provenance: string;
   /** Lien vers le paiement dans le tableau de bord Stripe. */
   stripeUrl: string | null;
@@ -56,33 +58,67 @@ export async function listOrders(stripe: Stripe): Promise<AdminOrder[]> {
     expand: ["data.payment_intent.latest_charge"],
   })) {
     if (orders.length >= MAX_ORDERS) break;
-    if (s.payment_status !== "paid" && s.payment_status !== "no_payment_required") continue;
-    const pi = s.payment_intent as Stripe.PaymentIntent | null;
-    const charge = (pi?.latest_charge ?? null) as Stripe.Charge | null;
-    const ship = shippingInfo(s);
-    const format = parseFormat(s.metadata?.format);
-    orders.push({
-      id: s.id,
-      reference: orderReference(s.id),
-      createdAt: s.created,
-      format,
-      packName: getPack(s.metadata?.pack ?? "")?.name ?? s.metadata?.pack ?? "?",
-      amountCents: s.amount_total ?? 0,
-      shippingCents: s.total_details?.amount_shipping ?? 0,
-      discountCents: s.total_details?.amount_discount ?? 0,
-      email: s.customer_details?.email ?? "",
-      name: ship?.name || s.customer_details?.name || "",
-      lines: format === "papier" ? (ship?.lines ?? ["⚠️ Adresse absente : voir Stripe"]) : [],
-      deliverable: format === "papier" ? (ship?.deliverable ?? false) : true,
-      shippedAt: pi?.metadata?.[SHIPPED_AT] || null,
-      tracking: pi?.metadata?.[TRACKING] || null,
-      refunded: Boolean(charge?.refunded),
-      provenance: s.metadata?.provenance ?? "direct",
-      stripeUrl: pi ? `https://dashboard.stripe.com/${s.livemode ? "" : "test/"}payments/${pi.id}` : null,
-      businessDaysOld: businessDaysBetween(s.created * 1000, now),
-    });
+    if (!isPaid(s)) continue;
+    orders.push(toAdminOrder(s, now));
   }
   return orders;
+}
+
+const isPaid = (s: Stripe.Checkout.Session) => s.payment_status === "paid" || s.payment_status === "no_payment_required";
+
+function toAdminOrder(s: Stripe.Checkout.Session, now = Date.now()): AdminOrder {
+  const pi = s.payment_intent as Stripe.PaymentIntent | null;
+  const charge = (pi?.latest_charge ?? null) as Stripe.Charge | null;
+  const ship = shippingInfo(s);
+  const format = parseFormat(s.metadata?.format);
+  return {
+    id: s.id,
+    reference: orderReference(s.id),
+    createdAt: s.created,
+    format,
+    packName: getPack(s.metadata?.pack ?? "")?.name ?? s.metadata?.pack ?? "?",
+    amountCents: s.amount_total ?? 0,
+    shippingCents: s.total_details?.amount_shipping ?? 0,
+    discountCents: s.total_details?.amount_discount ?? 0,
+    email: s.customer_details?.email ?? "",
+    name: ship?.name || s.customer_details?.name || "",
+    lines: format === "papier" ? (ship?.lines ?? ["⚠️ Adresse absente : voir Stripe"]) : [],
+    deliverable: format === "papier" ? (ship?.deliverable ?? false) : true,
+    shippedAt: pi?.metadata?.[SHIPPED_AT] || null,
+    tracking: pi?.metadata?.[TRACKING] || null,
+    refunded: Boolean(charge?.refunded),
+    refundedCents: charge?.amount_refunded ?? 0,
+    provenance: s.metadata?.provenance ?? "direct",
+    stripeUrl: pi ? `https://dashboard.stripe.com/${s.livemode ? "" : "test/"}payments/${pi.id}` : null,
+    businessDaysOld: businessDaysBetween(s.created * 1000, now),
+  };
+}
+
+/** Commandes payées entre deux dates (secondes Unix, fin exclue) : toutes, pour l'export comptable. */
+export async function listOrdersBetween(stripe: Stripe, from: number, to: number): Promise<AdminOrder[]> {
+  const orders: AdminOrder[] = [];
+  for await (const s of stripe.checkout.sessions.list({
+    status: "complete",
+    created: { gte: from, lt: to },
+    limit: 100,
+    expand: ["data.payment_intent.latest_charge"],
+  })) {
+    if (isPaid(s)) orders.push(toAdminOrder(s));
+  }
+  return orders.sort((a, b) => a.createdAt - b.createdAt);
+}
+
+/** Acheteurs d'un pack (paiement valide, non remboursé), un par adresse email (commande la plus récente). */
+export async function listPackBuyers(stripe: Stripe, slug: string): Promise<Order[]> {
+  const byEmail = new Map<string, Order>();
+  for await (const s of stripe.checkout.sessions.list({ status: "complete", limit: 100, expand: ["data.payment_intent.latest_charge"] })) {
+    if (s.metadata?.pack !== slug) continue;
+    const order = orderFromSession(s);
+    const email = order.email?.toLowerCase();
+    if (!email || !order.paid || order.revoked || byEmail.has(email)) continue;
+    byEmail.set(email, order); // la liste Stripe va de la plus récente à la plus ancienne
+  }
+  return [...byEmail.values()];
 }
 
 /** Nombre de jours ouvrés (lundi–vendredi) entièrement écoulés entre deux instants. */

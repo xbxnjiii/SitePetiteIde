@@ -40,6 +40,11 @@ export async function getOrder(stripe: Stripe, sessionId: string): Promise<Order
   } catch {
     return null;
   }
+  return orderFromSession(session);
+}
+
+/** Commande à partir d'une session Stripe (avec `payment_intent.latest_charge` développé). */
+export function orderFromSession(session: Stripe.Checkout.Session): Order {
   const pi = session.payment_intent as Stripe.PaymentIntent | null;
   const charge = (pi?.latest_charge ?? null) as Stripe.Charge | null;
   return {

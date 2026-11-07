@@ -25,7 +25,7 @@ export const IS_PREPROD = process.env.NEXT_PUBLIC_SITE_ENV === "preprod";
  * Passer `LAUNCHED` à `true` au lancement : autorise l'indexation par les
  * moteurs de recherche (jamais en préprod).
  */
-const LAUNCHED = false;
+const LAUNCHED = true;
 export const IS_LIVE = LAUNCHED && !IS_PREPROD;
 
 /**

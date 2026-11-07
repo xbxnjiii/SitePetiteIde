@@ -1,11 +1,14 @@
 import type Stripe from "stripe";
 import { getPack } from "@/content/packs";
-import { sendShippedEmail } from "@/lib/email";
+import { publishedPacks } from "@/content/packs";
+import { sendShippedEmail, sendUpdateEmails } from "@/lib/email";
+import { SITE } from "@/lib/format";
 import { type AppEnv, getEnvAsync, siteUrl } from "@/lib/env";
-import { orderReference } from "@/lib/orders";
+import { downloadLinks, imagesLink, orderReference } from "@/lib/orders";
 import { isAllowedOrigin } from "@/lib/origin";
 import { stripeClient } from "@/lib/stripe";
-import { type AdminOrder, SHIPPED_AT, TRACKING, computeStats, listOrders, matches, statusOf } from "./data";
+import { type AdminOrder, SHIPPED_AT, TRACKING, computeStats, listOrders, listOrdersBetween, listPackBuyers, matches, statusOf } from "./data";
+import { lastMonths, monthBounds, ordersCsv } from "./export";
 import { TABS, type Tab, adminPage, labelsPage } from "./view";
 
 // /admin — suivi des commandes (protégé par mot de passe : secret ADMIN_PASSWORD).
@@ -13,6 +16,8 @@ import { TABS, type Tab, adminPage, labelsPage } from "./view";
 //  GET  ?etiquettes=cs_…,cs_…                  → étiquettes d'adresse à imprimer
 //  POST action=expedier {session_id, tracking} → marque expédiée + email de suivi au client
 //  POST action=annuler  {session_id}           → remet la commande « à expédier » (sans email)
+//  GET  ?export=AAAA-MM                        → export comptable du mois (CSV)
+//  POST action=maj {pack, message, test}       → nouvelle version envoyée à tous les acheteurs du pack
 // Aucune base de données : l'état « expédiée » est enregistré sur le paiement Stripe (métadonnées).
 export const dynamic = "force-dynamic";
 
@@ -23,6 +28,8 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const labelIds = url.searchParams.get("etiquettes");
+  const exportMonth = url.searchParams.get("export");
+  if (exportMonth !== null) return exportCsv(env, exportMonth);
   const tab = parseTab(url.searchParams.get("vue"));
   const q = (url.searchParams.get("q") ?? "").slice(0, 100);
 
@@ -44,6 +51,7 @@ export async function GET(request: Request) {
     "a-expedier": (o) => ["todo", "late"].includes(statusOf(o)),
     expediees: (o) => o.format === "papier" && Boolean(o.shippedAt),
     ventes: () => true,
+    outils: () => false,
   };
   const found = orders.filter((o) => matches(o, q));
   const counts = Object.fromEntries(TABS.map((t) => [t.id, found.filter(inTab[t.id]).length])) as Record<Tab, number>;
@@ -61,7 +69,8 @@ export async function GET(request: Request) {
       tab,
       q,
       counts,
-      notice: ok === "expediee" ? "Commande marquée expédiée, email de suivi envoyé ✅" : ok === "annulee" ? "Commande remise dans « À expédier »." : null,
+      notice: noticeFor(ok, url.searchParams.get("n")),
+      tools: { packs: publishedPacks().map((p) => ({ slug: p.slug, name: p.name })), months: lastMonths(), testTo: notifyTo(env) },
       error: loadError ?? (error ? errorMessage(error) : null),
     }),
   );
@@ -82,6 +91,8 @@ export async function POST(request: Request) {
   const tab = parseTab(String(form?.get("vue") ?? ""));
   const q = String(form?.get("q") ?? "").slice(0, 100);
   const back = (params: string) => Response.redirect(`${base}/admin?vue=${tab}${q ? `&q=${encodeURIComponent(q)}` : ""}&${params}`, 303);
+
+  if (action === "maj") return sendUpdate(env, form, back);
 
   if (!/^cs_(test|live)_[A-Za-z0-9]{10,200}$/.test(sessionId)) return back("erreur=session");
   const tracking = String(form?.get("tracking") ?? "").replace(/\s+/g, "").toUpperCase();
@@ -108,6 +119,67 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("admin:", action, err instanceof Error ? err.message : err);
     return back(action === "annuler" ? "erreur=stripe" : "erreur=envoi");
+  }
+}
+
+const notifyTo = (env: AppEnv) => env.ORDERS_NOTIFY_TO ?? env.EMAIL_REPLY_TO ?? SITE.contactEmail;
+
+function noticeFor(ok: string | null, n: string | null): string | null {
+  if (ok === "expediee") return "Commande marquée expédiée, email de suivi envoyé ✅";
+  if (ok === "annulee") return "Commande remise dans « À expédier ».";
+  if (ok === "maj") return `Mise à jour envoyée à ${Number(n) || 0} acheteur(s) ✅`;
+  if (ok === "maj-test") return "Email de test envoyé : vérifie ta boîte avant l'envoi à tous.";
+  return null;
+}
+
+/** Export comptable d'un mois : toutes les commandes payées, avec totaux. */
+async function exportCsv(env: AppEnv, month: string): Promise<Response> {
+  const bounds = monthBounds(month);
+  if (!bounds) return new Response("Mois invalide (format AAAA-MM)", { status: 400 });
+  try {
+    const orders = await listOrdersBetween(stripeClient(env), bounds.from, bounds.to);
+    return new Response(ordersCsv(orders), {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="la-petite-ide-recettes-${month}.csv"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch (err) {
+    console.error("admin: export", err instanceof Error ? err.message : err);
+    return new Response("Export impossible : Stripe n'a pas répondu. Réessaie.", { status: 503 });
+  }
+}
+
+/** Mise à jour d'un pack : nouveaux liens (PDF + images) à tous les acheteurs, ou un test à La Petite IDE. */
+async function sendUpdate(env: AppEnv, form: FormData | null, back: (params: string) => Response): Promise<Response> {
+  const slug = String(form?.get("pack") ?? "");
+  const message = String(form?.get("message") ?? "").trim().slice(0, 1000);
+  const test = form?.get("test") === "on";
+  if (!publishedPacks().some((p) => p.slug === slug)) return back("erreur=pack");
+  try {
+    const buyers = await listPackBuyers(stripeClient(env), slug);
+    if (!buyers.length) return back("erreur=acheteurs");
+    const expiresAt = Math.floor(Date.now() / 1000) + SITE.downloadDays * 24 * 3600;
+    const targets = test ? buyers.slice(0, 1) : buyers;
+    const recipients = await Promise.all(
+      targets.map(async (o) => ({
+        to: test ? notifyTo(env) : o.email!,
+        packName: o.pack!.name,
+        links: await downloadLinks(env, o, expiresAt),
+        imagesUrl: await imagesLink(env, o, expiresAt),
+        expiresAt,
+      })),
+    );
+    // Clé d'envoi : le même envoi (pack + message, même jour) n'est jamais envoyé deux fois.
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${slug}|${message}|${new Date().toISOString().slice(0, 10)}`));
+    const key = Array.from(new Uint8Array(digest).slice(0, 10), (b) => b.toString(16).padStart(2, "0")).join("");
+    const sent = await sendUpdateEmails(env, recipients, message, test ? `maj-test-${key}-${Date.now()}` : `maj-${key}`);
+    console.log("admin: mise à jour envoyée", slug, test ? "(test)" : sent);
+    return back(test ? "ok=maj-test" : `ok=maj&n=${sent}`);
+  } catch (err) {
+    console.error("admin: mise à jour", err instanceof Error ? err.message : err);
+    return back("erreur=maj");
   }
 }
 
@@ -149,6 +221,9 @@ const errorMessage = (code: string) =>
     session: "Commande introuvable.",
     envoi: "L'email de suivi n'a pas pu être envoyé. Réessaie.",
     stripe: "Stripe n'a pas répondu. Réessaie.",
+    pack: "Pack introuvable.",
+    acheteurs: "Aucun acheteur pour ce pack pour le moment.",
+    maj: "L'envoi de la mise à jour a échoué. Réessaie (les emails déjà partis ne seront pas renvoyés).",
   })[code] ?? "Une erreur est survenue.";
 
 function html(body: string) {

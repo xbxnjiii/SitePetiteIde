@@ -4,12 +4,13 @@ import { type AdminOrder, type Stats, statusOf } from "./data";
 
 // Rendu HTML de la page /admin (pas de React : une page légère, rendue côté serveur).
 
-export type Tab = "a-expedier" | "expediees" | "ventes";
+export type Tab = "a-expedier" | "expediees" | "ventes" | "outils";
 
 export const TABS: { id: Tab; label: string }[] = [
   { id: "a-expedier", label: "À expédier" },
   { id: "expediees", label: "Expédiées" },
   { id: "ventes", label: "Ventes" },
+  { id: "outils", label: "Outils" },
 ];
 
 const esc = (s: string) =>
@@ -108,6 +109,42 @@ function orderCard(o: AdminOrder, tab: Tab, q: string): string {
   </article>`;
 }
 
+export interface Tools {
+  packs: { slug: string; name: string }[];
+  months: { value: string; label: string }[];
+  /** Adresse qui reçoit l'email de test. */
+  testTo: string;
+}
+
+function toolsSection(t: Tools): string {
+  return `<section class="tool">
+    <h2>📊 Export comptable</h2>
+    <p class="muted">Toutes les ventes du mois (numérique et papier), avec remboursements et totaux, pour le livre des recettes.
+      Fichier CSV à ouvrir avec Excel, Numbers ou Google Sheets.</p>
+    <form method="get" class="row">
+      <select name="export" aria-label="Mois">${t.months.map((m) => `<option value="${esc(m.value)}">${esc(m.label)}</option>`).join("")}</select>
+      <button type="submit">Télécharger</button>
+    </form>
+  </section>
+
+  <section class="tool">
+    <h2>✨ Envoyer une mise à jour</h2>
+    <p class="muted">Après avoir remplacé le PDF (et les images) dans Cloudflare R2 : chaque acheteur du pack reçoit un email avec
+      ses nouveaux liens (valables 30 jours). Commence par un test.</p>
+    <form method="post" class="stack" onsubmit="return this.test.checked || confirm('Envoyer la mise à jour à TOUS les acheteurs de ce pack ?')">
+      <input type="hidden" name="action" value="maj"><input type="hidden" name="vue" value="outils">
+      <label>Pack
+        <select name="pack">${t.packs.map((p) => `<option value="${esc(p.slug)}">${esc(p.name)}</option>`).join("")}</select>
+      </label>
+      <label>Ce qui a changé <span class="muted">(facultatif, affiché dans l'email)</span>
+        <textarea name="message" rows="3" maxlength="1000" placeholder="Ex. : nouvelle fiche sur la douleur, valeurs de la glycémie précisées…"></textarea>
+      </label>
+      <label class="check"><input type="checkbox" name="test" checked> M'envoyer seulement un test (à ${esc(t.testTo)})</label>
+      <button type="submit">Envoyer</button>
+    </form>
+  </section>`;
+}
+
 function statTile(value: string, label: string, tone = "") {
   return `<div class="stat ${tone}"><span class="stat__value">${value}</span><span class="stat__label">${esc(label)}</span></div>`;
 }
@@ -120,6 +157,7 @@ export function adminPage(opts: {
   notice: string | null;
   error: string | null;
   counts: Record<Tab, number>;
+  tools: Tools;
 }): string {
   const { orders, stats, tab, q } = opts;
   const qs = (t: Tab) => `/admin?vue=${t}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
@@ -160,10 +198,10 @@ export function adminPage(opts: {
   }
 
   <nav class="tabs" aria-label="Vues">
-    ${TABS.map((t) => `<a href="${esc(qs(t.id))}" class="${t.id === tab ? "on" : ""}"${t.id === tab ? ' aria-current="page"' : ""}>${esc(t.label)} <span>${opts.counts[t.id]}</span></a>`).join("")}
+    ${TABS.map((t) => `<a href="${esc(qs(t.id))}" class="${t.id === tab ? "on" : ""}"${t.id === tab ? ' aria-current="page"' : ""}>${esc(t.label)} ${t.id === "outils" ? "" : `<span>${opts.counts[t.id]}</span>`}</a>`).join("")}
   </nav>
 
-  <form class="search" method="get" role="search">
+  ${tab === "outils" ? toolsSection(opts.tools) : `  <form class="search" method="get" role="search">
     <input type="hidden" name="vue" value="${tab}">
     <input type="search" name="q" value="${esc(q)}" placeholder="Rechercher : nom, email, référence, ville…" aria-label="Rechercher">
     ${q ? `<a href="/admin?vue=${tab}" class="link">Effacer</a>` : ""}
@@ -179,6 +217,7 @@ export function adminPage(opts: {
     ${orders.length ? orders.map((o) => orderCard(o, tab, q)).join("") : `<p class="empty">${esc(empty)}</p>`}
   </section>
 
+`}
   <p class="foot">${esc(SHIPPING.dispatch)} · « En retard » après 2 jours ouvrés · 300 dernières commandes</p>
 </main>
 <script>
@@ -250,8 +289,8 @@ const CSS = `
   .stat--todo { background:var(--todo50); border-color:transparent; } .stat--todo .stat__value { color:var(--todo); }
   .stat--late { background:var(--late50); border-color:transparent; } .stat--late .stat__value { color:var(--late); }
   .tabs { display:flex; gap:4px; padding:4px; background:#fff; border:1px solid var(--line); border-radius:14px; margin-bottom:10px; overflow-x:auto; }
-  .tabs a { flex:1; white-space:nowrap; text-align:center; padding:8px 6px; border-radius:10px; text-decoration:none; color:var(--soft); font-weight:600; font-size:.9rem; }
-  .tabs a span { display:inline-block; min-width:20px; padding:0 6px; border-radius:99px; background:var(--bg); font-size:.75rem; margin-left:2px; }
+  .tabs a { flex:1 1 auto; white-space:nowrap; text-align:center; padding:8px 4px; border-radius:10px; text-decoration:none; color:var(--soft); font-weight:600; font-size:.84rem; }
+  .tabs a span { display:inline-block; min-width:18px; padding:0 5px; border-radius:99px; background:var(--bg); font-size:.75rem; margin-left:2px; }
   .tabs a.on { background:var(--p); color:#fff; } .tabs a.on span { background:rgb(255 255 255 / 25%); }
   .search { display:flex; gap:10px; align-items:center; margin-bottom:12px; }
   .search input { flex:1; min-width:0; padding:10px 14px; border:1.5px solid var(--line); border-radius:12px; font:inherit; background:#fff; }
@@ -286,5 +325,17 @@ const CSS = `
   .msg { padding:10px 14px; border-radius:12px; margin:0 0 14px; }
   .msg--ok { background:var(--ok50); color:#1F6B4F; } .msg--err { background:var(--late50); color:#9B3A63; }
   .empty { background:#fff; border:1px dashed var(--line); border-radius:16px; padding:24px; text-align:center; color:var(--soft); }
+  .tool { background:#fff; border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:12px; }
+  .tool h2 { margin:0 0 4px; font-size:1.05rem; }
+  .tool .muted { margin:0 0 12px; }
+  .row { display:flex; gap:8px; }
+  .stack { display:grid; gap:12px; }
+  .stack label { display:grid; gap:6px; font-weight:600; font-size:.9rem; }
+  .stack label .muted { font-weight:400; }
+  .stack label.check { display:flex; align-items:center; gap:8px; font-weight:500; }
+  .tool select, .tool textarea { flex:1; min-width:0; padding:10px 12px; border:1.5px solid var(--line); border-radius:12px; font:inherit; background:#fff; color:inherit; }
+  .tool textarea { resize:vertical; }
+  .tool select:focus, .tool textarea:focus { outline:none; border-color:var(--p); box-shadow:0 0 0 3px var(--p50); }
+  .tool button { padding:10px 16px; border:0; border-radius:12px; background:var(--p); color:#fff; font-weight:700; white-space:nowrap; }
   .foot { margin-top:20px; text-align:center; font-size:.78rem; color:var(--soft); }
 `;

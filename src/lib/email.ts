@@ -315,3 +315,72 @@ export async function sendShippedEmail(
     idempotencyKey: `shipped-${s.sessionId}-${s.tracking}`,
   });
 }
+
+// ---------------------------------------------------------------------------
+//  Mise à jour d'un pack : nouveaux liens envoyés à tous les acheteurs
+// ---------------------------------------------------------------------------
+
+export interface UpdateEmail {
+  to: string;
+  packName: string;
+  links: DownloadLink[];
+  imagesUrl: string | null;
+  expiresAt: number;
+}
+
+function updateEmailHtml(u: UpdateEmail, message: string): string {
+  const until = new Date(u.expiresAt * 1000).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  const button = (href: string, label: string, primary: boolean) =>
+    `<a href="${esc(href)}" style="display:block;margin:0 0 10px;background:${primary ? "#4E7AC7" : "#EEF3FB"};color:${primary ? "#ffffff" : "#3A63AB"};text-decoration:none;font-weight:700;text-align:center;padding:15px 18px;border-radius:14px">${esc(label)}</a>`;
+  return simpleEmailHtml(
+    "Tes fiches ont été mises à jour ✨",
+    `<p style="margin:0 0 14px;color:#5B6784">Bonne nouvelle : ton <strong style="color:#2D3A5A">${esc(u.packName)}</strong> a été amélioré. Voici la nouvelle version, offerte comme promis.</p>
+      ${message ? `<p style="margin:0 0 18px;padding:12px 14px;background:#F8F9FC;border-radius:12px">${esc(message).replace(/\n/g, "<br>")}</p>` : ""}
+      ${u.links.map((l) => button(l.url, "Télécharger le nouveau PDF", true)).join("")}
+      ${u.imagesUrl ? button(u.imagesUrl, "📱 Voir les fiches en images", false) : ""}
+      <p style="margin:12px 0 0;font-size:13px;line-height:20px;color:#5B6784">Liens valables jusqu'au ${esc(until)}. Pense à remplacer l'ancienne version sur ton téléphone.</p>`,
+  );
+}
+
+function updateEmailText(u: UpdateEmail, message: string): string {
+  return [
+    `Ton ${u.packName} a été mis à jour. Voici la nouvelle version, offerte :`,
+    ...(message ? ["", message, ""] : []),
+    ...u.links.map((l) => `- PDF : ${l.url}`),
+    ...(u.imagesUrl ? [`- En images : ${u.imagesUrl}`] : []),
+    "",
+    "— La Petite IDE",
+  ].join("\n");
+}
+
+/**
+ * Envoie l'email de mise à jour à chaque acheteur (API « batch » de Resend : 100 emails par requête).
+ * `batchKey` identifie l'envoi : un même envoi relancé n'est pas renvoyé (idempotence Resend, 24 h).
+ */
+export async function sendUpdateEmails(env: AppEnv, recipients: UpdateEmail[], message: string, batchKey: string): Promise<number> {
+  let sent = 0;
+  for (let i = 0; i < recipients.length; i += 100) {
+    const chunk = recipients.slice(i, i + 100);
+    const res = await fetch("https://api.resend.com/emails/batch", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${requireVar(env, "RESEND_API_KEY")}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": `${batchKey}-${i / 100}`,
+      },
+      body: JSON.stringify(
+        chunk.map((u) => ({
+          from: env.EMAIL_FROM ?? "La Petite IDE <commandes@lapetiteide.fr>",
+          to: [u.to],
+          reply_to: env.EMAIL_REPLY_TO ?? SITE.contactEmail,
+          subject: `Mise à jour de ton ${u.packName} ✨`,
+          html: updateEmailHtml(u, message),
+          text: updateEmailText(u, message),
+        })),
+      ),
+    });
+    if (!res.ok && res.status !== 409) throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 300)}`);
+    sent += chunk.length;
+  }
+  return sent;
+}
