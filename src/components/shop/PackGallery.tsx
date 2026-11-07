@@ -11,13 +11,35 @@ export interface GallerySlide {
   label?: string;
 }
 
+/** Délai entre deux images en défilement automatique. */
+const AUTOPLAY_MS = 3000;
+
 /**
  * Carrousel du visuel de la page de vente : une image à la fois.
  * Glisser au doigt (défilement natif avec aimantation), flèches sur ordinateur, points de navigation.
+ * Défilement automatique toutes les 3 s : en pause au survol, arrêté dès que le visiteur s'en sert,
+ * désactivé si l'appareil demande moins d'animations.
  */
 export function PackGallery({ slides }: { slides: GallerySlide[] }) {
   const track = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
+  const indexRef = useRef(0);
+  indexRef.current = index;
+  const [hovered, setHovered] = useState(false);
+  const [stopped, setStopped] = useState(false);
+
+  useEffect(() => {
+    if (slides.length < 2 || hovered || stopped) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(() => {
+      if (document.hidden) return;
+      const el = track.current;
+      if (!el) return;
+      const next = (indexRef.current + 1) % slides.length;
+      el.scrollTo({ left: next * el.clientWidth, behavior: "smooth" });
+    }, AUTOPLAY_MS);
+    return () => window.clearInterval(timer);
+  }, [slides.length, hovered, stopped]);
 
   // Image visible = celle la plus proche du bord gauche du défilement.
   useEffect(() => {
@@ -29,6 +51,7 @@ export function PackGallery({ slides }: { slides: GallerySlide[] }) {
   }, []);
 
   const go = (i: number) => {
+    setStopped(true); // le visiteur prend la main : plus de défilement automatique
     const el = track.current;
     if (!el) return;
     const target = (i + slides.length) % slides.length;
@@ -47,6 +70,10 @@ export function PackGallery({ slides }: { slides: GallerySlide[] }) {
       role="region"
       aria-roledescription="carrousel"
       aria-label="Visuels du pack"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onTouchStart={() => setStopped(true)}
+      onFocus={() => setStopped(true)}
       onKeyDown={(e) => {
         if (e.key === "ArrowRight") go(index + 1);
         if (e.key === "ArrowLeft") go(index - 1);

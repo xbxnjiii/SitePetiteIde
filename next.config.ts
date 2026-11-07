@@ -8,8 +8,13 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
 ];
 
+// Préprod : variable NEXT_PUBLIC_SITE_ENV=preprod, ou détection automatique de la branche Git « preprod »
+// pendant le build Cloudflare (WORKERS_CI_BRANCH est fourni par Workers Builds).
+const siteEnv = process.env.NEXT_PUBLIC_SITE_ENV || (process.env.WORKERS_CI_BRANCH === "preprod" ? "preprod" : "");
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  env: { NEXT_PUBLIC_SITE_ENV: siteEnv },
   images: { unoptimized: true },
   // Ancienne adresse du quiz (liens déjà partagés).
   async redirects() {
