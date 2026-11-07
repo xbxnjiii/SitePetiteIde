@@ -7,23 +7,6 @@ export interface R2BucketLike {
   head(key: string): Promise<{ size: number } | null>;
 }
 
-export interface LeaderboardEntry {
-  pseudo: string;
-  score: number;
-  total: number;
-  ms: number;
-}
-
-/** Durable Object du classement des quiz (voir workers/leaderboard.ts). */
-export interface LeaderboardStub {
-  top(week: string, board: string, limit?: number): Promise<LeaderboardEntry[]>;
-  submit(week: string, board: string, e: LeaderboardEntry, who: string): Promise<{ ok: true; rank: number } | { ok: false; error: string }>;
-}
-export interface LeaderboardNamespace {
-  idFromName(name: string): unknown;
-  get(id: unknown): LeaderboardStub;
-}
-
 /** Variables et secrets du Worker (wrangler.jsonc "vars" + `wrangler secret put`). */
 export interface AppEnv {
   STRIPE_SECRET_KEY?: string;
@@ -35,7 +18,6 @@ export interface AppEnv {
   EMAIL_REPLY_TO?: string;
   STRIPE_AUTOMATIC_TAX?: string;
   PDF_BUCKET?: R2BucketLike;
-  LEADERBOARD?: LeaderboardNamespace;
 }
 
 export function getEnv(): AppEnv {

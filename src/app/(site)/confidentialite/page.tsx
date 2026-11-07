@@ -74,18 +74,6 @@ export default function PrivacyPage() {
           ),
         },
         {
-          id: "quiz",
-          title: "Classement des quiz",
-          content: (
-            <p>
-              Si tu choisis d&apos;inscrire ton score au classement, nous enregistrons le pseudo que tu indiques, ton score et ton temps.
-              Le pseudo est affiché publiquement ; le classement est remis à zéro chaque semaine et les données sont supprimées après
-              8 semaines. Pour limiter les abus, une empreinte anonymisée de ta connexion est conservée une heure. N&apos;utilise pas
-              ton vrai nom si tu ne le souhaites pas.
-            </p>
-          ),
-        },
-        {
           id: "cookies",
           title: "Cookies",
           content: (

@@ -3,8 +3,8 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { QUIZ_MODES, TOPICS, type QuizMode, type QuizQuestion, type QuizTheme, type Topic, quizVerdict } from "@/content/quiz";
-import { makeScoreCard, shareScoreCard } from "@/lib/score-card";
-import { QuizLeaderboard } from "./QuizLeaderboard";
+import { getPack } from "@/content/packs";
+import { formatPrice } from "@/lib/format";
 
 /** Tire `n` questions au hasard (mélange de Fisher-Yates). */
 function draw(all: QuizQuestion[], n: number): QuizQuestion[] {
@@ -69,7 +69,6 @@ export function Quiz({ theme }: { theme: QuizTheme }) {
   const [picked, setPicked] = useState<number | null>(null);
   const [results, setResults] = useState<boolean[]>([]);
   const [missed, setMissed] = useState<Topic[]>([]);
-  const [answers, setAnswers] = useState<{ q: number; a: number }[]>([]);
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
   const [startedAt, setStartedAt] = useState(0);
@@ -85,7 +84,6 @@ export function Quiz({ theme }: { theme: QuizTheme }) {
     setPicked(null);
     setResults([]);
     setMissed([]);
-    setAnswers([]);
     setStreak(0);
     setBestStreak(0);
     setStartedAt(Date.now());
@@ -114,10 +112,6 @@ export function Quiz({ theme }: { theme: QuizTheme }) {
           <p className="qz-intro__kicker">Prête à te tester ?</p>
           <ModePicker onPick={start} />
         </div>
-        <details className="qz-board">
-          <summary>🏅 Classement de la semaine</summary>
-          <QuizLeaderboard theme={theme.slug} mode="pros" />
-        </details>
       </div>
     );
   }
@@ -138,7 +132,6 @@ export function Quiz({ theme }: { theme: QuizTheme }) {
           elapsed={elapsed}
           bestStreak={bestStreak}
           missed={missed}
-          answers={answers}
           onReplay={() => start(mode)}
           onOther={() => start(mode === "flash" ? "pros" : "flash")}
         />
@@ -156,7 +149,6 @@ export function Quiz({ theme }: { theme: QuizTheme }) {
     const ok = i === q.answer;
     setPicked(i);
     setResults((r) => [...r, ok]);
-    setAnswers((list) => [...list, { q: theme.questions.indexOf(q), a: i }]);
     if (ok) {
       const s = streak + 1;
       setStreak(s);
@@ -245,7 +237,6 @@ function Result({
   elapsed,
   bestStreak,
   missed,
-  answers,
   onReplay,
   onOther,
 }: {
@@ -256,28 +247,17 @@ function Result({
   elapsed: number;
   bestStreak: number;
   missed: Topic[];
-  answers: { q: number; a: number }[];
   onReplay: () => void;
   onOther: () => void;
 }) {
-  const [cardState, setCardState] = useState<"idle" | "busy" | "saved">("idle");
   const [copied, setCopied] = useState(false);
   const label = QUIZ_MODES[mode].label;
   const ratio = score / total;
   const verdict = quizVerdict(score, total);
+  const other: QuizMode = mode === "flash" ? "pros" : "flash";
+  const pack = theme.packSlug ? getPack(theme.packSlug) : undefined;
   const R = 52;
   const C = 2 * Math.PI * R;
-
-  const shareImage = async () => {
-    setCardState("busy");
-    try {
-      const blob = await makeScoreCard({ score, total, mode: label, theme: theme.title });
-      const r = await shareScoreCard(blob, `J'ai eu ${score}/${total} au ${label} de La Petite IDE 👀 lapetiteide.fr/quiz`);
-      setCardState(r === "downloaded" ? "saved" : "idle");
-    } catch {
-      setCardState("idle"); // partage annulé
-    }
-  };
 
   const challenge = async () => {
     const url = `${window.location.origin}/quiz/${theme.slug}?mode=${mode}`;
@@ -335,38 +315,55 @@ function Result({
         </div>
       ) : null}
 
-      {theme.packSlug ? (
-        <Link href={`/${theme.packSlug}?src=quiz`} className="qz-cta">
-          <span>
-            <strong>{ratio === 1 ? "Garde ce niveau toute l'année" : "Retiens tout en un clin d'œil"}</strong>
-            <small>{theme.packName}</small>
+      {pack ? (
+        <Link href={`/${pack.slug}?src=quiz`} className="qz-pack">
+          {pack.images ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={pack.images.card} alt="" width={800} height={800} className="qz-pack__img" />
+          ) : null}
+          <span className="qz-pack__body">
+            <span className="qz-pack__hook">
+              {review.length ? "Corrige tes erreurs ✨" : "Garde ce niveau ✨"}
+            </span>
+            <strong>{pack.name}</strong>
+            <span className="qz-pack__meta">
+              {pack.items.length} fiches{pack.bonus ? " + bonus" : ""}
+            </span>
           </span>
-          <Icon name="arrow" />
+          <span className="qz-pack__buy">
+            <span className="qz-pack__price">{formatPrice(pack.priceCents)}</span>
+            <span className="qz-pack__go">
+              Voir <Icon name="arrow" />
+            </span>
+          </span>
         </Link>
       ) : null}
 
+      <button type="button" className={`qz-next qz-next--${other}`} onClick={onOther}>
+        <span className="qz-next__emoji" aria-hidden="true">
+          {MODE_EMOJI[other]}
+        </span>
+        <span className="qz-next__text">
+          <strong>{other === "pros" ? "Prête pour le Quiz des Pros ?" : "Envie d'un Flash Quiz ?"}</strong>
+          <span>
+            {QUIZ_MODES[other].count} questions · {QUIZ_MODES[other].tagline.toLowerCase()}
+          </span>
+        </span>
+        <span className="qz-next__go" aria-hidden="true">
+          <Icon name="arrow" />
+        </span>
+      </button>
+
       <div className="qz-actions">
-        <button type="button" onClick={shareImage} disabled={cardState === "busy"}>
-          <span aria-hidden="true">📸</span>
-          {cardState === "busy" ? "…" : cardState === "saved" ? "Enregistrée" : "Partager"}
-        </button>
-        <button type="button" onClick={challenge}>
-          <span aria-hidden="true">⚔️</span>
-          {copied ? "Lien copié" : "Défier"}
-        </button>
         <button type="button" onClick={onReplay}>
           <span aria-hidden="true">🔁</span>
           Rejouer
         </button>
+        <button type="button" onClick={challenge}>
+          <span aria-hidden="true">⚔️</span>
+          {copied ? "Lien copié" : "Défier une amie"}
+        </button>
       </div>
-      <button type="button" className="qz-switch" onClick={onOther}>
-        Passer au format {mode === "flash" ? `« ${QUIZ_MODES.pros.label} » 🏆` : `« ${QUIZ_MODES.flash.label} » ⚡`}
-      </button>
-
-      <details className="qz-board" open>
-        <summary>🏅 Entre dans le classement</summary>
-        <QuizLeaderboard theme={theme.slug} mode={mode} result={{ answers, ms: elapsed }} />
-      </details>
 
       <Link href="/quiz" className="qz-other">
         Autres thèmes

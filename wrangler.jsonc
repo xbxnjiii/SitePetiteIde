@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "sitepetiteide",
-  "main": "worker.ts",
+  "main": ".open-next/worker.js",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
@@ -23,8 +23,10 @@
     "EMAIL_REPLY_TO": "contact@lapetiteide.fr",
     "STRIPE_AUTOMATIC_TAX": "false"
   },
-  // Classement hebdomadaire des quiz (Durable Object SQLite, créé automatiquement au déploiement)
-  "durable_objects": { "bindings": [{ "name": "LEADERBOARD", "class_name": "Leaderboard" }] },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Leaderboard"] }],
+  // Ancien classement des quiz : supprimé (la migration v2 efface le Durable Object créé par la v1).
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Leaderboard"] },
+    { "tag": "v2", "deleted_classes": ["Leaderboard"] }
+  ],
   "observability": { "enabled": true }
 }
