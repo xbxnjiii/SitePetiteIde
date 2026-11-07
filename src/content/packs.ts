@@ -38,6 +38,8 @@ export interface PackImages {
   /** Image de partage réseaux sociaux (1200×630), dans public/. */
   og?: string;
   alt: string;
+  /** Images supplémentaires du carrousel de la page de vente (après le visuel carré). */
+  gallery?: { src: string; width: number; height: number; alt: string; label?: string }[];
 }
 
 /** Format choisi à l'achat : PDF seul, ou fiches papier avec le PDF offert. */
@@ -109,6 +111,15 @@ export const packs: Pack[] = [
       sale: "/img/packs/pack-constantes-v3-detail.webp",
       saleSize: [1100, 1100],
       og: "/img/packs/pack-constantes-v2-og.jpg",
+      gallery: [
+        {
+          src: "/img/packs/pack-constantes-apercu-pdf.webp",
+          width: 1100,
+          height: 733,
+          alt: "Aperçu flouté des fiches du pack Constantes",
+          label: "Aperçu PDF",
+        },
+      ],
       alt: "Pack Mémos : Constantes — 8 fiches : fréquence cardiaque, fréquence respiratoire, température, tension artérielle, glycémie, saturation (SpO2), diurèse et une fiche bonus pour mieux apprendre",
     },
     // Liste des fiches (non affichée sur le site : le visuel détaillé la présente).
@@ -141,7 +152,7 @@ export const packs: Pack[] = [
       //    À remplacer par une vraie photo des fiches Constantes, puis supprimer
       //    public/img/packs/papier-illustration-preprod.webp avant la mise en production.
       photo: IS_PREPROD
-        ? { src: "/img/packs/papier-illustration-preprod.webp", width: 400, height: 419, alt: "Exemple de fiches papier (illustration)" }
+        ? { src: "/img/packs/papier-illustration-preprod.webp", width: 623, height: 653, alt: "Exemple de fiches papier (illustration)" }
         : undefined,
     },
     status: "published",

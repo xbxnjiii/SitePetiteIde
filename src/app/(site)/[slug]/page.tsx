@@ -7,6 +7,7 @@ import { CheckoutError } from "@/components/shop/CheckoutError";
 import { OfferBanner } from "@/components/shop/OfferBanner";
 import { PackCheckout } from "@/components/shop/PackCheckout";
 import { PackCover } from "@/components/shop/PackCover";
+import { PackGallery } from "@/components/shop/PackGallery";
 import { QuizCta } from "@/components/shop/QuizCta";
 import { StickyBuyBar } from "@/components/shop/StickyBuyBar";
 import { Icon } from "@/components/ui/Icon";
@@ -84,8 +85,14 @@ export default async function PackPage({ params }: { params: Params }) {
       <section className="container sale-main">
         <div className="sale-main__visual">
           {pack.images ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={pack.images.card} alt={pack.images.alt} width={800} height={800} className="sale-main__img" fetchPriority="high" />
+            // Carrousel : visuel du pack, aperçus (PDF), puis photo du format papier s'il y en a une.
+            <PackGallery
+              slides={[
+                { src: pack.images.card, alt: pack.images.alt, width: 800, height: 800 },
+                ...(pack.images.gallery ?? []),
+                ...(pack.print?.photo ? [{ ...pack.print.photo, label: "Format papier" }] : []),
+              ]}
+            />
           ) : (
             <PackCover icon={pack.icon} tone={pack.tone} />
           )}
