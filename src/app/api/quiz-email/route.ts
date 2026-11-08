@@ -4,6 +4,7 @@ import { sendEmail } from "@/lib/email";
 import { getEnvAsync, requireVar, siteUrl } from "@/lib/env";
 import { isAllowedOrigin } from "@/lib/origin";
 import { type CorrectionItem, correctionEmail, offerEmail, tipsEmail } from "@/lib/quiz-emails";
+import { recordQuizEvent } from "@/lib/quiz-stats";
 import { getSettings } from "@/lib/settings";
 import { signToken } from "@/lib/signed";
 
@@ -75,6 +76,7 @@ export async function POST(request: Request) {
     await sendEmail(env, { to: email, ...first, idempotencyKey: idem("first"), unsubscribeUrl: firstUnsub });
 
     console.log("quiz-email: séquence programmée", theme.slug, mode);
+    await recordQuizEvent(env, { event: "email", theme: theme.slug, mode, pct: null }).catch(() => {});
     return Response.json({ ok: true });
   } catch (err) {
     console.error("quiz-email:", err instanceof Error ? err.message : err);

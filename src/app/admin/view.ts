@@ -1,5 +1,6 @@
 import { formatPrice } from "@/lib/format";
 import type { Dashboard } from "./dashboard";
+import { QUIZ_PERIODS, type QuizStatsView } from "./quizstats";
 import { type AdminOrder, statusOf } from "./data";
 import type { AdminEmail } from "./emails";
 import type { BioLink } from "@/lib/settings";
@@ -7,7 +8,7 @@ import type { BioLink } from "@/lib/settings";
 // Rendu HTML de la page /admin (pas de React : une page légère, rendue côté serveur).
 // Navigation : barre latérale sur ordinateur, barre d'onglets en bas sur mobile.
 
-export type Tab = "accueil" | "a-expedier" | "expediees" | "ventes" | "corbeille" | "emails" | "reglages" | "outils";
+export type Tab = "accueil" | "quiz" | "a-expedier" | "expediees" | "ventes" | "corbeille" | "emails" | "reglages" | "outils";
 export type OrderTab = "a-expedier" | "expediees" | "ventes" | "corbeille";
 
 export const ORDER_TABS: { id: OrderTab; label: string }[] = [
@@ -16,7 +17,7 @@ export const ORDER_TABS: { id: OrderTab; label: string }[] = [
   { id: "ventes", label: "Toutes" },
   { id: "corbeille", label: "Corbeille" },
 ];
-export const TABS: Tab[] = ["accueil", ...ORDER_TABS.map((t) => t.id), "emails", "reglages", "outils"];
+export const TABS: Tab[] = ["accueil", "quiz", ...ORDER_TABS.map((t) => t.id), "emails", "reglages", "outils"];
 export const isOrderTab = (t: Tab): t is OrderTab => ORDER_TABS.some((o) => o.id === t);
 
 const esc = (s: string) =>
@@ -53,6 +54,7 @@ const ICONS = {
   search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
   trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
   undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',
+  chart: '<path d="M3 21h18"/><rect x="5" y="11" width="3" height="7" rx="1"/><rect x="10.5" y="6" width="3" height="12" rx="1"/><rect x="16" y="13" width="3" height="5" rx="1"/>',
 } as const;
 type IconName = keyof typeof ICONS;
 const icon = (name: IconName, cls = "ico") =>
@@ -108,6 +110,7 @@ export interface PageData {
   scheduled: number | null;
   emails?: EmailsView;
   settings?: SettingsView;
+  quiz?: QuizStatsView;
   tools: Tools;
   site: SiteInfo;
 }
@@ -251,9 +254,26 @@ function niceMax(cents: number): number {
 }
 
 function salesChart(days: Dashboard["days"]): string {
+  return barChart(
+    days.map((d) => ({ label: d.label, value: d.cents, tip: `${d.label} · ${d.count ? `${plural(d.count, "commande")} · ${formatPrice(d.cents)}` : "aucune vente"}` })),
+    niceMax(Math.max(...days.map((d) => d.cents))),
+    euroShort,
+    "Ventes par jour sur 30 jours",
+  );
+}
+
+/** Maximum d'axe pour un nombre entier, dont la moitié est aussi entière : 4, 10, 20, 40, 100… */
+function niceCount(n: number): number {
+  const v = Math.max(n, 4);
+  const pow = 10 ** Math.floor(Math.log10(v));
+  return [1, 2, 4, 10].find((m) => m * pow >= v)! * pow;
+}
+
+/** Histogramme à une série (barres arrondies, infobulle au survol). */
+function barChart(points: { label: string; value: number; tip: string }[], max: number, axis: (v: number) => string, aria: string): string {
+  const days = points;
   const W = 640, H = 220, padL = 58, padT = 12, padB = 34;
   const plotH = H - padT - padB;
-  const max = niceMax(Math.max(...days.map((d) => d.cents)));
   const slot = (W - padL) / days.length;
   const barW = Math.max(slot - 4, 2);
   const y = (c: number) => padT + plotH - (c / max) * plotH;
@@ -261,34 +281,34 @@ function salesChart(days: Dashboard["days"]): string {
   const grid = [0, 0.5, 1]
     .map((f) => {
       const yy = y(max * f);
-      return `<line x1="${padL}" x2="${W}" y1="${yy}" y2="${yy}" class="grid${f === 0 ? " grid--base" : ""}"/><text x="${padL - 10}" y="${yy + 5}" class="axis" text-anchor="end">${euroShort(max * f)}</text>`;
+      return `<line x1="${padL}" x2="${W}" y1="${yy}" y2="${yy}" class="grid${f === 0 ? " grid--base" : ""}"/><text x="${padL - 10}" y="${yy + 5}" class="axis" text-anchor="end">${axis(max * f)}</text>`;
     })
     .join("");
 
   const bars = days
     .map((d, i) => {
       const x = padL + i * slot + (slot - barW) / 2;
-      const h = (d.cents / max) * plotH;
+      const h = (d.value / max) * plotH;
       const base = padT + plotH;
       const r = Math.min(4, h, barW / 2);
       const bar =
         h > 0
           ? `<path class="bar" d="M${x},${base} V${base - h + r} Q${x},${base - h} ${x + r},${base - h} H${x + barW - r} Q${x + barW},${base - h} ${x + barW},${base - h + r} V${base} Z"/>`
           : "";
-      const tip = `${d.label} · ${d.count ? `${plural(d.count, "commande")} · ${formatPrice(d.cents)}` : "aucune vente"}`;
+      const tip = d.tip;
       return `<g class="col" data-tip="${esc(tip)}" tabindex="0"><rect class="hit" x="${padL + i * slot}" y="${padT}" width="${slot}" height="${plotH}"/>${bar}</g>`;
     })
     .join("");
 
   const labels = days
     .map((d, i) =>
-      i % 7 === 1 || i === days.length - 1
+      (days.length > 10 ? i % Math.ceil(days.length / 4.3) === 1 : true) || i === days.length - 1
         ? `<text x="${padL + i * slot + slot / 2}" y="${H - 8}" class="axis" text-anchor="${i === days.length - 1 ? "end" : "middle"}">${i === days.length - 1 ? "auj." : esc(d.label)}</text>`
         : "",
     )
     .join("");
 
-  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Ventes par jour sur 30 jours">${grid}${bars}${labels}</svg>`;
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(aria)}">${grid}${bars}${labels}</svg>`;
 }
 
 function dashboardSection(d: PageData): string {
@@ -359,6 +379,88 @@ function dashboardSection(d: PageData): string {
     <header class="card__head"><h2>Dernières commandes</h2><a href="/admin?vue=ventes" class="link">Tout voir →</a></header>
     ${recent}
   </section>`;
+}
+
+/* ---------- Quiz : statistiques ---------- */
+
+const pctOf = (n: number, of: number) => (of ? `${Math.round((n / of) * 100)} %` : "—");
+
+function hbars(rows: { name: string; value: number; label: string }[], max = Math.max(...rows.map((r) => r.value), 1)): string {
+  return `<ul class="hbars">${rows
+    .map(
+      (r) => `<li><span class="hbars__name">${esc(r.name)}</span><span class="hbars__val">${r.label}</span>
+      <span class="hbars__track"><span class="hbars__fill" style="width:${r.value ? Math.max((r.value / max) * 100, 2).toFixed(1) : 0}%"></span></span></li>`,
+    )
+    .join("")}</ul>`;
+}
+
+function quizSection(v: QuizStatsView): string {
+  const t = v.totals;
+  const period = `<nav class="seg seg--inline" aria-label="Période">${QUIZ_PERIODS.map((p) => `<a href="/admin?vue=quiz&p=${p}" class="${p === v.period ? "on" : ""}">${p} jours</a>`).join("")}</nav>`;
+  if (!t.start && !t.finish && !t.email) {
+    return `${v.error ? `<p class="msg msg--err" role="alert">${esc(v.error)}</p>` : ""}${period}
+    <p class="empty">Aucun quiz joué sur ${v.period} jours pour le moment.<br><span class="muted">Les statistiques démarrent avec cette version du site : chaque quiz lancé, terminé, chaque email et clic vers le pack sera compté ici.</span></p>`;
+  }
+  const themeRows = v.themes
+    .map(
+      (th) => `<tr><th scope="row"><span aria-hidden="true">${th.emoji}</span> ${esc(th.title)}</th>
+        <td data-l="Lancés">${th.counts.start}</td><td data-l="Terminés">${th.counts.finish}<span class="muted"> · ${pctOf(th.counts.finish, th.counts.start)}</span></td>
+        <td data-l="Emails">${th.counts.email}</td><td data-l="Score moyen">${th.avg === null ? "—" : `${th.avg} %`}</td></tr>`,
+    )
+    .join("");
+  const modeRow = (m: "flash" | "pros", label: string) => {
+    const c = v.modes[m];
+    return { name: label, value: c.start, label: `${c.start} lancés <span class="muted">· ${pctOf(c.finish, c.start)} terminés</span>` };
+  };
+
+  return `${v.error ? `<p class="msg msg--err" role="alert">${esc(v.error)}</p>` : ""}${period}
+  <section class="kpis" aria-label="Chiffres clés des quiz">
+    ${kpi("Quiz lancés", String(t.start), "", "kpi--hero")}
+    ${kpi("Quiz terminés", String(t.finish), `${pctOf(t.finish, t.start)} des quiz lancés`)}
+    ${kpi("Emails récupérés", String(t.email), `${pctOf(t.email, t.finish)} des quiz terminés`)}
+    ${kpi("Clics vers le pack", String(t.pack), `${pctOf(t.pack, t.finish)} des quiz terminés`)}
+  </section>
+
+  <section class="card">
+    <header class="card__head"><h2>Quiz lancés par jour</h2><span class="muted">${v.period} jours</span></header>
+    ${barChart(
+      v.days.map((d) => ({ label: d.label, value: d.start, tip: `${d.label} · ${plural(d.start, "lancé")} · ${plural(d.finish, "terminé")}` })),
+      niceCount(Math.max(...v.days.map((d) => d.start))),
+      (n) => String(Math.round(n)),
+      `Quiz lancés par jour sur ${v.period} jours`,
+    )}
+  </section>
+
+  <div class="cols">
+    <section class="card">
+      <header class="card__head"><h2>Parcours</h2><span class="muted">sur les quiz lancés</span></header>
+      ${hbars([
+        { name: "Quiz lancés", value: t.start, label: String(t.start) },
+        { name: "Quiz terminés", value: t.finish, label: `${t.finish} <span class="muted">· ${pctOf(t.finish, t.start)}</span>` },
+        { name: "Emails laissés", value: t.email, label: `${t.email} <span class="muted">· ${pctOf(t.email, t.start)}</span>` },
+        { name: "Clics vers le pack", value: t.pack, label: `${t.pack} <span class="muted">· ${pctOf(t.pack, t.start)}</span>` },
+      ])}
+      <p class="hint">« Défier » utilisé ${plural(t.share, "fois", "fois")}.</p>
+    </section>
+    <section class="card">
+      <header class="card__head"><h2>Scores</h2><span class="muted">moyenne ${v.avg === null ? "—" : `${v.avg} %`}</span></header>
+      ${hbars(v.scores.map((s) => ({ name: s.label, value: s.count, label: `${s.count} <span class="muted">· ${pctOf(s.count, t.finish)}</span>` })))}
+    </section>
+  </div>
+
+  <section class="card">
+    <header class="card__head"><h2>Par thème</h2></header>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th scope="col">Thème</th><th scope="col">Lancés</th><th scope="col">Terminés</th><th scope="col">Emails</th><th scope="col">Score moyen</th></tr></thead>
+      <tbody>${themeRows}</tbody>
+    </table></div>
+  </section>
+
+  <section class="card">
+    <header class="card__head"><h2>Flash ou Pros ?</h2></header>
+    ${hbars([modeRow("flash", "⚡ Flash Quiz"), modeRow("pros", "🏆 Quiz des Pros")])}
+  </section>
+  <p class="foot">Statistiques anonymes (aucune donnée personnelle) · un quiz rejoué compte comme un nouveau quiz lancé</p>`;
 }
 
 /* ---------- Emails (Resend), regroupés par contact ---------- */
@@ -528,7 +630,7 @@ function settingsSection(s: SettingsView, site: SiteInfo): string {
     <div class="danger-zone">
       <div>
         <strong>Repartir de zéro</strong>
-        <span class="muted">${s.resetAt ? `Compteurs remis à zéro le ${esc(dateTime(s.resetAt * 1000))} : ce qui précède est ignoré.` : "Ignore toutes les commandes et tous les emails créés jusqu'à maintenant."}</span>
+        <span class="muted">${s.resetAt ? `Compteurs remis à zéro le ${esc(dateTime(s.resetAt * 1000))} : ce qui précède est ignoré.` : "Ignore les commandes, emails et statistiques de quiz créés jusqu'à maintenant."}</span>
       </div>
       <div class="row">
         ${s.resetAt ? `<form method="post">${hiddenFields("reglages", "", { action: "reset", mode: "annuler" })}<button type="submit" class="btn btn--ghost">Annuler la remise à zéro</button></form>` : ""}
@@ -608,11 +710,12 @@ function toolsSection(t: Tools): string {
 
 /* ---------- Mise en page ---------- */
 
-type NavId = "accueil" | "commandes" | "emails" | "reglages" | "outils";
+type NavId = "accueil" | "quiz" | "commandes" | "emails" | "reglages" | "outils";
 const navOf = (t: Tab): NavId => (isOrderTab(t) ? "commandes" : (t as NavId));
 
 const HEADINGS: Record<NavId, [string, string]> = {
   accueil: ["Tableau de bord", ""],
+  quiz: ["Quiz", "Combien de quiz joués, terminés, et ce qu'ils rapportent"],
   commandes: ["Commandes", "Expédition, suivi et historique des ventes"],
   emails: ["Emails", "Séquences du quiz et envois programmés"],
   reglages: ["Réglages", "Interrupteurs du site et données de test"],
@@ -624,6 +727,7 @@ export function adminPage(d: PageData): string {
   const toShip = d.dashboard?.toShip ?? 0;
   const items: { id: NavId; href: string; label: string; icon: IconName; badge?: number | null }[] = [
     { id: "accueil", href: "/admin", label: "Accueil", icon: "home" },
+    { id: "quiz", href: "/admin?vue=quiz", label: "Quiz", icon: "chart" },
     { id: "commandes", href: `/admin?vue=${toShip ? "a-expedier" : "ventes"}`, label: "Commandes", icon: "box", badge: toShip || null },
     { id: "emails", href: "/admin?vue=emails", label: "Emails", icon: "mail", badge: d.scheduled || null },
     { id: "reglages", href: "/admin?vue=reglages", label: "Réglages", icon: "sliders" },
@@ -643,7 +747,9 @@ export function adminPage(d: PageData): string {
   const body =
     nav === "accueil"
       ? dashboardSection(d)
-      : nav === "commandes"
+      : nav === "quiz" && d.quiz
+        ? quizSection(d.quiz)
+        : nav === "commandes"
         ? ordersSection(d)
         : nav === "emails" && d.emails
           ? emailsSection(d.emails, d.tab)
@@ -693,6 +799,7 @@ function currentUrl(d: PageData): string {
   const p = new URLSearchParams();
   if (d.tab !== "accueil") p.set("vue", d.tab);
   if (d.q) p.set("q", d.q);
+  if (d.quiz && d.quiz.period !== 30) p.set("p", String(d.quiz.period));
   if (d.emails && d.emails.filter !== "en-cours") p.set("f", d.emails.filter);
   const s = p.toString();
   return `/admin${s ? `?${s}` : ""}`;
@@ -783,7 +890,7 @@ const CSS = `
   .side__site { margin-top:auto; padding:10px 12px; color:var(--soft); text-decoration:none; font-size:.88rem; font-weight:600; }
   .pill { display:inline-grid; place-items:center; min-width:20px; height:20px; padding:0 6px; border-radius:99px; background:var(--late); color:#fff; font-size:.7rem; font-weight:800; }
 
-  .tabbar { position:fixed; z-index:20; left:0; right:0; bottom:0; display:grid; grid-template-columns:repeat(5,1fr); padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+  .tabbar { position:fixed; z-index:20; left:0; right:0; bottom:0; display:grid; grid-template-columns:repeat(6,1fr); padding:6px 6px calc(6px + env(safe-area-inset-bottom));
     background:color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-top:1px solid var(--line); }
   .tab { position:relative; display:grid; justify-items:center; gap:2px; padding:6px 2px; border-radius:12px; text-decoration:none; color:var(--faint); font-size:.68rem; font-weight:700; }
   .tab .ico { width:22px; height:22px; }
@@ -848,6 +955,24 @@ const CSS = `
   .hbars__track { grid-column:1 / -1; height:8px; border-radius:99px; background:var(--bg); overflow:hidden; }
   .hbars__fill { display:block; height:100%; border-radius:99px; background:var(--p); }
 
+  .seg--inline { display:inline-flex; margin-bottom:12px; }
+  .seg--inline a { flex:0 0 auto; }
+  .table-wrap { overflow-x:auto; margin:0 -4px; }
+  .table { width:100%; border-collapse:collapse; font-size:.88rem; font-variant-numeric:tabular-nums; }
+  .table th, .table td { padding:9px 6px; text-align:right; border-top:1px solid var(--line); white-space:nowrap; }
+  .table thead th { border-top:0; font-size:.74rem; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:.03em; }
+  .table th:first-child { text-align:left; white-space:normal; }
+  .table tbody th { font-weight:600; }
+  @media (max-width:600px) {
+    .table thead { display:none; }
+    .table tr { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px 8px; padding:10px 4px; border-top:1px solid var(--line); }
+    .table tbody tr:first-child { border-top:0; }
+    .table th, .table td { border:0; padding:0; text-align:left; white-space:normal; }
+    .table tbody th { grid-column:1 / -1; }
+    .table td { display:grid; font-weight:700; }
+    .table td::before { content:attr(data-l); font-size:.7rem; font-weight:600; color:var(--faint); }
+    .table td .muted { font-size:.72rem; font-weight:500; }
+  }
   .facts { list-style:none; margin:0; padding:0; }
   .facts li { display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-top:1px solid var(--line); font-size:.9rem; }
   .facts li:first-child { border-top:0; padding-top:0; }

@@ -6,6 +6,11 @@ export interface R2BucketLike {
   get(key: string): Promise<{ body: ReadableStream; size: number } | null>;
   head(key: string): Promise<{ size: number } | null>;
   put(key: string, value: string, options?: { httpMetadata?: { contentType?: string } }): Promise<unknown>;
+  list(options: { prefix?: string; startAfter?: string; cursor?: string; limit?: number }): Promise<{
+    objects: { key: string }[];
+    truncated: boolean;
+    cursor?: string;
+  }>;
 }
 
 /** Variables et secrets du Worker (wrangler.jsonc "vars" + `wrangler secret put`). */

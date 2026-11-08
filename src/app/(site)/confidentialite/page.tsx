@@ -95,7 +95,8 @@ export default function PrivacyPage() {
               Aucun cookie publicitaire ni de mesure d&apos;audience. Seuls les éléments strictement nécessaires au paiement sécurisé
               sont utilisés. Nous mesurons la fréquentation du site avec Cloudflare Web Analytics, de façon anonyme et sans cookie
               (pages vues, pays, type d&apos;appareil). Si tu arrives sur le site par un lien de nos réseaux, le nom du réseau
-              (ex. « tiktok ») est enregistré avec ta commande, sans aucune autre information.
+              (ex. « tiktok ») est enregistré avec ta commande, sans aucune autre information. Les quiz comptent de façon anonyme les
+              parties lancées et terminées (thème, format, score), sans cookie ni donnée personnelle.
             </p>
           ),
         },

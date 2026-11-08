@@ -33,6 +33,18 @@ function draw(all: QuizQuestion[], n: number): DrawnQuestion[] {
     });
 }
 
+/** Statistiques anonymes (aucune donnée personnelle) : quiz lancé, terminé, clic vers le pack, défi. */
+function track(event: "start" | "finish" | "pack" | "share", theme: string, mode: QuizMode, pct?: number) {
+  try {
+    const body = JSON.stringify({ event, theme, mode, ...(pct === undefined ? {} : { pct }) });
+    if (!navigator.sendBeacon?.("/api/quiz-stat", new Blob([body], { type: "application/json" }))) {
+      void fetch("/api/quiz-stat", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
+    }
+  } catch {
+    /* statistiques facultatives */
+  }
+}
+
 const isMode = (v: unknown): v is QuizMode => v === "flash" || v === "pros";
 const LETTERS = ["A", "B", "C", "D"];
 const MODE_EMOJI: Record<QuizMode, string> = { flash: "⚡", pros: "🏆" };
@@ -106,6 +118,7 @@ export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCa
     setBestStreak(0);
     setStartedAt(Date.now());
     setDone(false);
+    track("start", theme.slug, m);
     requestAnimationFrame(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
 
@@ -181,6 +194,7 @@ export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCa
     if (index + 1 >= total) {
       setElapsed(Date.now() - startedAt);
       setDone(true);
+      track("finish", theme.slug, mode, (results.filter(Boolean).length / total) * 100);
       requestAnimationFrame(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
     } else {
       setIndex(index + 1);
@@ -279,6 +293,7 @@ function Result({
   const C = 2 * Math.PI * R;
 
   const challenge = async () => {
+    track("share", theme.slug, mode);
     const url = `${window.location.origin}/quiz/${theme.slug}?mode=${mode}`;
     const text = `J'ai eu ${score}/${total} au ${label} « ${theme.title} » de La Petite IDE. Tu fais mieux ? 👀`;
     try {
@@ -320,7 +335,7 @@ function Result({
       {emailCapture ? <QuizEmailCapture theme={theme.slug} mode={mode} answers={answers} /> : null}
 
       {pack ? (
-        <Link href={`/${pack.slug}?src=quiz`} className="qz-pack">
+        <Link href={`/${pack.slug}?src=quiz`} className="qz-pack" onClick={() => track("pack", theme.slug, mode)}>
           <span className="qz-pack__shine" aria-hidden="true" />
           {pack.images ? (
             // eslint-disable-next-line @next/next/no-img-element

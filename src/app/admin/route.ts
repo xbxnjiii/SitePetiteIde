@@ -15,6 +15,8 @@ import { lastMonths, monthBounds, ordersCsv } from "./export";
 import { BIO_ITEMS, type BioKey, MAX_LINKS, type Settings, applySettings, cleanLinkUrl, getSettings, saveSettings } from "@/lib/settings";
 import { cancelEmails, listEmails } from "./emails";
 import { PREVIEW_COUNT, sendAllPreviews } from "./preview-emails";
+import { QUIZ_PERIODS, type QuizPeriod, type QuizStatsView, buildQuizStats } from "./quizstats";
+import { listQuizEvents } from "@/lib/quiz-stats";
 import { type AdminEmail } from "./emails";
 import { type EmailsView, ORDER_TABS, type OrderTab, type SiteInfo, TABS, type Tab, adminPage } from "./view";
 
@@ -96,6 +98,19 @@ export async function GET(request: Request) {
     }
   }
 
+  // Quiz : événements anonymes (hors période « Repartir de zéro »).
+  let quiz: QuizStatsView | undefined;
+  if (tab === "quiz") {
+    const period: QuizPeriod = QUIZ_PERIODS.find((p) => String(p) === url.searchParams.get("p")) ?? 30;
+    try {
+      const hits = await listQuizEvents(env, period);
+      quiz = buildQuizStats(settings.resetAt === null ? hits : hits.filter((h) => h.ts / 1000 > settings.resetAt!), period);
+    } catch (err) {
+      console.error("admin: stats quiz", err instanceof Error ? err.message : err);
+      quiz = buildQuizStats([], period, "Les statistiques des quiz n'ont pas pu être lues. Réessaie dans un instant.");
+    }
+  }
+
   const ok = url.searchParams.get("ok");
   const error = url.searchParams.get("erreur");
   return html(
@@ -110,6 +125,7 @@ export async function GET(request: Request) {
       error: loadError ?? (error ? errorMessage(error) : null),
       tools: { packs: publishedPacks().map((p) => ({ slug: p.slug, name: p.name })), months: lastMonths(), testTo: notifyTo(env), previewCount: PREVIEW_COUNT },
       emails,
+      quiz,
       settings:
         tab === "reglages"
           ? {
