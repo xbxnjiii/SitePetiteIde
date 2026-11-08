@@ -282,6 +282,8 @@ export interface PrintOrderNotice {
   deliverable: boolean;
   adminUrl: string;
   sessionId: string;
+  /** Destinataire (défaut : ORDERS_NOTIFY_TO). Utilisé pour l'aperçu des emails. */
+  to?: string;
 }
 
 /** Alerte envoyée à La Petite IDE : une commande papier est à préparer. */
@@ -305,7 +307,7 @@ export async function sendPrintOrderNotice(env: AppEnv, n: PrintOrderNotice): Pr
     `Commandes à expédier : ${n.adminUrl}`,
   ].join("\n");
   await sendEmail(env, {
-    to: env.ORDERS_NOTIFY_TO ?? env.EMAIL_REPLY_TO ?? SITE.contactEmail,
+    to: n.to ?? env.ORDERS_NOTIFY_TO ?? env.EMAIL_REPLY_TO ?? SITE.contactEmail,
     replyTo: n.customerEmail,
     subject: `${n.deliverable ? "📦" : "⚠️"} Commande papier à préparer · ${n.reference}`,
     html,

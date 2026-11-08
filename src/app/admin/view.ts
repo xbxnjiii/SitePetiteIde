@@ -65,6 +65,8 @@ export interface Tools {
   months: { value: string; label: string }[];
   /** Adresse qui reçoit l'email de test. */
   testTo: string;
+  /** Nombre d'emails envoyés par « Aperçu des emails ». */
+  previewCount: number;
 }
 
 export interface SettingsView {
@@ -584,6 +586,17 @@ function toolsSection(t: Tools): string {
   </section>
 
   <section class="card">
+    <header class="card__head"><h2>📬 Aperçu des emails</h2></header>
+    <p class="muted">Reçois un exemple de chacun des ${t.previewCount} emails du site (commande numérique et papier, alerte papier, colis expédié,
+      retrouver mon achat, mise à jour, et les 3 emails du quiz), avec une fausse commande « LPI-EXEMPLE ». Aucun client n'est concerné.</p>
+    <form method="post" class="row" data-confirm="Envoyer les ${t.previewCount} emails d'exemple ?">
+      ${hiddenFields("outils", "", { action: "apercu-emails" })}
+      <input type="email" name="to" required value="${esc(t.testTo)}" aria-label="Adresse qui reçoit les exemples" class="row__grow">
+      <button type="submit" class="btn">Envoyer</button>
+    </form>
+  </section>
+
+  <section class="card">
     <header class="card__head"><h2>🔗 Liens utiles</h2></header>
     <ul class="links">
       <li><a href="https://dashboard.stripe.com/payments" target="_blank" rel="noreferrer"><strong>Stripe</strong><span class="muted">Paiements, remboursements, codes promo</span>${icon("external")}</a></li>
@@ -914,6 +927,7 @@ const CSS = `
   button:disabled, .busy { opacity:.6; cursor:progress; }
   .row { display:flex; flex-wrap:wrap; gap:8px; }
   .row form { margin:0; }
+  .row__grow { flex:1 1 200px; min-width:0; padding:10px 12px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface); }
   .stack { display:grid; gap:12px; }
   .stack label { display:grid; gap:6px; font-weight:600; font-size:.9rem; }
   .stack label .muted { font-weight:400; }

@@ -14,6 +14,7 @@ import { labelsPage } from "./labels";
 import { lastMonths, monthBounds, ordersCsv } from "./export";
 import { BIO_ITEMS, type BioKey, MAX_LINKS, type Settings, applySettings, cleanLinkUrl, getSettings, saveSettings } from "@/lib/settings";
 import { cancelEmails, listEmails } from "./emails";
+import { PREVIEW_COUNT, sendAllPreviews } from "./preview-emails";
 import { type AdminEmail } from "./emails";
 import { type EmailsView, ORDER_TABS, type OrderTab, type SiteInfo, TABS, type Tab, adminPage } from "./view";
 
@@ -107,7 +108,7 @@ export async function GET(request: Request) {
       scheduled,
       notice: noticeFor(ok, url.searchParams.get("n")),
       error: loadError ?? (error ? errorMessage(error) : null),
-      tools: { packs: publishedPacks().map((p) => ({ slug: p.slug, name: p.name })), months: lastMonths(), testTo: notifyTo(env) },
+      tools: { packs: publishedPacks().map((p) => ({ slug: p.slug, name: p.name })), months: lastMonths(), testTo: notifyTo(env), previewCount: PREVIEW_COUNT },
       emails,
       settings:
         tab === "reglages"
@@ -161,6 +162,18 @@ export async function POST(request: Request) {
   if (action === "maj") return sendUpdate(env, form, back);
   if (action === "reglage") return updateSetting(env, form, back);
   if (action === "lien") return linkAction(env, form, back);
+  if (action === "apercu-emails") {
+    const to = String(form?.get("to") ?? "").trim().toLowerCase();
+    if (!/^[^\s@]{1,64}@[^\s@]{1,190}\.[a-z]{2,}$/i.test(to)) return back("erreur=adresse");
+    try {
+      const n = await sendAllPreviews(env, to);
+      console.log("admin: aperçu des emails envoyé", n);
+      return back(`ok=apercu&n=${n}`);
+    } catch (err) {
+      console.error("admin: aperçu des emails", err instanceof Error ? err.message : err);
+      return back("erreur=apercu");
+    }
+  }
   if (["masquer", "restaurer", "reset", "restaurer-tout"].includes(action)) return trashAction(env, action, form, back);
   if (action === "annuler-email" || action === "annuler-contact") {
     const f = String(form?.get("f") ?? "en-cours");
@@ -216,6 +229,7 @@ function noticeFor(ok: string | null, n: string | null): string | null {
   if (ok === "annulee") return "Commande remise dans « À expédier ».";
   if (ok === "maj") return `Mise à jour envoyée à ${Number(n) || 0} acheteur(s) ✅`;
   if (ok === "emails-annules") return `${Number(n) || 0} envoi(s) programmé(s) annulé(s) ✅`;
+  if (ok === "apercu") return `${Number(n) || 0} emails d'exemple envoyés ✅ Regarde ta boîte (et les spams).`;
   if (ok === "lien-ajoute") return "Bouton ajouté à la page de liens ✅";
   if (ok === "lien-supprime") return "Bouton supprimé.";
   if (ok === "masque") return "Supprimé de l'admin ✅ (restaurable)";
@@ -423,6 +437,8 @@ const errorMessage = (code: string) =>
     email: "Email introuvable ou déjà parti.",
     annulation: "Resend n'a pas pu annuler l'envoi (déjà parti ?). Actualise la page.",
     reglage: "Le réglage n'a pas pu être enregistré. Réessaie.",
+    adresse: "Adresse email invalide.",
+    apercu: "L'envoi des exemples s'est arrêté (Resend). Les premiers sont peut-être partis : réessaie dans une minute.",
     lien: "Bouton invalide : un texte et une adresse en https://, mailto: ou /page du site.",
     "liens-max": `Maximum ${MAX_LINKS} boutons : supprimes-en un d'abord.`,
     reset: "Cette commande date d'avant la remise à zéro : annule la remise à zéro (Réglages) pour la retrouver.",
