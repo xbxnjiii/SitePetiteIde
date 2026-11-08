@@ -53,6 +53,7 @@ export default async function BioPage() {
             <PackQuizBlock pack={packs[0] ?? publishedPacks()[0]} variant={BLOCK_VARIANT} showPack={packs.length > 0} showQuiz={show.quiz} />
           ) : packs.length > 1 ? (
             <>
+              {show.quiz ? <QuizCta className="bio__quiz" /> : null}
               <ul className="bio__list">
                 {packs.map((p) => (
                   <li key={p.slug}>
@@ -74,7 +75,6 @@ export default async function BioPage() {
                   </li>
                 ))}
               </ul>
-              {show.quiz ? <QuizCta className="bio__quiz" /> : null}
             </>
           ) : null}
           {links.length ? (
