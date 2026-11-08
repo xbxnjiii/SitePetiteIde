@@ -106,6 +106,7 @@ export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCa
   const [done, setDone] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
 
+
   const start = (m: QuizMode) => {
     // Tirage côté navigateur uniquement (évite un écart entre le rendu serveur et le navigateur).
     setMode(m);
@@ -209,7 +210,7 @@ export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCa
 
   return (
     <div className="qz" ref={topRef}>
-      <div className={answered ? "qz-play qz-play--answered" : "qz-play"}>
+      <div className="qz-play">
         <div className="qz-bar">
           <button type="button" className="qz-bar__quit" onClick={quit} aria-label="Quitter le quiz">
             <Icon name="close" />

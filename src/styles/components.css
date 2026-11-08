@@ -989,5 +989,25 @@ img.bio__avatar { width: 128px; height: 128px; }
 }
 .qz-feedback__text { font-size: 0.88rem; line-height: 1.45; }
 .qz-feedback__btn { min-height: 50px; }
-.qz-play--answered { padding-bottom: 230px; }
 @keyframes qz-sheet { from { opacity: 0; transform: translate(-50%, 20px); } }
+
+/* ===== Navigateur intégré (TikTok, Instagram…) : inviter à ouvrir le vrai navigateur ===== */
+.inapp {
+  position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 20px 16px;
+  background: linear-gradient(160deg, #e6eefb 0%, #fdf1f6 100%); overflow-y: auto; animation: fade-in 0.2s;
+}
+.inapp__card { width: 100%; max-width: 400px; display: grid; justify-items: center; gap: 12px; text-align: center; }
+.inapp__logo { width: 84px; height: 84px; border-radius: 50%; box-shadow: 0 8px 22px rgb(78 122 199 / 25%); }
+.inapp h2 { margin: 0; font-size: 1.4rem; line-height: 1.2; }
+.inapp__text { margin: 0; color: var(--c-ink-soft); font-size: 0.95rem; line-height: 1.45; }
+.inapp__btn { width: 100%; min-height: 54px; font-size: 1.05rem; margin-top: 4px; }
+.inapp__steps {
+  width: 100%; margin: 4px 0 0; padding: 12px 14px 12px 34px; text-align: left; background: #fff; border-radius: 18px;
+  border: 1px solid var(--c-line); font-size: 0.92rem; line-height: 1.5; display: grid; gap: 4px;
+}
+.inapp__key { display: inline-grid; place-items: center; min-width: 28px; height: 22px; padding: 0 6px; border-radius: 7px; background: var(--c-primary-50); color: var(--c-primary-dark); }
+.inapp__copy {
+  width: 100%; min-height: 48px; border-radius: 16px; border: 1.5px solid var(--c-primary-light); background: #fff; cursor: pointer;
+  font: inherit; font-weight: 700; color: var(--c-primary-dark);
+}
+.inapp__stay { border: 0; background: none; padding: 6px; font: inherit; font-size: 0.85rem; color: var(--c-ink-soft); text-decoration: underline; cursor: pointer; }

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fredoka, Inter, Nunito_Sans } from "next/font/google";
+import { InAppBrowserGate } from "@/components/layout/InAppBrowserGate";
 import { CF_WEB_ANALYTICS_TOKEN, IS_LIVE, SITE } from "@/lib/format";
 import "@/styles/tokens.css";
 import "@/styles/base.css";
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <a href="#contenu" className="skip-link">Aller au contenu</a>
         {children}
+        <InAppBrowserGate />
         {CF_WEB_ANALYTICS_TOKEN ? (
           <script
             defer
