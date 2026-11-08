@@ -2,6 +2,7 @@ import { formatPrice } from "@/lib/format";
 import type { Dashboard } from "./dashboard";
 import { type AdminOrder, statusOf } from "./data";
 import type { AdminEmail } from "./emails";
+import type { BioLink } from "@/lib/settings";
 
 // Rendu HTML de la page /admin (pas de React : une page légère, rendue côté serveur).
 // Navigation : barre latérale sur ordinateur, barre d'onglets en bas sur mobile.
@@ -73,6 +74,8 @@ export interface SettingsView {
   hiddenOrders: number;
   hiddenEmails: number;
   resetAt: number | null;
+  bio: { key: string; label: string; help: string; on: boolean }[];
+  links: BioLink[];
 }
 
 export interface SiteInfo {
@@ -460,9 +463,51 @@ function toggle(name: string, value: string, on: boolean, title: string, help: s
     </form>`;
 }
 
+function bioSection(s: SettingsView, site: SiteInfo): string {
+  const linkForm = (l: BioLink, op: string, label: string, cls = "link", confirmMsg = "") =>
+    `<form method="post"${confirmMsg ? ` data-confirm="${esc(confirmMsg)}"` : ""}>${hiddenFields("reglages", "", { action: "lien", op, id: l.id })}<button type="submit" class="${cls}" aria-label="${esc(label)}" title="${esc(label)}">${label === "Monter" ? "↑" : label === "Descendre" ? "↓" : esc(label)}</button></form>`;
+  const custom = s.links
+    .map(
+      (l, i) => `<div class="custom-link">
+        ${toggle(`lien:${l.id}`, "", l.on, `${l.emoji ? `${l.emoji} ` : ""}${l.label}`, l.url)}
+        <div class="custom-link__tools">
+          ${i > 0 ? linkForm(l, "monter", "Monter", "mini") : ""}
+          ${i < s.links.length - 1 ? linkForm(l, "descendre", "Descendre", "mini") : ""}
+          ${linkForm(l, "suppr", "Supprimer", "link link--danger", `Supprimer le bouton « ${l.label} » ?`)}
+        </div>
+      </div>`,
+    )
+    .join("");
+  return `<section class="card" id="page-de-liens">
+    <header class="card__head"><h2>🔗 Page de liens</h2><a class="link" href="${esc(site.url)}/" target="_blank" rel="noreferrer">Voir la page ${icon("external", "ico ico--sm")}</a></header>
+    <p class="muted">Ce qui s'affiche sur la page d'accueil (le lien de ta bio). Effet en moins d'une minute.</p>
+    ${s.bio.map((b) => toggle(`bio:${b.key}`, "", b.on, b.label, b.help)).join("")}
+  </section>
+
+  <section class="card">
+    <header class="card__head"><h2>➕ Boutons personnalisés</h2><span class="muted">${s.links.length}/10</span></header>
+    <p class="muted">Ajoute tes propres boutons (vidéo YouTube, live, collab, formulaire…). Ils s'affichent sous les packs, dans cet ordre.</p>
+    ${custom || `<p class="empty empty--sm">Aucun bouton pour l'instant.</p>`}
+    <details class="add-link"${s.links.length ? "" : " open"}>
+      <summary class="btn btn--ghost">+ Ajouter un bouton</summary>
+      <form method="post" class="stack">
+        ${hiddenFields("reglages", "", { action: "lien", op: "ajout" })}
+        <div class="add-link__row">
+          <label>Emoji <input name="emoji" maxlength="8" placeholder="🎥" autocomplete="off"></label>
+          <label>Texte du bouton <input name="label" required maxlength="60" placeholder="Ma dernière vidéo" autocomplete="off"></label>
+        </div>
+        <label>Adresse <input name="url" required maxlength="500" placeholder="https://… ou /quiz" inputmode="url" autocomplete="off"></label>
+        <button type="submit" class="btn">Ajouter</button>
+      </form>
+    </details>
+  </section>`;
+}
+
 function settingsSection(s: SettingsView, site: SiteInfo): string {
   const trash = s.hiddenOrders + s.hiddenEmails;
-  return `<section class="card">
+  return `${bioSection(s, site)}
+
+  <section class="card">
     <header class="card__head"><h2>📦 Version papier</h2></header>
     <p class="muted">Sur O : le choix « Papier » disparaît de la page du pack et de la FAQ, et le paiement papier est refusé. Effet en moins d'une minute.</p>
     ${s.print.length ? s.print.map((p) => toggle("papier", p.slug, p.on, p.name, p.on ? "En vente en papier" : "Numérique uniquement")).join("") : `<p class="muted">Aucun pack n'a de version papier.</p>`}
@@ -885,6 +930,21 @@ const CSS = `
   .switch__knob { position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:#fff; color:#5B6784; font-weight:800; font-size:.8rem; display:grid; place-items:center; box-shadow:0 1px 3px rgb(0 0 0 / 25%); transition:left .2s; }
   .switch--on .switch__knob { left:33px; color:#2F8F6B; }
 
+  .custom-link { border-top:1px solid var(--line); }
+  .custom-link .switch-row { border-top:0; padding-bottom:4px; }
+  .custom-link .switch-row__text .muted { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .custom-link__tools { display:flex; gap:6px; align-items:center; justify-content:flex-end; padding-bottom:10px; font-size:.82rem; }
+  .custom-link__tools form { margin:0; }
+  .custom-link__tools .link--danger { margin-left:8px; }
+  .mini { width:30px; height:30px; border-radius:9px; border:1.5px solid var(--line); background:var(--surface); color:var(--soft); font-weight:800; }
+  .mini:hover { color:var(--p); border-color:var(--p); }
+  .empty--sm { padding:14px; font-size:.88rem; margin-bottom:12px; }
+  .add-link { margin-top:12px; }
+  .add-link summary { list-style:none; width:100%; }
+  .add-link summary::-webkit-details-marker { display:none; }
+  .add-link[open] summary { display:none; }
+  .add-link__row { display:grid; grid-template-columns:90px minmax(0,1fr); gap:10px; }
+  .stack input { padding:10px 12px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface); font-weight:400; min-width:0; }
   .danger-zone { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px 16px; padding:12px 0; border-top:1px solid var(--line); }
   .danger-zone > div:first-child { display:grid; gap:2px; flex:1 1 240px; }
 

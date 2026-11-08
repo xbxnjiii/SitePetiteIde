@@ -14,9 +14,68 @@ export interface Settings {
   hidden: { orders: string[]; emails: string[] };
   /** « Repartir de zéro » : tout ce qui a été créé avant cette date (secondes Unix) est ignoré dans /admin. */
   resetAt: number | null;
+  /** Éléments de la page de liens (accueil) : affichés ou masqués. */
+  bio: Record<BioKey, boolean>;
+  /** Boutons ajoutés à la page de liens, dans l'ordre d'affichage. */
+  links: BioLink[];
 }
 
-export const DEFAULT_SETTINGS: Settings = { print: {}, quizEmails: true, hidden: { orders: [], emails: [] }, resetAt: null };
+/** Éléments de la page de liens que l'on peut afficher / masquer depuis /admin. */
+export const BIO_ITEMS = [
+  { key: "offer", label: "Bandeau de l'offre", help: "Code promo en haut de page (pendant une offre)" },
+  { key: "slogan", label: "Slogan", help: "« Les soins, simplement. »" },
+  { key: "tagline", label: "Phrase d'accroche", help: "« Fiches mémo pour étudiants infirmiers 💙 »" },
+  { key: "tiktok", label: "Icône TikTok", help: "Réseaux sous le logo" },
+  { key: "instagram", label: "Icône Instagram", help: "Réseaux sous le logo" },
+  { key: "mail", label: "Icône email", help: "Réseaux sous le logo" },
+  { key: "packs", label: "Pack(s) en vente", help: "Le gros bouton vers la page du pack" },
+  { key: "quiz", label: "Bouton « Quiz gratuits »", help: "Lien vers les quiz" },
+  { key: "soon", label: "« D'autres packs arrivent bientôt »", help: "Encart avec la mascotte" },
+  { key: "tip", label: "Soutien (1, 2 ou 5 €)", help: "Bloc en bas de page" },
+] as const;
+export type BioKey = (typeof BIO_ITEMS)[number]["key"];
+
+export interface BioLink {
+  id: string;
+  label: string;
+  url: string;
+  emoji: string;
+  on: boolean;
+}
+export const MAX_LINKS = 10;
+
+const DEFAULT_BIO = Object.fromEntries(BIO_ITEMS.map((i) => [i.key, true])) as Record<BioKey, boolean>;
+
+export const DEFAULT_SETTINGS: Settings = {
+  print: {},
+  quizEmails: true,
+  hidden: { orders: [], emails: [] },
+  resetAt: null,
+  bio: DEFAULT_BIO,
+  links: [],
+};
+
+/** Adresse autorisée pour un bouton : https://…, mailto:… ou une page du site (/…). */
+export function cleanLinkUrl(v: string): string | null {
+  const url = v.trim();
+  if (/^\/(?!\/)[^\s]{0,300}$/.test(url)) return url;
+  if (/^mailto:[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(url)) return url;
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && url.length <= 500 ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+function parseLinks(v: unknown): BioLink[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((l): l is BioLink => l && typeof l.id === "string" && typeof l.label === "string" && typeof l.url === "string")
+    .filter((l) => cleanLinkUrl(l.url) !== null)
+    .slice(0, MAX_LINKS)
+    .map((l) => ({ id: l.id, label: l.label.slice(0, 60), url: l.url, emoji: typeof l.emoji === "string" ? l.emoji.slice(0, 8) : "", on: l.on !== false }));
+}
 
 const MAX_HIDDEN = 3000;
 const ids = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").slice(-MAX_HIDDEN) : []);
@@ -39,6 +98,8 @@ export async function getSettings(env: AppEnv): Promise<Settings> {
         quizEmails: raw.quizEmails !== false,
         hidden: { orders: ids(raw.hidden?.orders), emails: ids(raw.hidden?.emails) },
         resetAt: typeof raw.resetAt === "number" ? raw.resetAt : null,
+        bio: Object.fromEntries(BIO_ITEMS.map((i) => [i.key, raw.bio?.[i.key] !== false])) as Record<BioKey, boolean>,
+        links: parseLinks(raw.links),
       };
     }
   } catch (err) {

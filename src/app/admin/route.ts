@@ -12,7 +12,7 @@ import { type AdminOrder, SHIPPED_AT, TRACKING, listOrders, listOrdersBetween, l
 import { buildDashboard } from "./dashboard";
 import { labelsPage } from "./labels";
 import { lastMonths, monthBounds, ordersCsv } from "./export";
-import { type Settings, applySettings, getSettings, saveSettings } from "@/lib/settings";
+import { BIO_ITEMS, type BioKey, MAX_LINKS, type Settings, applySettings, cleanLinkUrl, getSettings, saveSettings } from "@/lib/settings";
 import { cancelEmails, listEmails } from "./emails";
 import { type AdminEmail } from "./emails";
 import { type EmailsView, ORDER_TABS, type OrderTab, type SiteInfo, TABS, type Tab, adminPage } from "./view";
@@ -119,6 +119,8 @@ export async function GET(request: Request) {
               hiddenOrders: all.filter(trashed).length,
               hiddenEmails: settings.hidden.emails.length,
               resetAt: settings.resetAt,
+              bio: BIO_ITEMS.map((i) => ({ ...i, on: settings.bio[i.key] })),
+              links: settings.links,
             }
           : undefined,
       site: siteInfo(env),
@@ -158,6 +160,7 @@ export async function POST(request: Request) {
 
   if (action === "maj") return sendUpdate(env, form, back);
   if (action === "reglage") return updateSetting(env, form, back);
+  if (action === "lien") return linkAction(env, form, back);
   if (["masquer", "restaurer", "reset", "restaurer-tout"].includes(action)) return trashAction(env, action, form, back);
   if (action === "annuler-email" || action === "annuler-contact") {
     const f = String(form?.get("f") ?? "en-cours");
@@ -213,6 +216,8 @@ function noticeFor(ok: string | null, n: string | null): string | null {
   if (ok === "annulee") return "Commande remise dans « À expédier ».";
   if (ok === "maj") return `Mise à jour envoyée à ${Number(n) || 0} acheteur(s) ✅`;
   if (ok === "emails-annules") return `${Number(n) || 0} envoi(s) programmé(s) annulé(s) ✅`;
+  if (ok === "lien-ajoute") return "Bouton ajouté à la page de liens ✅";
+  if (ok === "lien-supprime") return "Bouton supprimé.";
   if (ok === "masque") return "Supprimé de l'admin ✅ (restaurable)";
   if (ok === "restaure") return "Restauré ✅";
   if (ok === "reset") return "Compteurs remis à zéro ✅";
@@ -287,12 +292,46 @@ async function updateSetting(env: AppEnv, form: FormData | null, back: (params: 
       next.print[slug] = on;
     } else if (key === "quiz-emails") {
       next.quizEmails = on;
+    } else if (key.startsWith("bio:") && BIO_ITEMS.some((i) => `bio:${i.key}` === key)) {
+      next.bio = { ...current.bio, [key.slice(4) as BioKey]: on };
+    } else if (key.startsWith("lien:") && current.links.some((l) => `lien:${l.id}` === key)) {
+      next.links = current.links.map((l) => (`lien:${l.id}` === key ? { ...l, on } : l));
     } else return back("erreur=reglage");
     await saveSettings(env, next);
     console.log("admin: réglage", key, form?.get("pack") ?? "", on ? "activé" : "désactivé");
     return back("ok=reglage");
   } catch (err) {
     console.error("admin: réglage", err instanceof Error ? err.message : err);
+    return back("erreur=reglage");
+  }
+}
+
+/** Boutons personnalisés de la page de liens : ajout, suppression, ordre. */
+async function linkAction(env: AppEnv, form: FormData | null, back: (params: string) => Response): Promise<Response> {
+  const op = String(form?.get("op") ?? "");
+  const id = String(form?.get("id") ?? "");
+  try {
+    const s = await getSettings(env);
+    let links = [...s.links];
+    if (op === "ajout") {
+      const label = String(form?.get("label") ?? "").trim().slice(0, 60);
+      const emoji = String(form?.get("emoji") ?? "").trim().slice(0, 8);
+      const url = cleanLinkUrl(String(form?.get("url") ?? ""));
+      if (!label || !url) return back("erreur=lien");
+      if (links.length >= MAX_LINKS) return back("erreur=liens-max");
+      links.push({ id: crypto.randomUUID().slice(0, 8), label, url, emoji, on: true });
+    } else {
+      const i = links.findIndex((l) => l.id === id);
+      if (i < 0) return back("erreur=reglage");
+      if (op === "suppr") links.splice(i, 1);
+      else if (op === "monter" && i > 0) [links[i - 1], links[i]] = [links[i], links[i - 1]];
+      else if (op === "descendre" && i < links.length - 1) [links[i + 1], links[i]] = [links[i], links[i + 1]];
+    }
+    await saveSettings(env, { ...s, links });
+    console.log("admin: lien", op, id);
+    return back(op === "ajout" ? "ok=lien-ajoute" : op === "suppr" ? "ok=lien-supprime" : "ok=reglage");
+  } catch (err) {
+    console.error("admin: lien", err instanceof Error ? err.message : err);
     return back("erreur=reglage");
   }
 }
@@ -384,6 +423,8 @@ const errorMessage = (code: string) =>
     email: "Email introuvable ou déjà parti.",
     annulation: "Resend n'a pas pu annuler l'envoi (déjà parti ?). Actualise la page.",
     reglage: "Le réglage n'a pas pu être enregistré. Réessaie.",
+    lien: "Bouton invalide : un texte et une adresse en https://, mailto: ou /page du site.",
+    "liens-max": `Maximum ${MAX_LINKS} boutons : supprimes-en un d'abord.`,
     reset: "Cette commande date d'avant la remise à zéro : annule la remise à zéro (Réglages) pour la retrouver.",
     maj: "L'envoi de la mise à jour a échoué. Réessaie (les emails déjà partis ne seront pas renvoyés).",
   })[code] ?? "Une erreur est survenue.";
