@@ -50,16 +50,6 @@ export function InAppBrowserGate() {
 
   const url = typeof window !== "undefined" ? window.location.href : "https://lapetiteide.fr/";
 
-  const open = () => {
-    if (ios) {
-      // iOS récent : ouvre Safari depuis la plupart des applis. Sinon, les étapes affichées prennent le relais.
-      window.location.href = `x-safari-${url}`;
-    } else {
-      const u = new URL(url);
-      window.location.href = `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=https;S.browser_fallback_url=${encodeURIComponent(url)};end`;
-    }
-  };
-
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(url);
@@ -91,10 +81,6 @@ export function InAppBrowserGate() {
           fonctionne 💙
         </p>
 
-        <button type="button" className="btn btn--primary inapp__btn" onClick={open}>
-          Ouvrir dans {ios ? "Safari" : "mon navigateur"}
-        </button>
-
         <ol className="inapp__steps">
           <li>
             Appuie sur <b className="inapp__key">⋯</b> en haut à droite
@@ -107,8 +93,15 @@ export function InAppBrowserGate() {
         <button type="button" className="inapp__copy" onClick={copy}>
           {copied ? "Lien copié ✓ colle-le dans ton navigateur" : "Copier le lien"}
         </button>
+        <div className="inapp__or" aria-hidden="true">
+          <span>ou</span>
+        </div>
         <button type="button" className="inapp__stay" onClick={stay}>
-          Continuer ici quand même
+          <span className="inapp__stay-text">
+            <strong>Continuer ici</strong>
+            <span>Rester dans {APP_NAME[app]}</span>
+          </span>
+          <span className="inapp__stay-go" aria-hidden="true">→</span>
         </button>
       </div>
     </div>
