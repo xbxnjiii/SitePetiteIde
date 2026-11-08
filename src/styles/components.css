@@ -939,3 +939,7 @@ img.bio__avatar { width: 128px; height: 128px; }
 
 /* ===== Liste des quiz : message sous la liste ============================ */
 .qz-more { margin: 14px 0 0; text-align: center; font-size: 0.9rem; color: var(--c-ink-soft); }
+
+/* Fin de quiz : l'accroche en grand, le nom du pack en petit */
+.qz-pack__hook { font-family: var(--font-title); font-size: 1.12rem; font-weight: 800; line-height: 1.2; color: var(--c-ink); }
+.qz-pack__name { font-size: 0.8rem; font-weight: 700; color: var(--c-accent-dark); line-height: 1.3; }

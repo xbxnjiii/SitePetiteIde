@@ -526,15 +526,21 @@ function emailsSection(v: EmailsView, tab: Tab): string {
           </li>`;
         })
         .join("");
-      return `<article class="card contact">
-        <header><div><strong>${esc(c.to)}</strong> <span class="badge badge--${state[1]}">${esc(state[0])}</span></div></header>
+      const next = c.list.find((e) => e.last_event === "scheduled");
+      const meta = next ? `prochain envoi ${dateTime(emailTime(next))}` : `dernier ${ago(c.last)}`;
+      return `<details class="card contact">
+        <summary>
+          <span class="contact__main"><strong>${esc(c.to)}</strong><span class="muted">${plural(c.list.length, "email")} · ${esc(meta)}</span></span>
+          <span class="badge badge--${state[1]}">${esc(state[0])}</span>
+          <svg class="ico chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
         <ol class="steps">${steps}</ol>
         <nav class="tools">
           <a href="mailto:${esc(c.to)}">Écrire</a>
           ${c.pending ? `<form method="post" data-confirm="Arrêter la séquence (${c.pending} envoi(s) programmé(s)) ?">${base({ action: "annuler-contact", to: c.to })}<button type="submit" class="link link--danger">Arrêter la séquence</button></form>` : ""}
           <form method="post" class="push" data-confirm="Supprimer ${esc(c.to)} de l'admin ?${c.pending ? " Les envois programmés seront aussi annulés." : ""} (restaurable depuis Réglages)">${base({ action: "masquer", type: "contact", to: c.to })}<button type="submit" class="link link--danger">${icon("trash")} Supprimer</button></form>
         </nav>
-      </article>`;
+      </details>`;
     })
     .join("");
 
@@ -1029,6 +1035,20 @@ const CSS = `
   .link .ico { width:16px; height:16px; }
   .link--danger { color:var(--late); }
 
+  /* Emails : une ligne par contact, dépliable */
+  .contact { padding:0; margin-bottom:8px; }
+  .contact summary { display:flex; align-items:center; gap:10px; padding:12px 14px; cursor:pointer; list-style:none; border-radius:18px; }
+  .contact summary::-webkit-details-marker { display:none; }
+  .contact summary:hover { background:var(--bg); }
+  .contact__main { flex:1; min-width:0; display:grid; }
+  .contact__main strong, .contact__main .muted { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .contact__main .muted { font-size:.78rem; }
+  .contact .badge { margin:0; }
+  .chev { color:var(--faint); transition:transform .2s; }
+  .contact[open] .chev { transform:rotate(180deg); }
+  .contact[open] summary { border-bottom:1px solid var(--line); border-radius:18px 18px 0 0; }
+  .contact .steps { margin:0; padding:14px 14px 0; }
+  .contact .tools { margin:12px 14px 0; padding:10px 0 12px; }
   /* Emails : séquence par contact */
   .steps { list-style:none; margin:12px 0 0; padding:0; }
   .step { position:relative; display:flex; align-items:flex-start; gap:12px; padding:0 0 12px; }

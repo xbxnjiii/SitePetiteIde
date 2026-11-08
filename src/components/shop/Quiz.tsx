@@ -343,12 +343,9 @@ function Result({
           ) : null}
           <span className="qz-pack__body">
             <span className="qz-pack__hook">
-              {theme.packSlug ? (score < total ? "Corrige tes erreurs ✨" : "Garde ce niveau ✨") : "La base de toute surveillance ✨"}
+              {theme.packSlug ? (score < total ? "Corrige tes erreurs ✨" : "Garde ce niveau ✨") : "Révise tes constantes ✨"}
             </span>
-            <strong>{pack.name}</strong>
-            <span className="qz-pack__meta">
-              {pack.items.length} fiches{pack.bonus ? " + bonus" : ""} · en PDF et en images
-            </span>
+            <span className="qz-pack__name">{pack.name}</span>
           </span>
           <span className="qz-pack__go">
             Voir <Icon name="arrow" />
