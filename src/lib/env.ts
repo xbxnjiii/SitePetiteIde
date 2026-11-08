@@ -5,6 +5,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 export interface R2BucketLike {
   get(key: string): Promise<{ body: ReadableStream; size: number } | null>;
   head(key: string): Promise<{ size: number } | null>;
+  put(key: string, value: string, options?: { httpMetadata?: { contentType?: string } }): Promise<unknown>;
 }
 
 /** Variables et secrets du Worker (wrangler.jsonc "vars" + `wrangler secret put`). */
@@ -14,9 +15,17 @@ export interface AppEnv {
   RESEND_API_KEY?: string;
   DOWNLOAD_TOKEN_SECRET?: string;
   SITE_URL?: string;
+  /** Clé publique Stripe (wrangler.jsonc), envoyée au navigateur avec la session de paiement. */
+  STRIPE_PUBLISHABLE_KEY?: string;
   EMAIL_FROM?: string;
   EMAIL_REPLY_TO?: string;
   STRIPE_AUTOMATIC_TAX?: string;
+  /** Adresse qui reçoit les commandes papier à préparer (défaut : EMAIL_REPLY_TO). */
+  ORDERS_NOTIFY_TO?: string;
+  /** Mot de passe de la page /admin (secret). Sans lui, la page est fermée. */
+  ADMIN_PASSWORD?: string;
+  /** Clé Resend « Full access » pour lire l'historique des emails dans /admin (sinon RESEND_API_KEY). */
+  RESEND_ADMIN_KEY?: string;
   PDF_BUCKET?: R2BucketLike;
 }
 

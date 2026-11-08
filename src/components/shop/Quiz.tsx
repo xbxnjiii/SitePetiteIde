@@ -62,7 +62,7 @@ export function ModePicker({ onPick, themeSlug }: { onPick?: (m: QuizMode) => vo
   );
 }
 
-export function Quiz({ theme }: { theme: QuizTheme }) {
+export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCapture?: boolean }) {
   const [mode, setMode] = useState<QuizMode | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [index, setIndex] = useState(0);
@@ -135,6 +135,7 @@ export function Quiz({ theme }: { theme: QuizTheme }) {
           bestStreak={bestStreak}
           missed={missed}
           answers={answers}
+          emailCapture={emailCapture}
           onReplay={() => start(mode)}
           onOther={() => start(mode === "flash" ? "pros" : "flash")}
         />
@@ -242,6 +243,7 @@ function Result({
   bestStreak,
   missed,
   answers,
+  emailCapture,
   onReplay,
   onOther,
 }: {
@@ -253,6 +255,7 @@ function Result({
   bestStreak: number;
   missed: Topic[];
   answers: { q: number; a: number }[];
+  emailCapture: boolean;
   onReplay: () => void;
   onOther: () => void;
 }) {
@@ -304,7 +307,7 @@ function Result({
         <span>🔥 série de {bestStreak}</span>
       </div>
 
-      <QuizEmailCapture theme={theme.slug} mode={mode} answers={answers} />
+      {emailCapture ? <QuizEmailCapture theme={theme.slug} mode={mode} answers={answers} /> : null}
 
       {pack ? (
         <Link href={`/${pack.slug}?src=quiz`} className="qz-pack">

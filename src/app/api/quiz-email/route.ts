@@ -4,6 +4,7 @@ import { sendEmail } from "@/lib/email";
 import { getEnvAsync, requireVar, siteUrl } from "@/lib/env";
 import { isAllowedOrigin } from "@/lib/origin";
 import { type CorrectionItem, correctionEmail, offerEmail, tipsEmail } from "@/lib/quiz-emails";
+import { getSettings } from "@/lib/settings";
 import { signToken } from "@/lib/signed";
 
 // POST /api/quiz-email {email, consent, theme, mode, answers:[{q,a}], website}
@@ -19,6 +20,7 @@ export async function POST(request: Request) {
   const base = siteUrl(env);
   const origin = request.headers.get("origin");
   if (origin && !isAllowedOrigin(origin, base)) return new Response("Origine non autorisée", { status: 403 });
+  if (!(await getSettings(env)).quizEmails) return Response.json({ error: "off" }, { status: 503 });
 
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   // Champ piège invisible : rempli uniquement par les robots.

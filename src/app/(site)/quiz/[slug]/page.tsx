@@ -3,10 +3,14 @@ import { notFound } from "next/navigation";
 import { QUIZ_MODES, getQuiz, quizzes } from "@/content/quiz";
 import { Quiz } from "@/components/shop/Quiz";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
+import { getEnvAsync } from "@/lib/env";
+import { getSettings } from "@/lib/settings";
 
 type Params = Promise<{ slug: string }>;
 
 export const dynamicParams = false;
+// Rendu à chaque visite : le formulaire email de fin de quiz s'active depuis /admin (Réglages).
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return quizzes.filter((q) => q.status === "available").map((q) => ({ slug: q.slug }));
@@ -25,6 +29,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function QuizThemePage({ params }: { params: Params }) {
   const theme = getQuiz((await params).slug);
   if (!theme) notFound();
+  const { quizEmails } = await getSettings(await getEnvAsync());
   return (
     <div className="container qz-page">
       <header className="qz-head">
@@ -33,7 +38,7 @@ export default async function QuizThemePage({ params }: { params: Params }) {
           <span aria-hidden="true">{theme.emoji}</span> {theme.title}
         </h1>
       </header>
-      <Quiz theme={theme} />
+      <Quiz theme={theme} emailCapture={quizEmails} />
       <p className="qz-disclaimer">Valeurs de référence chez l&apos;adulte, à titre de révision : suis toujours les protocoles de ton service.</p>
     </div>
   );

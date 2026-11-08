@@ -30,6 +30,7 @@ export default function PrivacyPage() {
           content: (
             <ul>
               <li>Lors d&apos;un achat : adresse email, pays de facturation, contenu et montant de la commande.</li>
+              <li>Pour une commande papier : nom et adresse de livraison.</li>
               <li>Les données bancaires sont traitées exclusivement par Stripe : nous n&apos;y avons jamais accès.</li>
               <li>
                 À la fin d&apos;un quiz, si tu le demandes : ton adresse email et tes réponses au quiz, uniquement pour t&apos;envoyer
@@ -43,7 +44,7 @@ export default function PrivacyPage() {
           title: "Pourquoi ces données",
           content: (
             <ul>
-              <li>Traiter ta commande et t&apos;envoyer tes fiches numériques (exécution du contrat).</li>
+              <li>Traiter ta commande, t&apos;envoyer tes fiches numériques et, pour le papier, expédier tes fiches (exécution du contrat).</li>
               <li>Tenir la comptabilité (obligation légale).</li>
               <li>
                 Emails du quiz (avec ton consentement) : ta correction et ta fiche gratuite, puis 2 emails espacés (un conseil de
@@ -76,6 +77,7 @@ export default function PrivacyPage() {
                   ["Cloudflare", "Hébergement du site et stockage des fichiers"],
                   ["Stripe", "Paiement et historique des commandes"],
                   ["Resend", "Envoi des emails (commandes et quiz)"],
+                  ["La Poste", "Livraison des fiches papier (nom et adresse de livraison)"],
                 ]}
               />
               <p className="legal__note">

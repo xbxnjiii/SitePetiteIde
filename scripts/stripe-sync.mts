@@ -1,4 +1,4 @@
-// Synchronise les packs (src/content/packs.ts) avec Stripe : produit + prix TTC.
+// Synchronise les packs (src/content/packs.ts) avec Stripe : produit + prix TTC, pour le PDF et le papier.
 // Idempotent : peut être relancé sans risque après chaque modification de prix ou de nom.
 //
 //   Mode test : STRIPE_SECRET_KEY=sk_test_... npm run stripe:sync
@@ -20,54 +20,75 @@ function secretKey(): string {
 
 const key = secretKey();
 const stripe = new Stripe(key);
-// Services fournis par voie électronique (taux normal). À confirmer avec le comptable.
-const TAX_CODE = "txcd_10000000";
 
 console.log(`Synchronisation Stripe (${key.startsWith("sk_live") ? "PRODUCTION" : "test"})`);
 
-for (const pack of packs) {
-  const productId = `lpi-${pack.slug}`;
-  const productData = {
+// Un produit Stripe par format vendu : le PDF (clé = slug) et, s'il existe, le papier (clé = slug-papier).
+const entries = packs.flatMap((pack) => [
+  {
+    productId: `lpi-${pack.slug}`,
+    lookupKey: pack.slug,
     name: pack.name,
     description: pack.tagline,
-    tax_code: TAX_CODE,
+    // Services fournis par voie électronique (taux normal). À confirmer avec le comptable.
+    taxCode: "txcd_10000000",
+    priceCents: pack.priceCents,
     active: pack.status === "published",
-    metadata: { slug: pack.slug },
-  };
+    metadata: { slug: pack.slug, format: "pdf" },
+  },
+  ...(pack.print
+    ? [
+        {
+          productId: `lpi-${pack.slug}-papier`,
+          lookupKey: `${pack.slug}-papier`,
+          name: `${pack.name} — fiches papier`,
+          description: `${pack.print.specs.join(", ")}. Version numérique (PDF et images) offerte.`,
+          // Biens physiques (taux normal). À confirmer avec le comptable.
+          taxCode: "txcd_99999999",
+          priceCents: pack.print.priceCents,
+          active: pack.status === "published",
+          metadata: { slug: pack.slug, format: "papier" },
+        },
+      ]
+    : []),
+]);
+
+for (const e of entries) {
+  const productData = { name: e.name, description: e.description, tax_code: e.taxCode, active: e.active, metadata: e.metadata };
 
   let product: Stripe.Product;
   try {
-    product = await stripe.products.update(productId, productData);
+    product = await stripe.products.update(e.productId, productData);
     console.log(`✓ produit mis à jour : ${product.id}`);
-  } catch (e) {
-    if ((e as Stripe.errors.StripeError).code !== "resource_missing") throw e;
-    product = await stripe.products.create({ id: productId, ...productData });
+  } catch (err) {
+    if ((err as Stripe.errors.StripeError).code !== "resource_missing") throw err;
+    product = await stripe.products.create({ id: e.productId, ...productData });
     console.log(`+ produit créé : ${product.id}`);
   }
 
-  const { data } = await stripe.prices.list({ lookup_keys: [pack.slug], limit: 1 });
+  const { data } = await stripe.prices.list({ lookup_keys: [e.lookupKey], limit: 1 });
   const current = data[0];
   const upToDate =
     current &&
     current.active &&
-    current.unit_amount === pack.priceCents &&
+    current.unit_amount === e.priceCents &&
     current.currency === "eur" &&
     current.tax_behavior === "inclusive" &&
     current.product === product.id;
 
   if (upToDate) {
-    console.log(`✓ prix à jour : ${current.id} (${pack.priceCents / 100} € TTC)`);
+    console.log(`✓ prix à jour : ${current.id} (${e.priceCents / 100} € TTC)`);
     continue;
   }
   const price = await stripe.prices.create({
     product: product.id,
     currency: "eur",
-    unit_amount: pack.priceCents,
+    unit_amount: e.priceCents,
     tax_behavior: "inclusive", // le prix affiché est le prix payé
-    lookup_key: pack.slug,
+    lookup_key: e.lookupKey,
     transfer_lookup_key: true,
   });
   if (current) await stripe.prices.update(current.id, { active: false });
   await stripe.products.update(product.id, { default_price: price.id });
-  console.log(`+ nouveau prix : ${price.id} (${pack.priceCents / 100} € TTC)${current ? ` — ancien prix ${current.id} désactivé` : ""}`);
+  console.log(`+ nouveau prix : ${price.id} (${e.priceCents / 100} € TTC)${current ? ` — ancien prix ${current.id} désactivé` : ""}`);
 }

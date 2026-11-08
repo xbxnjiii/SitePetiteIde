@@ -19,6 +19,8 @@
   //   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, RESEND_API_KEY, DOWNLOAD_TOKEN_SECRET
   "vars": {
     "SITE_URL": "https://lapetiteide.fr",
+    // Clé PUBLIQUE Stripe (pas un secret) : doit être du même compte et du même mode que STRIPE_SECRET_KEY.
+    "STRIPE_PUBLISHABLE_KEY": "pk_live_51UYktNIzHGfhb0teN7aYiOxJOP1DONNKzVqwhXKa1e5Ger3XHTWVIDLgMsYal3pvqYPty396kqYydmayBNa11VW700ZsON5Oxg",
     "EMAIL_FROM": "La Petite IDE <commandes@lapetiteide.fr>",
     "EMAIL_REPLY_TO": "contact@lapetiteide.fr",
     "STRIPE_AUTOMATIC_TAX": "false"
@@ -28,5 +30,28 @@
     { "tag": "v1", "new_sqlite_classes": ["Leaderboard"] },
     { "tag": "v2", "deleted_classes": ["Leaderboard"] }
   ],
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  // ==========================================================================
+  //  PRÉPROD — https://preprod.lapetiteide.fr (Stripe en mode TEST)
+  //  Déployée avec `--env preprod`. Les secrets se règlent sur le Worker
+  //  preprodlapetiteide (clés Stripe sk_test_…, webhook de test, etc.).
+  //  ⚠️ Dans un environnement Wrangler, vars / services / r2_buckets ne sont
+  //  PAS hérités : tout est redéclaré ci-dessous.
+  // ==========================================================================
+  "env": {
+    "preprod": {
+      "name": "preprodlapetiteide",
+      "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "preprodlapetiteide" }],
+      // Même bucket que la production : la préprod ne fait que lire les PDF.
+      "r2_buckets": [{ "binding": "PDF_BUCKET", "bucket_name": "la-petite-ide-pdfs" }],
+      "vars": {
+        "SITE_URL": "https://preprod.lapetiteide.fr",
+        "STRIPE_PUBLISHABLE_KEY": "pk_test_51UYkuiETz5v1OXsdZCWTYsHSeiDkB5ZpHFTw5dYHPHePeQE4Q6aW2wdQY0h3qi7NX1onCea3NLmpWfMpICiiDLH500AI82HzcT",
+        "EMAIL_FROM": "La Petite IDE PREPROD <commandes@lapetiteide.fr>",
+        "EMAIL_REPLY_TO": "contact@lapetiteide.fr",
+        "STRIPE_AUTOMATIC_TAX": "false"
+      },
+      "observability": { "enabled": true }
+    }
+  }
 }

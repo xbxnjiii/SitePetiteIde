@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AutoRefresh } from "@/components/shop/AutoRefresh";
 import { Icon } from "@/components/ui/Icon";
 import { Mascot, type MascotPose } from "@/components/ui/Mascot";
+import { SHIPPING } from "@/content/shipping";
 import { getEnvAsync } from "@/lib/env";
 import { SITE } from "@/lib/format";
 import { downloadLinks, getOrder, imagesLink, orderReference } from "@/lib/orders";
@@ -60,13 +61,34 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
     console.error("merci: liens indisponibles", err instanceof Error ? err.message : err);
   }
 
+  const isPrint = order.format === "papier";
+
   return (
     <Layout pose="bravo">
       <h1>Merci pour ta commande ! 💙</h1>
-      <p>
-        Ton <strong>{order.pack.name}</strong> est prêt.
-        {order.email ? <> Tu vas aussi recevoir ton lien par email à <strong>{order.email}</strong>.</> : null}
-      </p>
+      {isPrint ? (
+        <>
+          <p>
+            Tes fiches papier <strong>{order.pack.name}</strong> sont en préparation. {SHIPPING.dispatch}, et tu recevras le
+            numéro de suivi par email{order.email ? <> à <strong>{order.email}</strong></> : null}.
+          </p>
+          {order.shipping ? (
+            <address className="thanks__address">
+              {order.shipping.lines.map((l) => (
+                <span key={l}>{l}</span>
+              ))}
+            </address>
+          ) : null}
+          <p>
+            <Icon name="gift" /> En attendant, tes <strong>fiches numériques offertes</strong> sont déjà prêtes :
+          </p>
+        </>
+      ) : (
+        <p>
+          Ton <strong>{order.pack.name}</strong> est prêt.
+          {order.email ? <> Tu vas aussi recevoir ton lien par email à <strong>{order.email}</strong>.</> : null}
+        </p>
+      )}
       {!expired && links.length === 0 ? (
         <p className="notice">Ton lien de téléchargement t&apos;arrive par email dans quelques instants.</p>
       ) : null}

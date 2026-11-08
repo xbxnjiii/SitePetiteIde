@@ -1,15 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
+import { SHIPPING } from "@/content/shipping";
+import { getEnvAsync } from "@/lib/env";
+import { formatPrice } from "@/lib/format";
+import { getSettings } from "@/lib/settings";
+import { publishedPacks } from "@/content/packs";
 import { jsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Questions fréquentes",
-  description: "Paiement, téléchargement, formats, rétractation : toutes les réponses à tes questions sur La Petite IDE.",
+  description: "Paiement, téléchargement, livraison, formats, rétractation : toutes les réponses à tes questions sur La Petite IDE.",
   alternates: { canonical: "/faq" },
 };
 
-const FAQ = [
+const FAQ: { q: string; a: string; print?: boolean }[] = [
   {
     q: "Comment je reçois mes fichiers ?",
     a: "Dès que ton paiement est validé, tes fiches sont disponibles sur la page de confirmation, en PDF et en images. Tu reçois aussi un email avec tes liens.",
@@ -35,12 +40,27 @@ const FAQ = [
     a: "Les navigateurs intégrés aux applications bloquent parfois les téléchargements. Ouvre la page dans Safari ou Chrome (menu « … » puis « Ouvrir dans le navigateur »), ou utilise le lien reçu par email.",
   },
   {
+    print: true,
+    q: "Les fiches existent-elles en papier ?",
+    a: `Oui, pour les packs qui l'indiquent : tu choisis « Papier + numérique offert » sur la page du pack. Les fiches sont livrées chez toi en ${SHIPPING.zone}, et tu reçois la version numérique (PDF et images) tout de suite.`,
+  },
+  {
+    print: true,
+    q: "Combien coûte la livraison et en combien de temps ?",
+    a: `${formatPrice(SHIPPING.priceCents)} par commande, par ${SHIPPING.name}. ${SHIPPING.dispatch}, puis compte ${SHIPPING.estimate.min} à ${SHIPPING.estimate.max} jours ouvrés. Tu reçois le numéro de suivi par email.`,
+  },
+  {
+    print: true,
+    q: "Livrez-vous à l'étranger ou en outre-mer ?",
+    a: "Pas encore : la livraison est possible en France métropolitaine (Corse comprise) uniquement. La version numérique, elle, est disponible partout.",
+  },
+  {
     q: "Quels moyens de paiement acceptez-vous ?",
     a: "Carte bancaire, Apple Pay ou Google Pay, via notre prestataire sécurisé Stripe. Nous n'avons jamais accès à tes données bancaires.",
   },
   {
     q: "Puis-je être remboursé·e ?",
-    a: "S'agissant de contenus numériques fournis immédiatement, tu renonces à ton droit de rétractation lorsque tu demandes l'accès immédiat aux fichiers lors de la commande. En cas de problème avec un fichier, contacte-nous : on trouvera une solution.",
+    a: "Pour la version numérique : s'agissant d'un contenu numérique fourni immédiatement, tu renonces à ton droit de rétractation lorsque tu demandes l'accès immédiat aux fichiers. Pour les fiches papier : tu as 14 jours après réception pour changer d'avis (voir les CGV). Dans tous les cas, en cas de problème, contacte-nous : on trouvera une solution.",
   },
   {
     q: "Puis-je partager mes fiches ?",
@@ -48,11 +68,17 @@ const FAQ = [
   },
 ];
 
-export default function FaqPage() {
+// Questions « papier » affichées seulement si la version papier est en vente (Réglages de /admin).
+export const dynamic = "force-dynamic";
+
+export default async function FaqPage() {
+  const settings = await getSettings(await getEnvAsync());
+  const printOn = publishedPacks().some((p) => p.print && settings.print[p.slug]);
+  const faq = FAQ.filter((f) => printOn || !f.print);
   const structured = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+    mainEntity: faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
   };
   return (
     <div className="container">
@@ -62,7 +88,7 @@ export default function FaqPage() {
       </header>
       <div className="prose">
         <div className="faq">
-          {FAQ.map((f) => (
+          {faq.map((f) => (
             <details key={f.q}>
               <summary>{f.q}</summary>
               <p>{f.a}</p>

@@ -1,31 +1,42 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { getPack, publishedPacks } from "@/content/packs";
+import { getPack, publishedPacks, type Pack } from "@/content/packs";
+import { SHIPPING } from "@/content/shipping";
 import { CheckoutError } from "@/components/shop/CheckoutError";
 import { OfferBanner } from "@/components/shop/OfferBanner";
 import { PackCheckout } from "@/components/shop/PackCheckout";
 import { PackCover } from "@/components/shop/PackCover";
+import { PackGallery } from "@/components/shop/PackGallery";
 import { QuizCta } from "@/components/shop/QuizCta";
 import { StickyBuyBar } from "@/components/shop/StickyBuyBar";
 import { Icon } from "@/components/ui/Icon";
+import { getEnvAsync } from "@/lib/env";
 import { SITE, formatPrice } from "@/lib/format";
+import { applySettings, getSettings } from "@/lib/settings";
 import { jsonLd } from "@/lib/seo";
 
 type Params = Promise<{ slug: string }>;
 
 export const dynamicParams = false;
+// Rendu à chaque visite : la version papier s'active / se désactive depuis /admin (Réglages).
+export const dynamic = "force-dynamic";
+
+async function livePack(slug: string) {
+  const pack = getPack(slug);
+  return pack && applySettings(pack, await getSettings(await getEnvAsync()));
+}
 
 export function generateStaticParams() {
   return publishedPacks().map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
-  const pack = getPack((await params).slug);
+  const pack = await livePack((await params).slug);
   if (!pack) return {};
   return {
     title: pack.name,
-    description: `${pack.promise} ${formatPrice(pack.priceCents)}, fiches numériques (PDF ou images) reçues par email.`,
+    description: `${pack.promise} ${formatPrice(pack.priceCents)}, fiches numériques (PDF ou images) reçues par email${pack.print ? ", ou en fiches papier livrées" : ""}.`,
     alternates: { canonical: `/${pack.slug}` },
     openGraph: {
       title: pack.name,
@@ -35,15 +46,30 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   };
 }
 
-const FAQ = [
-  { q: "Comment je reçois mon pack ?", a: "Juste après le paiement : bouton de téléchargement immédiat et lien envoyé par email (valable 30 jours)." },
-  { q: "C'est un format papier ?", a: "Non, numérique : tu reçois le PDF (idéal pour imprimer) et les fiches en images (idéal sur téléphone)." },
-  { q: "Et si les fiches sont améliorées ?", a: "Les mises à jour sont gratuites : tu reçois la nouvelle version des fiches que tu as achetées." },
+const faqFor = (pack: Pack) => [
+  pack.print
+    ? {
+        q: "Comment je reçois mon pack ?",
+        a: `En numérique (PDF et images) : juste après le paiement, bouton de téléchargement immédiat et lien par email (valable 30 jours). En papier : ${SHIPPING.dispatch.toLowerCase()} par ${SHIPPING.name} (${formatPrice(SHIPPING.priceCents)}), avec les fiches numériques offertes tout de suite.`,
+      }
+    : { q: "Comment je reçois mon pack ?", a: "Juste après le paiement : bouton de téléchargement immédiat et lien envoyé par email (valable 30 jours)." },
+  pack.print
+    ? {
+        q: "C'est un format papier ?",
+        a: `Les deux au choix ! En numérique (PDF et images), ou en fiches papier (${pack.print.specs.join(", ").toLowerCase()}) livrées en ${SHIPPING.zone}, avec la version numérique offerte.`,
+      }
+    : { q: "C'est un format papier ?", a: "Non, numérique : tu reçois le PDF (idéal pour imprimer) et les fiches en images (idéal sur téléphone)." },
+  pack.print
+    ? {
+        q: "Et si les fiches sont améliorées ?",
+        a: "Les mises à jour de la version numérique sont gratuites : tu reçois la nouvelle version, même si tu as pris le format papier.",
+      }
+    : { q: "Et si les fiches sont améliorées ?", a: "Les mises à jour sont gratuites : tu reçois la nouvelle version des fiches que tu as achetées." },
   { q: "Je n'ai pas reçu l'email", a: "Regarde dans tes spams. Sinon, va sur la page « Retrouver mon achat » (en bas de page) : tes liens te sont renvoyés." },
 ];
 
 export default async function PackPage({ params }: { params: Params }) {
-  const pack = getPack((await params).slug);
+  const pack = await livePack((await params).slug);
   if (!pack) notFound();
 
   const structured = {
@@ -68,8 +94,14 @@ export default async function PackPage({ params }: { params: Params }) {
       <section className="container sale-main">
         <div className="sale-main__visual">
           {pack.images ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={pack.images.card} alt={pack.images.alt} width={800} height={800} className="sale-main__img" fetchPriority="high" />
+            // Carrousel : visuel du pack, aperçus (PDF), puis photo du format papier s'il y en a une.
+            <PackGallery
+              slides={[
+                { src: pack.images.card, alt: pack.images.alt, width: 800, height: 800 },
+                ...(pack.images.gallery ?? []),
+                ...(pack.print?.photo ? [{ ...pack.print.photo, label: "Format papier" }] : []),
+              ]}
+            />
           ) : (
             <PackCover icon={pack.icon} tone={pack.tone} />
           )}
@@ -105,7 +137,7 @@ export default async function PackPage({ params }: { params: Params }) {
             <Suspense>
               <CheckoutError />
             </Suspense>
-            <PackCheckout slug={pack.slug} priceCents={pack.priceCents} />
+            <PackCheckout slug={pack.slug} priceCents={pack.priceCents} print={pack.print ?? null} />
           </div>
         </div>
       </section>
@@ -135,14 +167,46 @@ export default async function PackPage({ params }: { params: Params }) {
           ) : null}
         </ul>
         <p className="sale-content__total">
-          {pack.items.length + (pack.bonus ? 1 : 0)} fiches · en PDF et en images, sur téléphone ou à imprimer
+          {pack.items.length + (pack.bonus ? 1 : 0)} fiches ·{" "}
+          {pack.print ? "en numérique (PDF ou image) ou en papier" : "en PDF et en images, sur téléphone ou à imprimer"}
         </p>
+
+        {pack.print ? (
+          <div className={pack.print.photo ? "paper-spec paper-spec--photo" : "paper-spec"}>
+            {pack.print.photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={pack.print.photo.src}
+                alt={pack.print.photo.alt}
+                width={pack.print.photo.width}
+                height={pack.print.photo.height}
+                className="paper-spec__photo"
+                loading="lazy"
+              />
+            ) : (
+              <span className="paper-spec__icon" aria-hidden="true">
+                <Icon name="note" />
+              </span>
+            )}
+            <div className="paper-spec__body">
+              <p className="paper-spec__title">Version papier</p>
+              <ul className="paper-spec__chips">
+                {pack.print.specs.map((s) => (
+                  <li key={s}>{s}</li>
+                ))}
+              </ul>
+              <p className="paper-spec__note">
+                Numérique offert · Livraison {formatPrice(SHIPPING.priceCents)} · {SHIPPING.dispatch.toLowerCase()}
+              </p>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       <section className="container sale-faq" aria-labelledby="faq-title">
         <h2 id="faq-title">Questions fréquentes</h2>
         <div className="faq">
-          {FAQ.map((f) => (
+          {faqFor(pack).map((f) => (
             <details key={f.q}>
               <summary>{f.q}</summary>
               <p>{f.a}</p>
