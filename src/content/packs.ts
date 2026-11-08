@@ -108,7 +108,7 @@ export const packs: Pack[] = [
     },
     description:
       "Un mémo clair et synthétique pour chaque paramètre vital : valeurs normales, technique de mesure et signes d'alerte. Conçu pour réviser vite et bien, sur téléphone ou imprimé.",
-    priceCents: 299,
+    priceCents: 399,
     icon: "heart",
     tone: "pink",
     images: {

@@ -74,6 +74,34 @@ function publishableKey(env: AppEnv): string | undefined {
   return pk;
 }
 
+/**
+ * Prix Stripe du pack. Si le prix du site (src/content/packs.ts) a changé, un nouveau prix est créé
+ * sur le même produit Stripe et récupère la clé du prix (l'ancien est archivé) : pas besoin de passer par Stripe.
+ */
+async function syncedPrice(stripe: Stripe, lookupKey: string, cents: number): Promise<Stripe.Price> {
+  const { data } = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
+  const current = data[0];
+  if (current && current.unit_amount === cents && current.currency === "eur") return current;
+  if (!current) throw new PriceMismatch(`prix Stripe absent (${lookupKey}) : lancer npm run stripe:sync`);
+  const product = typeof current.product === "string" ? current.product : current.product.id;
+  const next = await stripe.prices.create(
+    {
+      product,
+      currency: "eur",
+      unit_amount: cents,
+      tax_behavior: current.tax_behavior ?? "inclusive",
+      lookup_key: lookupKey,
+      transfer_lookup_key: true,
+      metadata: current.metadata,
+    },
+    // Une seule création même si plusieurs clientes paient au même moment.
+    { idempotencyKey: `prix-${lookupKey}-${cents}` },
+  );
+  await stripe.prices.update(current.id, { active: false }).catch(() => {});
+  console.log("checkout: nouveau prix Stripe", lookupKey, current.unit_amount, "→", cents);
+  return next;
+}
+
 async function createSession(
   env: AppEnv,
   base: string,
@@ -85,11 +113,7 @@ async function createSession(
   const stripe = stripeClient(env);
   // Le prix vient de Stripe (jamais du navigateur), et doit correspondre au prix affiché.
   const lookupKey = priceLookupKey(pack.slug, format);
-  const { data } = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
-  const price = data[0];
-  if (!price || price.unit_amount !== formatPriceCents(pack, format) || price.currency !== "eur") {
-    throw new PriceMismatch(`prix Stripe absent ou différent du prix affiché (${lookupKey}, ${price?.unit_amount})`);
-  }
+  const price = await syncedPrice(stripe, lookupKey, formatPriceCents(pack, format));
   const isPrint = format === "papier";
   const metadata = { pack: pack.slug, format, provenance: source ?? "direct" };
 
