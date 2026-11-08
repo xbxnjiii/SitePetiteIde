@@ -13,14 +13,15 @@ export interface AdminEmail {
 }
 
 const API = "https://api.resend.com";
-const MAX_PAGES = 5; // 500 emails les plus récents
 
 const key = (env: AppEnv) => env.RESEND_ADMIN_KEY || env.RESEND_API_KEY || "";
 
-export async function listEmails(env: AppEnv): Promise<{ emails: AdminEmail[]; error: string | null }> {
+export async function listEmails(env: AppEnv, maxPages = 5): Promise<{ emails: AdminEmail[]; error: string | null }> {
   const emails: AdminEmail[] = [];
   let after = "";
-  for (let i = 0; i < MAX_PAGES; i++) {
+  for (let i = 0; i < maxPages; i++) {
+    // Limite de Resend : 2 requêtes par seconde.
+    if (i > 0) await new Promise((r) => setTimeout(r, 600));
     const res = await fetch(`${API}/emails?limit=100${after ? `&after=${encodeURIComponent(after)}` : ""}`, {
       headers: { Authorization: `Bearer ${key(env)}` },
     }).catch(() => null);

@@ -10,9 +10,16 @@ export interface Settings {
   print: Record<string, boolean>;
   /** Formulaire « correction + fiche gratuite » en fin de quiz et séquence d'emails. */
   quizEmails: boolean;
+  /** Éléments supprimés de /admin (tests…) : masqués des listes et des statistiques, restaurables. */
+  hidden: { orders: string[]; emails: string[] };
+  /** « Repartir de zéro » : tout ce qui a été créé avant cette date (secondes Unix) est ignoré dans /admin. */
+  resetAt: number | null;
 }
 
-export const DEFAULT_SETTINGS: Settings = { print: {}, quizEmails: true };
+export const DEFAULT_SETTINGS: Settings = { print: {}, quizEmails: true, hidden: { orders: [], emails: [] }, resetAt: null };
+
+const MAX_HIDDEN = 3000;
+const ids = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").slice(-MAX_HIDDEN) : []);
 
 const CACHE_MS = 15_000;
 let cache: { at: number; key: string; value: Settings } | null = null;
@@ -30,6 +37,8 @@ export async function getSettings(env: AppEnv): Promise<Settings> {
       value = {
         print: raw.print && typeof raw.print === "object" ? raw.print : {},
         quizEmails: raw.quizEmails !== false,
+        hidden: { orders: ids(raw.hidden?.orders), emails: ids(raw.hidden?.emails) },
+        resetAt: typeof raw.resetAt === "number" ? raw.resetAt : null,
       };
     }
   } catch (err) {

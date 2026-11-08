@@ -2,16 +2,20 @@ import type Stripe from "stripe";
 import { getPack } from "@/content/packs";
 import { publishedPacks } from "@/content/packs";
 import { sendShippedEmail, sendUpdateEmails } from "@/lib/email";
-import { SITE } from "@/lib/format";
+import { IS_LIVE, IS_PREPROD, SITE } from "@/lib/format";
+import { OFFER, isOfferActive } from "@/content/offer";
 import { type AppEnv, getEnvAsync, siteUrl } from "@/lib/env";
 import { downloadLinks, imagesLink, orderReference } from "@/lib/orders";
 import { isAllowedOrigin } from "@/lib/origin";
 import { stripeClient } from "@/lib/stripe";
-import { type AdminOrder, SHIPPED_AT, TRACKING, computeStats, listOrders, listOrdersBetween, listPackBuyers, matches, statusOf } from "./data";
+import { type AdminOrder, SHIPPED_AT, TRACKING, listOrders, listOrdersBetween, listPackBuyers, matches, statusOf } from "./data";
+import { buildDashboard } from "./dashboard";
+import { labelsPage } from "./labels";
 import { lastMonths, monthBounds, ordersCsv } from "./export";
-import { applySettings, getSettings, saveSettings } from "@/lib/settings";
+import { type Settings, applySettings, getSettings, saveSettings } from "@/lib/settings";
 import { cancelEmails, listEmails } from "./emails";
-import { type EmailsView, TABS, type Tab, adminPage, labelsPage } from "./view";
+import { type AdminEmail } from "./emails";
+import { type EmailsView, ORDER_TABS, type OrderTab, type SiteInfo, TABS, type Tab, adminPage } from "./view";
 
 // /admin — suivi des commandes (protégé par mot de passe : secret ADMIN_PASSWORD).
 //  GET  ?vue=a-expedier|expediees|ventes&q=…   → liste des commandes
@@ -38,10 +42,11 @@ export async function GET(request: Request) {
   const tab = parseTab(url.searchParams.get("vue"));
   const q = (url.searchParams.get("q") ?? "").slice(0, 100);
 
-  let orders: AdminOrder[] = [];
+  const settings = await getSettings(env);
+  let all: AdminOrder[] = [];
   let loadError: string | null = null;
   try {
-    orders = await listOrders(stripeClient(env));
+    all = await listOrders(stripeClient(env));
   } catch (err) {
     console.error("admin:", err instanceof Error ? err.message : err);
     loadError = "Impossible de charger les commandes depuis Stripe. Réessaie dans un instant.";
@@ -49,57 +54,90 @@ export async function GET(request: Request) {
 
   if (labelIds !== null) {
     const ids = new Set(labelIds.split(","));
-    return html(labelsPage(orders.filter((o) => ids.has(o.id) && o.format === "papier")));
+    return html(labelsPage(all.filter((o) => ids.has(o.id) && o.format === "papier")));
   }
 
-  const inTab: Record<Tab, (o: AdminOrder) => boolean> = {
+  // Commandes supprimées de l'admin (tests) : hors listes et statistiques, visibles dans la corbeille.
+  const trashed = (o: AdminOrder) => settings.hidden.orders.includes(o.id) || (settings.resetAt !== null && o.createdAt <= settings.resetAt);
+  const orders = all.filter((o) => !trashed(o));
+  const inTab: Record<OrderTab, (o: AdminOrder) => boolean> = {
     "a-expedier": (o) => ["todo", "late"].includes(statusOf(o)),
     expediees: (o) => o.format === "papier" && Boolean(o.shippedAt),
     ventes: () => true,
-    emails: () => false,
-    reglages: () => false,
-    outils: () => false,
+    corbeille: () => true,
   };
-  const found = orders.filter((o) => matches(o, q));
-  const counts = Object.fromEntries(TABS.map((t) => [t.id, found.filter(inTab[t.id]).length])) as Record<Tab, number>;
-  let list = found.filter(inTab[tab]);
-  // À expédier : les plus anciennes d'abord (premières arrivées, premières servies).
-  if (tab === "a-expedier") list = list.sort((a, b) => a.createdAt - b.createdAt);
-  if (tab === "expediees") list = list.sort((a, b) => Date.parse(b.shippedAt!) - Date.parse(a.shippedAt!));
+  const pool = (t: OrderTab) => (t === "corbeille" ? all.filter(trashed) : orders);
+  const counts = Object.fromEntries(ORDER_TABS.map((t) => [t.id, pool(t.id).filter((o) => matches(o, q)).filter(inTab[t.id]).length])) as Record<OrderTab, number>;
+
+  let list: AdminOrder[] = [];
+  if (ORDER_TABS.some((t) => t.id === tab)) {
+    const t = tab as OrderTab;
+    list = pool(t).filter((o) => matches(o, q)).filter(inTab[t]);
+    // À expédier : les plus anciennes d'abord (premières arrivées, premières servies).
+    if (t === "a-expedier") list.sort((a, b) => a.createdAt - b.createdAt);
+    if (t === "expediees") list.sort((a, b) => Date.parse(b.shippedAt!) - Date.parse(a.shippedAt!));
+  }
+
+  // Emails : l'onglet Emails lit tout l'historique ; l'accueil, une seule page (compteur des envois programmés).
+  let emails: EmailsView | undefined;
+  let scheduled: number | null = null;
+  if (tab === "emails" || tab === "accueil") {
+    const res = await listEmails(env, tab === "emails" ? 5 : 1);
+    const visible = res.emails.filter((e) => !hiddenEmail(e, settings));
+    scheduled = res.error ? null : visible.filter((e) => e.last_event === "scheduled").length;
+    if (tab === "emails") {
+      emails = {
+        emails: visible,
+        error: res.error,
+        filter: (["en-cours", "tous", "arretes"] as const).find((f) => f === url.searchParams.get("f")) ?? "en-cours",
+        q,
+      };
+    }
+  }
 
   const ok = url.searchParams.get("ok");
   const error = url.searchParams.get("erreur");
-
-  const settings = tab === "reglages" ? await getSettings(env) : null;
-  const emails: EmailsView | undefined =
-    tab === "emails"
-      ? {
-          ...(await listEmails(env)),
-          filter: (["programmes", "tous", "annules"] as const).find((f) => f === url.searchParams.get("f")) ?? "programmes",
-          q,
-        }
-      : undefined;
   return html(
     adminPage({
-      orders: list,
-      stats: loadError ? null : computeStats(orders),
       tab,
       q,
       counts,
+      orders: list,
+      dashboard: loadError ? null : buildDashboard(orders),
+      scheduled,
       notice: noticeFor(ok, url.searchParams.get("n")),
-      tools: { packs: publishedPacks().map((p) => ({ slug: p.slug, name: p.name })), months: lastMonths(), testTo: notifyTo(env) },
       error: loadError ?? (error ? errorMessage(error) : null),
+      tools: { packs: publishedPacks().map((p) => ({ slug: p.slug, name: p.name })), months: lastMonths(), testTo: notifyTo(env) },
       emails,
-      settings: settings
-        ? {
-            print: publishedPacks()
-              .filter((p) => p.print)
-              .map((p) => ({ slug: p.slug, name: p.name, on: Boolean(applySettings(p, settings).print) })),
-            quizEmails: settings.quizEmails,
-          }
-        : undefined,
+      settings:
+        tab === "reglages"
+          ? {
+              print: publishedPacks()
+                .filter((p) => p.print)
+                .map((p) => ({ slug: p.slug, name: p.name, on: Boolean(applySettings(p, settings).print) })),
+              quizEmails: settings.quizEmails,
+              hiddenOrders: all.filter(trashed).length,
+              hiddenEmails: settings.hidden.emails.length,
+              resetAt: settings.resetAt,
+            }
+          : undefined,
+      site: siteInfo(env),
     }),
   );
+}
+
+const hiddenEmail = (e: AdminEmail, s: Settings) =>
+  s.hidden.emails.includes(e.id) || (s.resetAt !== null && Date.parse(e.created_at) / 1000 <= s.resetAt);
+
+function siteInfo(env: AppEnv): SiteInfo {
+  const key = env.STRIPE_SECRET_KEY ?? "";
+  return {
+    url: siteUrl(env),
+    indexed: IS_LIVE,
+    preprod: IS_PREPROD,
+    offer: isOfferActive() ? `${OFFER.code} (${OFFER.label}) jusqu'au ${OFFER.endsLabel}` : null,
+    stripeMode: /^(sk|rk)_live_/.test(key) ? "live" : /^(sk|rk)_test_/.test(key) ? "test" : "?",
+  };
 }
 
 export async function POST(request: Request) {
@@ -120,8 +158,9 @@ export async function POST(request: Request) {
 
   if (action === "maj") return sendUpdate(env, form, back);
   if (action === "reglage") return updateSetting(env, form, back);
+  if (["masquer", "restaurer", "reset", "restaurer-tout"].includes(action)) return trashAction(env, action, form, back);
   if (action === "annuler-email" || action === "annuler-contact") {
-    const f = String(form?.get("f") ?? "programmes");
+    const f = String(form?.get("f") ?? "en-cours");
     const backEmails = (params: string) =>
       Response.redirect(`${base}/admin?vue=emails&f=${encodeURIComponent(f)}${q ? `&q=${encodeURIComponent(q)}` : ""}&${params}`, 303);
     let ids: string[] = [];
@@ -174,6 +213,11 @@ function noticeFor(ok: string | null, n: string | null): string | null {
   if (ok === "annulee") return "Commande remise dans « À expédier ».";
   if (ok === "maj") return `Mise à jour envoyée à ${Number(n) || 0} acheteur(s) ✅`;
   if (ok === "emails-annules") return `${Number(n) || 0} envoi(s) programmé(s) annulé(s) ✅`;
+  if (ok === "masque") return "Supprimé de l'admin ✅ (restaurable)";
+  if (ok === "restaure") return "Restauré ✅";
+  if (ok === "reset") return "Compteurs remis à zéro ✅";
+  if (ok === "reset-annule") return "Remise à zéro annulée : tout est de retour.";
+  if (ok === "tout-restaure") return "Tous les éléments supprimés sont restaurés ✅";
   if (ok === "reglage") return "Réglage enregistré ✅ (visible sur le site en moins d'une minute)";
   if (ok === "maj-test") return "Email de test envoyé : vérifie ta boîte avant l'envoi à tous.";
   return null;
@@ -253,7 +297,51 @@ async function updateSetting(env: AppEnv, form: FormData | null, back: (params: 
   }
 }
 
-const parseTab = (v: string | null): Tab => (TABS.some((t) => t.id === v) ? (v as Tab) : "a-expedier");
+/** Suppression (masquage) de commandes et d'emails de test, remise à zéro et restauration. */
+async function trashAction(env: AppEnv, action: string, form: FormData | null, back: (params: string) => Response): Promise<Response> {
+  const type = String(form?.get("type") ?? "");
+  const id = String(form?.get("id") ?? "");
+  try {
+    const s = await getSettings(env);
+    const next: Settings = { ...s, hidden: { orders: [...s.hidden.orders], emails: [...s.hidden.emails] } };
+    let ok = "masque";
+
+    if (action === "reset") {
+      next.resetAt = form?.get("mode") === "annuler" ? null : Math.floor(Date.now() / 1000);
+      ok = next.resetAt ? "reset" : "reset-annule";
+    } else if (action === "restaurer-tout") {
+      next.hidden = { orders: [], emails: [] };
+      next.resetAt = null;
+      ok = "tout-restaure";
+    } else if (type === "commande") {
+      if (!/^cs_(test|live)_[A-Za-z0-9]{10,200}$/.test(id)) return back("erreur=session");
+      if (action === "masquer") next.hidden.orders = [...new Set([...next.hidden.orders, id])];
+      else {
+        next.hidden.orders = next.hidden.orders.filter((x) => x !== id);
+        ok = "restaure";
+        // Commande antérieure à la remise à zéro : on ne peut pas la restaurer seule.
+        if (s.resetAt !== null) return back("erreur=reset");
+      }
+    } else if (type === "contact" && action === "masquer") {
+      const to = String(form?.get("to") ?? "").toLowerCase();
+      const { emails } = await listEmails(env);
+      const mine = emails.filter((e) => e.to.some((t) => t.toLowerCase() === to));
+      if (!mine.length) return back("erreur=email");
+      const pending = mine.filter((e) => e.last_event === "scheduled").map((e) => e.id);
+      if (pending.length) await cancelEmails(env, pending);
+      next.hidden.emails = [...new Set([...next.hidden.emails, ...mine.map((e) => e.id)])];
+    } else return back("erreur=reglage");
+
+    await saveSettings(env, next);
+    console.log("admin:", action, type, id || "");
+    return back(`ok=${ok}`);
+  } catch (err) {
+    console.error("admin:", action, err instanceof Error ? err.message : err);
+    return back("erreur=reglage");
+  }
+}
+
+const parseTab = (v: string | null): Tab => (TABS.includes(v as Tab) ? (v as Tab) : "accueil");
 
 /** Authentification HTTP « Basic » : n'importe quel identifiant, mot de passe = ADMIN_PASSWORD. */
 async function checkAuth(request: Request, env: AppEnv): Promise<Response | null> {
@@ -296,6 +384,7 @@ const errorMessage = (code: string) =>
     email: "Email introuvable ou déjà parti.",
     annulation: "Resend n'a pas pu annuler l'envoi (déjà parti ?). Actualise la page.",
     reglage: "Le réglage n'a pas pu être enregistré. Réessaie.",
+    reset: "Cette commande date d'avant la remise à zéro : annule la remise à zéro (Réglages) pour la retrouver.",
     maj: "L'envoi de la mise à jour a échoué. Réessaie (les emails déjà partis ne seront pas renvoyés).",
   })[code] ?? "Une erreur est survenue.";
 

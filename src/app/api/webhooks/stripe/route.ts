@@ -95,7 +95,7 @@ export async function POST(request: Request) {
         customerEmail: order.email,
         shippingLines: order.shipping?.lines ?? ["⚠️ Adresse absente : voir Stripe"],
         deliverable: order.shipping?.deliverable ?? false,
-        adminUrl: `${siteUrl(env)}/admin`,
+        adminUrl: `${siteUrl(env)}/admin?vue=a-expedier`,
         sessionId: order.session.id,
       });
     } catch (err) {
