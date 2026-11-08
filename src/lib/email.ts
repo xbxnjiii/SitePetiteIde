@@ -170,3 +170,57 @@ export async function sendRecoveryEmail(env: AppEnv, to: string, items: Recovery
   // 409 = même clé d'idempotence déjà utilisée (envoi déjà fait dans l'heure) : pas une erreur.
   if (!res.ok && res.status !== 409) throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 300)}`);
 }
+
+/* ===================================================================== */
+/*  Envoi générique (Resend) — utilisé par la séquence du quiz            */
+/* ===================================================================== */
+
+export interface SendOptions {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  idempotencyKey: string;
+  /** Date ISO d'envoi programmé (jusqu'à 30 jours). */
+  scheduledAt?: string;
+  /** Lien de désinscription (en-têtes List-Unsubscribe, désinscription en un clic). */
+  unsubscribeUrl?: string;
+}
+
+/** Envoie (ou programme) un email ; renvoie son identifiant Resend. */
+export async function sendEmail(env: AppEnv, o: SendOptions): Promise<string | null> {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${requireVar(env, "RESEND_API_KEY")}`,
+      "Content-Type": "application/json",
+      "Idempotency-Key": o.idempotencyKey,
+    },
+    body: JSON.stringify({
+      from: env.EMAIL_FROM ?? "La Petite IDE <commandes@lapetiteide.fr>",
+      to: [o.to],
+      reply_to: env.EMAIL_REPLY_TO ?? SITE.contactEmail,
+      subject: o.subject,
+      html: o.html,
+      text: o.text,
+      ...(o.scheduledAt ? { scheduled_at: o.scheduledAt } : {}),
+      ...(o.unsubscribeUrl
+        ? { headers: { "List-Unsubscribe": `<${o.unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }
+        : {}),
+    }),
+  });
+  if (res.status === 409) return null; // déjà envoyé (même clé d'idempotence)
+  if (!res.ok) throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  const data = (await res.json()) as { id?: string };
+  return data.id ?? null;
+}
+
+/** Annule un email programmé (sans erreur s'il est déjà parti ou annulé). */
+export async function cancelEmail(env: AppEnv, id: string): Promise<void> {
+  await fetch(`https://api.resend.com/emails/${encodeURIComponent(id)}/cancel`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${requireVar(env, "RESEND_API_KEY")}` },
+  }).catch(() => {});
+}
+
+export { esc as escapeHtml };

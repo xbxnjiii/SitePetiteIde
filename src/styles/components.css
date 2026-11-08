@@ -788,3 +788,17 @@ img.bio__avatar { width: 128px; height: 128px; }
 .qz-list { grid-template-columns: minmax(0, 1fr); }
 .qz-row { min-width: 0; }
 .qz-head p { font-size: 0.9rem; }
+
+/* ===== Fin de quiz : capture email ====================================== */
+.qz-mail { display: grid; gap: 8px; padding: 16px 14px; border-radius: 22px; text-align: left; background: linear-gradient(140deg, #fff7e8 0%, #fcf0f5 100%); border: 1.5px solid #f6d7a8; }
+.qz-mail__title { margin: 0; font-family: var(--font-title); font-weight: 800; font-size: 1.05rem; line-height: 1.25; }
+.qz-mail__text { margin: 0; font-size: 0.86rem; color: var(--c-ink-soft); }
+.qz-mail__row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.qz-mail__input { min-height: 48px; border-radius: 14px; font-size: 1rem; background: #fff; }
+.qz-mail__btn { min-height: 48px; padding: 0 16px; border: 0; border-radius: 14px; cursor: pointer; font: inherit; font-family: var(--font-title); font-weight: 800; color: #fff; background: var(--c-ink); }
+.qz-mail__btn[disabled] { opacity: 0.6; }
+.qz-mail__hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.qz-mail__consent { display: flex; gap: 8px; align-items: flex-start; font-size: 0.74rem; line-height: 1.4; color: var(--c-ink-soft); cursor: pointer; }
+.qz-mail__consent input { width: 17px; height: 17px; flex: none; margin-top: 1px; accent-color: var(--c-primary); }
+.qz-mail__error { margin: 0; font-size: 0.82rem; font-weight: 600; color: #8f3a5e; }
+.qz-mail--sent { text-align: center; background: #e9f6f0; border-color: #bfe3d3; }

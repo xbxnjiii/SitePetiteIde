@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { QUIZ_MODES, type QuizMode, type QuizQuestion, type QuizTheme, type Topic, quizVerdict } from "@/content/quiz";
 import { getPack } from "@/content/packs";
+import { QuizEmailCapture } from "./QuizEmailCapture";
 
 /** Tire `n` questions au hasard (mélange de Fisher-Yates). */
 function draw(all: QuizQuestion[], n: number): QuizQuestion[] {
@@ -68,6 +69,7 @@ export function Quiz({ theme }: { theme: QuizTheme }) {
   const [picked, setPicked] = useState<number | null>(null);
   const [results, setResults] = useState<boolean[]>([]);
   const [missed, setMissed] = useState<Topic[]>([]);
+  const [answers, setAnswers] = useState<{ q: number; a: number }[]>([]);
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
   const [startedAt, setStartedAt] = useState(0);
@@ -83,6 +85,7 @@ export function Quiz({ theme }: { theme: QuizTheme }) {
     setPicked(null);
     setResults([]);
     setMissed([]);
+    setAnswers([]);
     setStreak(0);
     setBestStreak(0);
     setStartedAt(Date.now());
@@ -131,6 +134,7 @@ export function Quiz({ theme }: { theme: QuizTheme }) {
           elapsed={elapsed}
           bestStreak={bestStreak}
           missed={missed}
+          answers={answers}
           onReplay={() => start(mode)}
           onOther={() => start(mode === "flash" ? "pros" : "flash")}
         />
@@ -147,6 +151,7 @@ export function Quiz({ theme }: { theme: QuizTheme }) {
     if (answered) return;
     const ok = i === q.answer;
     setPicked(i);
+    setAnswers((list) => [...list, { q: theme.questions.indexOf(q), a: i }]);
     setResults((r) => [...r, ok]);
     if (ok) {
       const s = streak + 1;
@@ -236,6 +241,7 @@ function Result({
   elapsed,
   bestStreak,
   missed,
+  answers,
   onReplay,
   onOther,
 }: {
@@ -246,6 +252,7 @@ function Result({
   elapsed: number;
   bestStreak: number;
   missed: Topic[];
+  answers: { q: number; a: number }[];
   onReplay: () => void;
   onOther: () => void;
 }) {
@@ -296,6 +303,8 @@ function Result({
         <span>⏱ {fmt(elapsed)}</span>
         <span>🔥 série de {bestStreak}</span>
       </div>
+
+      <QuizEmailCapture theme={theme.slug} mode={mode} answers={answers} />
 
       {pack ? (
         <Link href={`/${pack.slug}?src=quiz`} className="qz-pack">

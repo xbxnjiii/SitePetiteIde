@@ -31,6 +31,10 @@ export default function PrivacyPage() {
             <ul>
               <li>Lors d&apos;un achat : adresse email, pays de facturation, contenu et montant de la commande.</li>
               <li>Les données bancaires sont traitées exclusivement par Stripe : nous n&apos;y avons jamais accès.</li>
+              <li>
+                À la fin d&apos;un quiz, si tu le demandes : ton adresse email et tes réponses au quiz, uniquement pour t&apos;envoyer
+                ta correction.
+              </li>
             </ul>
           ),
         },
@@ -41,6 +45,10 @@ export default function PrivacyPage() {
             <ul>
               <li>Traiter ta commande et t&apos;envoyer tes fiches numériques (exécution du contrat).</li>
               <li>Tenir la comptabilité (obligation légale).</li>
+              <li>
+                Emails du quiz (avec ton consentement) : ta correction et ta fiche gratuite, puis 2 emails espacés (un conseil de
+                révision et la présentation du pack). Rien d&apos;autre, et désinscription en un clic dans chaque email.
+              </li>
             </ul>
           ),
         },
@@ -50,6 +58,10 @@ export default function PrivacyPage() {
           content: (
             <ul>
               <li>Données de commande : 10 ans (obligations comptables).</li>
+              <li>
+                Emails du quiz : ton adresse n&apos;est enregistrée dans aucune base de données ; elle reste uniquement dans
+                l&apos;historique d&apos;envoi de Resend (30 jours maximum). Les envois programmés sont annulés dès ta désinscription.
+              </li>
               <li>Journaux techniques du site : quelques jours.</li>
             </ul>
           ),
@@ -63,7 +75,7 @@ export default function PrivacyPage() {
                 items={[
                   ["Cloudflare", "Hébergement du site et stockage des fichiers"],
                   ["Stripe", "Paiement et historique des commandes"],
-                  ["Resend", "Envoi des emails de commande"],
+                  ["Resend", "Envoi des emails (commandes et quiz)"],
                 ]}
               />
               <p className="legal__note">
