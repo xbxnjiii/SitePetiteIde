@@ -58,7 +58,7 @@ const buzz = (pattern: number | number[]) => {
 };
 
 /** Deux grandes tuiles : Flash Quiz et Quiz des Pros (boutons, ou liens depuis la page des thèmes). */
-export function ModePicker({ onPick, themeSlug }: { onPick?: (m: QuizMode) => void; themeSlug?: string }) {
+export function ModePicker({ onPick, themeSlug, total }: { onPick?: (m: QuizMode) => void; themeSlug?: string; total?: number }) {
   return (
     <div className="qz-modes">
       {(Object.keys(QUIZ_MODES) as QuizMode[]).map((m) => {
@@ -70,7 +70,7 @@ export function ModePicker({ onPick, themeSlug }: { onPick?: (m: QuizMode) => vo
             </span>
             <strong>{mode.label}</strong>
             <span className="qz-mode__meta">
-              {mode.count} questions · {mode.duration}
+              {Math.min(mode.count, total ?? mode.count)} questions · {mode.duration}
             </span>
             <span className="qz-mode__go">
               Jouer <Icon name="arrow" />
@@ -138,7 +138,7 @@ export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCa
       <div className="qz" ref={topRef}>
         <div className="qz-intro">
           <p className="qz-intro__kicker">Prête à te tester ?</p>
-          <ModePicker onPick={start} />
+          <ModePicker onPick={start} total={theme.questions.length} />
         </div>
       </div>
     );

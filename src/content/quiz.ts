@@ -6,7 +6,7 @@
 //  `answer` = index (à partir de 0) de la bonne réponse dans `choices`.
 // ============================================================================
 
-import { arretCardiaque, avc, embolie } from "./quiz-urgences";
+import { arretCardiaque, avc, bpco, embolie } from "./quiz-urgences";
 
 export interface QuizQuestion {
   question: string;
@@ -478,7 +478,7 @@ export const quizzes: QuizTheme[] = [
     slug: "arret-cardiaque",
     emoji: "🚑",
     title: "L'arrêt cardiaque",
-    description: "Reconnaître, masser, défibriller",
+    description: "Reconnaître, alerter, masser, défibriller",
     icon: "heart",
     status: "available",
     questions: arretCardiaque,
@@ -487,7 +487,7 @@ export const quizzes: QuizTheme[] = [
     slug: "embolie-pulmonaire",
     emoji: "🫁",
     title: "L'embolie pulmonaire",
-    description: "Signes, examens, anticoagulants",
+    description: "Phlébite, signes, urgence, anticoagulants",
     icon: "lungs",
     status: "available",
     questions: embolie,
@@ -496,10 +496,19 @@ export const quizzes: QuizTheme[] = [
     slug: "avc",
     emoji: "🧠",
     title: "L'AVC",
-    description: "VITE, délais, surveillance",
+    description: "VITE, ischémique ou hémorragique, le 15",
     icon: "book",
     status: "available",
     questions: avc,
+  },
+  {
+    slug: "bpco",
+    emoji: "🌬️",
+    title: "La BPCO",
+    description: "Bronches, tabac, spirométrie, oxygène",
+    icon: "lungs",
+    status: "available",
+    questions: bpco,
   },
 ];
 

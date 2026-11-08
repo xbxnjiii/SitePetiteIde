@@ -5,7 +5,7 @@ import { Breadcrumb } from "@/components/ui/Breadcrumb";
 
 export const metadata: Metadata = {
   title: "Quiz gratuits pour étudiants infirmiers",
-  description: "Teste tes connaissances en 2 minutes : constantes, arrêt cardiaque, embolie pulmonaire, AVC…",
+  description: "Teste tes connaissances en 2 minutes : constantes, arrêt cardiaque, embolie pulmonaire, AVC, BPCO…",
   alternates: { canonical: "/quiz" },
 };
 
@@ -18,7 +18,7 @@ export default function QuizHubPage() {
         <Breadcrumb items={[{ label: "Quiz" }]} />
         <h1>Quiz 🧠</h1>
         <p>
-          ⚡ Flash : {QUIZ_MODES.flash.count} questions · 🏆 Pros : {QUIZ_MODES.pros.count} questions
+          ⚡ Flash : {QUIZ_MODES.flash.count} questions · 🏆 Pros : jusqu&apos;à {QUIZ_MODES.pros.count} questions
         </p>
       </header>
 

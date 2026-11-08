@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!theme) return {};
   return {
     title: `Quiz gratuit : ${theme.title.toLowerCase()}`,
-    description: `Flash Quiz (${QUIZ_MODES.flash.count} questions) ou Quiz des Pros (${QUIZ_MODES.pros.count} questions) : ${theme.description}. Gratuit.`,
+    description: `Flash Quiz (${QUIZ_MODES.flash.count} questions) ou Quiz des Pros (${Math.min(QUIZ_MODES.pros.count, theme.questions.length)} questions) : ${theme.description}. Gratuit.`,
     alternates: { canonical: `/quiz/${theme.slug}` },
   };
 }
