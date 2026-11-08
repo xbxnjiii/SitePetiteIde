@@ -980,3 +980,14 @@ img.bio__avatar { width: 128px; height: 128px; }
   .pq-quiz__text span { font-size: 0.95rem; }
   .pq-quiz__go { width: 42px; height: 42px; }
 }
+
+/* ===== Quiz : la correction s'affiche en bas de l'écran, « Continuer » toujours visible ===== */
+.qz-feedback {
+  position: fixed; z-index: 40; left: 50%; bottom: calc(10px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+  width: min(560px, calc(100% - 20px)); max-height: 60vh; overflow-y: auto; gap: 6px; padding: 14px 16px;
+  box-shadow: 0 -6px 30px rgb(45 58 90 / 22%); animation: qz-sheet 0.25s var(--ease);
+}
+.qz-feedback__text { font-size: 0.88rem; line-height: 1.45; }
+.qz-feedback__btn { min-height: 50px; }
+.qz-play--answered { padding-bottom: 230px; }
+@keyframes qz-sheet { from { opacity: 0; transform: translate(-50%, 20px); } }

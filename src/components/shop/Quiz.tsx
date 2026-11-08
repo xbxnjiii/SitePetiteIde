@@ -199,12 +199,17 @@ export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCa
     } else {
       setIndex(index + 1);
       setPicked(null);
+      // Nouvelle question : on remonte en haut du quiz si besoin.
+      requestAnimationFrame(() => {
+        const top = topRef.current?.getBoundingClientRect().top ?? 0;
+        if (top < 0) topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     }
   };
 
   return (
     <div className="qz" ref={topRef}>
-      <div className="qz-play">
+      <div className={answered ? "qz-play qz-play--answered" : "qz-play"}>
         <div className="qz-bar">
           <button type="button" className="qz-bar__quit" onClick={quit} aria-label="Quitter le quiz">
             <Icon name="close" />

@@ -122,7 +122,7 @@ export async function sendOrderEmail(env: AppEnv, o: OrderEmail): Promise<void> 
       "Idempotency-Key": o.idempotencyKey,
     },
     body: JSON.stringify({
-      from: env.EMAIL_FROM ?? "La Petite IDE <commandes@lapetiteide.fr>",
+      from: env.EMAIL_FROM ?? "La Petite IDE <contact@lapetiteide.fr>",
       to: [o.to],
       reply_to: env.EMAIL_REPLY_TO ?? SITE.contactEmail,
       subject: o.shippingLines ? `Commande confirmée : ${o.packName} (papier) 💙` : `Ton ${o.packName} est prêt 💙`,
@@ -185,7 +185,7 @@ export async function sendRecoveryEmail(env: AppEnv, to: string, items: Recovery
       "Idempotency-Key": idempotencyKey,
     },
     body: JSON.stringify({
-      from: env.EMAIL_FROM ?? "La Petite IDE <commandes@lapetiteide.fr>",
+      from: env.EMAIL_FROM ?? "La Petite IDE <contact@lapetiteide.fr>",
       to: [to],
       reply_to: env.EMAIL_REPLY_TO ?? SITE.contactEmail,
       subject: "Tes fiches La Petite IDE 💙",
@@ -225,7 +225,7 @@ export async function sendEmail(env: AppEnv, o: SendOptions): Promise<string | n
       "Idempotency-Key": o.idempotencyKey,
     },
     body: JSON.stringify({
-      from: env.EMAIL_FROM ?? "La Petite IDE <commandes@lapetiteide.fr>",
+      from: env.EMAIL_FROM ?? "La Petite IDE <contact@lapetiteide.fr>",
       to: [o.to],
       reply_to: o.replyTo ?? env.EMAIL_REPLY_TO ?? SITE.contactEmail,
       subject: o.subject,
@@ -400,7 +400,7 @@ export async function sendUpdateEmails(env: AppEnv, recipients: UpdateEmail[], m
       },
       body: JSON.stringify(
         chunk.map((u) => ({
-          from: env.EMAIL_FROM ?? "La Petite IDE <commandes@lapetiteide.fr>",
+          from: env.EMAIL_FROM ?? "La Petite IDE <contact@lapetiteide.fr>",
           to: [u.to],
           reply_to: env.EMAIL_REPLY_TO ?? SITE.contactEmail,
           subject: `Mise à jour de ton ${u.packName} ✨`,

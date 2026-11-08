@@ -39,7 +39,6 @@ export default async function QuizThemePage({ params }: { params: Params }) {
         </h1>
       </header>
       <Quiz theme={theme} emailCapture={quizEmails} />
-      <p className="qz-disclaimer">Contenu de révision (adulte) : suis toujours les protocoles de ton service.</p>
     </div>
   );
 }

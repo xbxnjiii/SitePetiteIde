@@ -55,36 +55,36 @@ export function correctionEmail(o: {
 }) {
   const score = o.items.filter((i) => i.picked === i.q.answer).length;
   const total = o.items.length;
-  const rows = o.items
-    .map(({ q, picked }, n) => {
-      const ok = picked === q.answer;
-      return `<tr><td style="padding:12px 0;border-top:1px solid #E3E8F2;font-family:${FONT}">
-<p style="margin:0 0 6px;font-size:14px;line-height:20px;font-weight:700;color:#2D3A5A">${n + 1}. ${esc(q.question)}</p>
-<p style="margin:0 0 4px;font-size:13px;line-height:19px;color:${ok ? "#1f6b4f" : "#8f3a5e"}">${ok ? "✅" : "❌"} Ta réponse : ${esc(q.choices[picked] ?? "—")}</p>
-${ok ? "" : `<p style="margin:0 0 4px;font-size:13px;line-height:19px;color:#1f6b4f">✔️ Bonne réponse : ${esc(q.choices[q.answer])}</p>`}
-<p style="margin:0;font-size:13px;line-height:19px;color:#5B6784">${esc(q.explanation)}</p>
-</td></tr>`;
-    })
+  // Email court : uniquement les erreurs, avec la bonne réponse et une explication d'une ligne.
+  const mistakes = o.items.filter((i) => i.picked !== i.q.answer);
+  const rows = mistakes
+    .map(
+      ({ q }) => `<tr><td style="padding:10px 0;border-top:1px solid #E3E8F2;font-family:${FONT}">
+<p style="margin:0 0 3px;font-size:14px;line-height:20px;font-weight:700;color:#2D3A5A">${esc(q.question)}</p>
+<p style="margin:0;font-size:13px;line-height:19px;color:#1f6b4f">✔️ ${esc(q.choices[q.answer])} <span style="color:#5B6784">· ${esc(q.explanation)}</span></p>
+</td></tr>`,
+    )
     .join("");
   const pack = getPack("pack-des-constantes");
-  const body = `${p(`Bravo d'avoir joué au <strong style="color:#2D3A5A">${esc(o.modeLabel)} « ${esc(o.themeTitle)} »</strong> : tu as eu <strong style="color:#4E7AC7">${score}/${total}</strong>.`)}
-<p style="margin:0 0 8px;font-size:15px;font-weight:700">🎁 Ta fiche gratuite</p>
-${button(o.freeUrl, "Télécharger ma fiche gratuite")}
-<p style="margin:6px 0 4px;font-size:15px;font-weight:700">📝 Ta correction détaillée</p>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
-${pack ? `<div style="margin-top:18px;padding:16px;border-radius:16px;background:#EEF3FB">
-${p(`${o.aboutPack ? "Toutes ces valeurs sont réunies dans le" : "Pour réviser la base de toute surveillance, les constantes sont réunies dans le"} <strong style="color:#2D3A5A">${esc(pack.name)}</strong> : ${pack.items.length} fiches mémo + 1 bonus, sur ton téléphone ou à imprimer.`, "margin-bottom:10px")}
-${button(o.packUrl, "Découvrir le pack")}</div>` : ""}`;
+  const correction = mistakes.length
+    ? `<p style="margin:14px 0 2px;font-size:15px;font-weight:700">📝 Tes ${mistakes.length} erreur${mistakes.length > 1 ? "s" : ""}, corrigée${mistakes.length > 1 ? "s" : ""}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>`
+    : p("🏆 Sans faute : rien à corriger, bravo !", "margin-top:12px;font-weight:700;color:#1f6b4f");
+  const body = `${p(`<strong style="color:#4E7AC7;font-size:18px">${score}/${total}</strong> au ${esc(o.modeLabel)} « ${esc(o.themeTitle)} ».`)}
+${button(o.freeUrl, "🎁 Télécharger ma fiche gratuite")}
+${correction}
+${pack ? `<p style="margin:18px 0 0;font-size:14px;line-height:21px;color:#5B6784">Tout l'essentiel des constantes en ${pack.items.length} fiches : <a href="${esc(o.packUrl)}" style="color:#4E7AC7;font-weight:700">découvrir le ${esc(pack.name)}</a></p>` : ""}`;
   return {
     subject: `Ta correction (${score}/${total}) + ta fiche gratuite 🎁`,
-    html: layout({ preheader: "Ta correction détaillée et ta fiche mémo gratuite.", title: "Ta correction + ta fiche gratuite 🎁", body, unsubscribeUrl: o.unsubscribeUrl }),
+    html: layout({ preheader: "Ta fiche gratuite et la correction de tes erreurs.", title: "Ta correction + ta fiche gratuite 🎁", body, unsubscribeUrl: o.unsubscribeUrl }),
     text: [
-      `Tu as eu ${score}/${total} au ${o.modeLabel} « ${o.themeTitle} ».`,
+      `${score}/${total} au ${o.modeLabel} « ${o.themeTitle} ».`,
       "",
       `Ta fiche gratuite : ${o.freeUrl}`,
       "",
-      "Ta correction :",
-      ...o.items.map(({ q, picked }, n) => `${n + 1}. ${q.question}\n   Ta réponse : ${q.choices[picked]} ${picked === q.answer ? "(juste)" : `— bonne réponse : ${q.choices[q.answer]}`}\n   ${q.explanation}`),
+      ...(mistakes.length
+        ? ["Tes erreurs, corrigées :", ...mistakes.map(({ q }) => `- ${q.question}\n  Bonne réponse : ${q.choices[q.answer]} · ${q.explanation}`)]
+        : ["Sans faute : bravo !"]),
       "",
       `Le pack : ${o.packUrl}`,
       `Se désinscrire : ${o.unsubscribeUrl}`,
