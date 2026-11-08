@@ -5,6 +5,8 @@
 //  `answer` = index (à partir de 0) de la bonne réponse dans `choices`.
 // ============================================================================
 
+import { arretCardiaque, avc, embolie } from "./quiz-urgences";
+
 export interface QuizQuestion {
   question: string;
   /** Fiche du pack qui traite la question (voir TOPICS). Absent = hors pack. */
@@ -427,9 +429,33 @@ export const quizzes: QuizTheme[] = [
     packSlug: QUIZ_PACK_SLUG,
     packName: "Pack Mémos : Constantes",
   },
-  { slug: "pathologies", emoji: "🩺", title: "Les pathologies", description: "Les grandes pathologies à connaître", icon: "book", status: "soon", questions: [] },
-  { slug: "arret-cardiaque", emoji: "🚑", title: "L'arrêt cardiaque", description: "Reconnaître et agir", icon: "lungs", status: "soon", questions: [] },
-  { slug: "diabete", emoji: "🩸", title: "Le diabète", description: "Glycémie, traitements, complications", icon: "drop", status: "soon", questions: [] },
+  {
+    slug: "arret-cardiaque",
+    emoji: "🚑",
+    title: "L'arrêt cardiaque",
+    description: "Reconnaître, masser, défibriller",
+    icon: "heart",
+    status: "available",
+    questions: arretCardiaque,
+  },
+  {
+    slug: "embolie-pulmonaire",
+    emoji: "🫁",
+    title: "L'embolie pulmonaire",
+    description: "Signes, examens, anticoagulants",
+    icon: "lungs",
+    status: "available",
+    questions: embolie,
+  },
+  {
+    slug: "avc",
+    emoji: "🧠",
+    title: "L'AVC",
+    description: "VITE, délais, surveillance",
+    icon: "book",
+    status: "available",
+    questions: avc,
+  },
 ];
 
 export const getQuiz = (slug: string) => quizzes.find((q) => q.slug === slug && q.status === "available");

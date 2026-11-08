@@ -1,19 +1,36 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
-import { QUIZ_MODES, type QuizMode, type QuizQuestion, type QuizTheme, type Topic, quizVerdict } from "@/content/quiz";
+import { QUIZ_MODES, QUIZ_PACK_SLUG, type QuizMode, type QuizQuestion, type QuizTheme, quizVerdict } from "@/content/quiz";
 import { getPack } from "@/content/packs";
 import { QuizEmailCapture } from "./QuizEmailCapture";
 
-/** Tire `n` questions au hasard (mélange de Fisher-Yates). */
-function draw(all: QuizQuestion[], n: number): QuizQuestion[] {
-  const a = [...all];
+/** Mélange de Fisher-Yates. */
+function shuffle<T>(list: T[]): T[] {
+  const a = [...list];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
-  return a.slice(0, Math.min(n, a.length));
+  return a;
+}
+
+/** Question tirée : réponses mélangées, avec le lien vers la question et les réponses d'origine (pour la correction par email). */
+interface DrawnQuestion extends QuizQuestion {
+  index: number;
+  order: number[];
+}
+
+/** Tire `n` questions au hasard et mélange l'ordre des réponses. */
+function draw(all: QuizQuestion[], n: number): DrawnQuestion[] {
+  return shuffle(all.map((q, index) => ({ q, index })))
+    .slice(0, Math.min(n, all.length))
+    .map(({ q, index }) => {
+      const order = shuffle(q.choices.map((_, i) => i));
+      return { ...q, index, order, choices: order.map((i) => q.choices[i]), answer: order.indexOf(q.answer) };
+    });
 }
 
 const isMode = (v: unknown): v is QuizMode => v === "flash" || v === "pros";
@@ -64,11 +81,11 @@ export function ModePicker({ onPick, themeSlug }: { onPick?: (m: QuizMode) => vo
 
 export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCapture?: boolean }) {
   const [mode, setMode] = useState<QuizMode | null>(null);
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const router = useRouter();
+  const [questions, setQuestions] = useState<DrawnQuestion[]>([]);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [results, setResults] = useState<boolean[]>([]);
-  const [missed, setMissed] = useState<Topic[]>([]);
   const [answers, setAnswers] = useState<{ q: number; a: number }[]>([]);
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
@@ -84,7 +101,6 @@ export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCa
     setIndex(0);
     setPicked(null);
     setResults([]);
-    setMissed([]);
     setAnswers([]);
     setStreak(0);
     setBestStreak(0);
@@ -93,11 +109,8 @@ export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCa
     requestAnimationFrame(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
 
-  const quit = () => {
-    setMode(null);
-    setQuestions([]);
-    setDone(false);
-  };
+  // La croix ramène à la liste des quiz.
+  const quit = () => router.push("/quiz");
 
   // Format demandé dans l'adresse (?mode=flash / ?mode=pros), depuis la page des thèmes.
   useEffect(() => {
@@ -133,7 +146,6 @@ export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCa
           total={total}
           elapsed={elapsed}
           bestStreak={bestStreak}
-          missed={missed}
           answers={answers}
           emailCapture={emailCapture}
           onReplay={() => start(mode)}
@@ -152,7 +164,7 @@ export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCa
     if (answered) return;
     const ok = i === q.answer;
     setPicked(i);
-    setAnswers((list) => [...list, { q: theme.questions.indexOf(q), a: i }]);
+    setAnswers((list) => [...list, { q: q.index, a: q.order[i] }]);
     setResults((r) => [...r, ok]);
     if (ok) {
       const s = streak + 1;
@@ -161,7 +173,6 @@ export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCa
       buzz(15);
     } else {
       setStreak(0);
-      if (q.topic) setMissed((m) => [...m, q.topic!]);
       buzz([30, 40, 30]);
     }
   };
@@ -241,7 +252,6 @@ function Result({
   total,
   elapsed,
   bestStreak,
-  missed,
   answers,
   emailCapture,
   onReplay,
@@ -253,7 +263,6 @@ function Result({
   total: number;
   elapsed: number;
   bestStreak: number;
-  missed: Topic[];
   answers: { q: number; a: number }[];
   emailCapture: boolean;
   onReplay: () => void;
@@ -264,7 +273,8 @@ function Result({
   const ratio = score / total;
   const verdict = quizVerdict(score, total);
   const other: QuizMode = mode === "flash" ? "pros" : "flash";
-  const pack = theme.packSlug ? getPack(theme.packSlug) : undefined;
+  // Pack du thème, sinon le pack des constantes (utile pour tous les thèmes).
+  const pack = getPack(theme.packSlug ?? QUIZ_PACK_SLUG);
   const R = 52;
   const C = 2 * Math.PI * R;
 
@@ -311,17 +321,18 @@ function Result({
 
       {pack ? (
         <Link href={`/${pack.slug}?src=quiz`} className="qz-pack">
+          <span className="qz-pack__shine" aria-hidden="true" />
           {pack.images ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={pack.images.card} alt="" width={800} height={800} className="qz-pack__img" />
           ) : null}
           <span className="qz-pack__body">
             <span className="qz-pack__hook">
-              {missed.length ? "Corrige tes erreurs ✨" : "Garde ce niveau ✨"}
+              {theme.packSlug ? (score < total ? "Corrige tes erreurs ✨" : "Garde ce niveau ✨") : "La base de toute surveillance ✨"}
             </span>
             <strong>{pack.name}</strong>
             <span className="qz-pack__meta">
-              {pack.items.length} fiches{pack.bonus ? " + bonus" : ""}
+              {pack.items.length} fiches{pack.bonus ? " + bonus" : ""} · en PDF et en images
             </span>
           </span>
           <span className="qz-pack__go">
@@ -330,21 +341,6 @@ function Result({
         </Link>
       ) : null}
 
-      <button type="button" className={`qz-next qz-next--${other}`} onClick={onOther}>
-        <span className="qz-next__emoji" aria-hidden="true">
-          {MODE_EMOJI[other]}
-        </span>
-        <span className="qz-next__text">
-          <strong>{other === "pros" ? "Prête pour le Quiz des Pros ?" : "Envie d'un Flash Quiz ?"}</strong>
-          <span>
-            {QUIZ_MODES[other].count} questions · {QUIZ_MODES[other].tagline.toLowerCase()}
-          </span>
-        </span>
-        <span className="qz-next__go" aria-hidden="true">
-          <Icon name="arrow" />
-        </span>
-      </button>
-
       <div className="qz-actions">
         <button type="button" onClick={onReplay}>
           <span aria-hidden="true">🔁</span>
@@ -352,7 +348,11 @@ function Result({
         </button>
         <button type="button" onClick={challenge}>
           <span aria-hidden="true">⚔️</span>
-          {copied ? "Lien copié" : "Défier un ami"}
+          {copied ? "Lien copié" : "Défier"}
+        </button>
+        <button type="button" onClick={onOther} className={`qz-actions__mode qz-actions__mode--${other}`}>
+          <span aria-hidden="true">{MODE_EMOJI[other]}</span>
+          {other === "pros" ? "Mode Pros" : "Mode Flash"}
         </button>
       </div>
 

@@ -50,6 +50,8 @@ export function correctionEmail(o: {
   freeUrl: string;
   packUrl: string;
   unsubscribeUrl: string;
+  /** Le quiz porte sur le contenu du pack (sinon : texte d'introduction plus général). */
+  aboutPack: boolean;
 }) {
   const score = o.items.filter((i) => i.picked === i.q.answer).length;
   const total = o.items.length;
@@ -71,7 +73,7 @@ ${button(o.freeUrl, "Télécharger ma fiche gratuite")}
 <p style="margin:6px 0 4px;font-size:15px;font-weight:700">📝 Ta correction détaillée</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
 ${pack ? `<div style="margin-top:18px;padding:16px;border-radius:16px;background:#EEF3FB">
-${p(`Toutes ces valeurs sont réunies dans le <strong style="color:#2D3A5A">${esc(pack.name)}</strong> : ${pack.items.length} fiches mémo + 1 bonus, sur ton téléphone ou à imprimer.`, "margin-bottom:10px")}
+${p(`${o.aboutPack ? "Toutes ces valeurs sont réunies dans le" : "Pour réviser la base de toute surveillance, les constantes sont réunies dans le"} <strong style="color:#2D3A5A">${esc(pack.name)}</strong> : ${pack.items.length} fiches mémo + 1 bonus, sur ton téléphone ou à imprimer.`, "margin-bottom:10px")}
 ${button(o.packUrl, "Découvrir le pack")}</div>` : ""}`;
   return {
     subject: `Ta correction (${score}/${total}) + ta fiche gratuite 🎁`,
@@ -102,7 +104,7 @@ export function tipsEmail(o: { quizUrl: string; unsubscribeUrl: string }) {
 ${p("Envie de vérifier que ça a marché ?", "margin-top:16px")}
 ${button(o.quizUrl, "Refaire un quiz 🏆", "#d77ba0")}`;
   return {
-    subject: "3 astuces pour retenir tes constantes 🧠",
+    subject: "3 astuces pour mieux retenir tes cours 🧠",
     html: layout({ preheader: "Réviser moins longtemps, mais retenir plus.", title: "3 astuces pour mieux retenir 🧠", body, unsubscribeUrl: o.unsubscribeUrl }),
     text: [
       "3 astuces pour retenir tes valeurs :",

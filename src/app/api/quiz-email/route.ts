@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     const firstUnsub = await unsub([tipsId, offerId]);
     const freeExp = Math.floor(now / 1000) + FREE_SHEET.days * 86_400;
     const freeUrl = `${base}/fiche-gratuite?t=${await signToken({ f: 1 }, freeExp, secret, "free")}`;
-    const first = correctionEmail({ themeTitle: theme.title, modeLabel: QUIZ_MODES[mode].label, items, freeUrl, packUrl, unsubscribeUrl: firstUnsub });
+    const first = correctionEmail({ themeTitle: theme.title, modeLabel: QUIZ_MODES[mode].label, items, freeUrl, packUrl, unsubscribeUrl: firstUnsub, aboutPack: Boolean(theme.packSlug) });
     await sendEmail(env, { to: email, ...first, idempotencyKey: idem("first"), unsubscribeUrl: firstUnsub });
 
     console.log("quiz-email: séquence programmée", theme.slug, mode);

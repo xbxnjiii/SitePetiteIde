@@ -5,13 +5,13 @@ import { Breadcrumb } from "@/components/ui/Breadcrumb";
 
 export const metadata: Metadata = {
   title: "Quiz gratuits pour étudiants infirmiers",
-  description: "Teste tes connaissances en 2 minutes : constantes, et bientôt pathologies, arrêt cardiaque, diabète…",
+  description: "Teste tes connaissances en 2 minutes : constantes, arrêt cardiaque, embolie pulmonaire, AVC…",
   alternates: { canonical: "/quiz" },
 };
 
 // Liste compacte des thèmes : une ligne par thème avec ses deux formats (lisible même avec beaucoup de thèmes).
 export default function QuizHubPage() {
-  const sorted = [...quizzes].sort((a, b) => (a.status === b.status ? 0 : a.status === "available" ? -1 : 1));
+  const sorted = quizzes.filter((q) => q.status === "available");
   return (
     <div className="container qz-page">
       <header className="qz-head">
@@ -50,6 +50,7 @@ export default function QuizHubPage() {
           );
         })}
       </ul>
+      <p className="qz-more">🛠️ D&apos;autres quiz sont en cours de préparation…</p>
     </div>
   );
 }
