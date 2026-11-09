@@ -6,7 +6,7 @@
 //  `answer` = index (à partir de 0) de la bonne réponse dans `choices`.
 // ============================================================================
 
-import { arretCardiaque, avc, bpco, embolie } from "./quiz-urgences";
+import { arretCardiaque, avc, bpco, embolie, priseDeSang } from "./quiz-urgences";
 
 export interface QuizQuestion {
   question: string;
@@ -509,6 +509,15 @@ export const quizzes: QuizTheme[] = [
     icon: "lungs",
     status: "available",
     questions: bpco,
+  },
+  {
+    slug: "materiel-prise-de-sang",
+    emoji: "🩸",
+    title: "Le matériel de prise de sang",
+    description: "Vacutainer, tubes, garrot, OPCT, DASRI",
+    icon: "syringe",
+    status: "available",
+    questions: priseDeSang,
   },
 ];
 
