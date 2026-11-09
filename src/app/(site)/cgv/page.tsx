@@ -154,6 +154,17 @@ export default function CgvPage() {
           ),
         },
         {
+          id: "soutien",
+          title: "Soutien volontaire",
+          content: (
+            <p>
+              Le site permet de verser un soutien facultatif (1, 2 ou 5 €) à {LEGAL.tradeName}. Ce paiement volontaire ne donne
+              droit à aucun produit ni avantage et n&apos;ouvre pas droit à une réduction d&apos;impôt (il ne s&apos;agit pas d&apos;un
+              don à une association).
+            </p>
+          ),
+        },
+        {
           id: "donnees",
           title: "Données personnelles",
           content: (

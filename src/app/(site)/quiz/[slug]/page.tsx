@@ -3,10 +3,14 @@ import { notFound } from "next/navigation";
 import { QUIZ_MODES, getQuiz, quizzes } from "@/content/quiz";
 import { Quiz } from "@/components/shop/Quiz";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
+import { getEnvAsync } from "@/lib/env";
+import { getSettings } from "@/lib/settings";
 
 type Params = Promise<{ slug: string }>;
 
 export const dynamicParams = false;
+// Rendu à chaque visite : le formulaire email de fin de quiz s'active depuis /admin (Réglages).
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return quizzes.filter((q) => q.status === "available").map((q) => ({ slug: q.slug }));
@@ -17,7 +21,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!theme) return {};
   return {
     title: `Quiz gratuit : ${theme.title.toLowerCase()}`,
-    description: `Flash Quiz (${QUIZ_MODES.flash.count} questions) ou Quiz des Pros (${QUIZ_MODES.pros.count} questions) : ${theme.description}. Gratuit.`,
+    description: `Flash Quiz (${QUIZ_MODES.flash.count} questions) ou Quiz des Pros (${Math.min(QUIZ_MODES.pros.count, theme.questions.length)} questions) : ${theme.description}. Gratuit.`,
     alternates: { canonical: `/quiz/${theme.slug}` },
   };
 }
@@ -25,17 +29,16 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function QuizThemePage({ params }: { params: Params }) {
   const theme = getQuiz((await params).slug);
   if (!theme) notFound();
+  const { quizEmails } = await getSettings(await getEnvAsync());
   return (
-    <div className="container legal">
-      <header className="legal__head contact__head">
+    <div className="container qz-page">
+      <header className="qz-head">
         <Breadcrumb items={[{ label: "Quiz", href: "/quiz" }, { label: theme.title }]} />
-        <h1>Quiz : {theme.title.toLowerCase()} 🧠</h1>
-        <p className="legal__intro">Flash Quiz pour réviser en 2 min, ou Quiz des Pros pour viser le sans-faute.</p>
+        <h1>
+          <span aria-hidden="true">{theme.emoji}</span> {theme.title}
+        </h1>
       </header>
-      <Quiz theme={theme} />
-      <p className="contact__tip">
-        Valeurs de référence chez l&apos;adulte, à titre de révision : suis toujours les protocoles de ton service.
-      </p>
+      <Quiz theme={theme} emailCapture={quizEmails} />
     </div>
   );
 }

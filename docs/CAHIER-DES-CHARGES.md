@@ -1,6 +1,6 @@
 # La Petite IDE — Cahier des charges V1 (version simplifiée)
 
-> Statut : **validé** (6 nov. 2026) — livraison par lien sécurisé valable 30 jours, un seul pack au lancement (Pack des constantes, 2,99 € TTC).
+> Statut : **validé** (6 nov. 2026) — livraison par lien sécurisé valable 30 jours, un seul pack au lancement (Pack des constantes, 2,99 € TTC au lancement, 3,99 € depuis le 8 nov. 2026).
 > Date : 6 novembre 2026
 
 ---

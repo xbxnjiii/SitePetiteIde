@@ -122,7 +122,7 @@ export async function sendOrderEmail(env: AppEnv, o: OrderEmail): Promise<void> 
       "Idempotency-Key": o.idempotencyKey,
     },
     body: JSON.stringify({
-      from: env.EMAIL_FROM ?? "La Petite IDE <commandes@lapetiteide.fr>",
+      from: env.EMAIL_FROM ?? "La Petite IDE <contact@lapetiteide.fr>",
       to: [o.to],
       reply_to: env.EMAIL_REPLY_TO ?? SITE.contactEmail,
       subject: o.shippingLines ? `Commande confirmée : ${o.packName} (papier) 💙` : `Ton ${o.packName} est prêt 💙`,
@@ -185,7 +185,7 @@ export async function sendRecoveryEmail(env: AppEnv, to: string, items: Recovery
       "Idempotency-Key": idempotencyKey,
     },
     body: JSON.stringify({
-      from: env.EMAIL_FROM ?? "La Petite IDE <commandes@lapetiteide.fr>",
+      from: env.EMAIL_FROM ?? "La Petite IDE <contact@lapetiteide.fr>",
       to: [to],
       reply_to: env.EMAIL_REPLY_TO ?? SITE.contactEmail,
       subject: "Tes fiches La Petite IDE 💙",
@@ -197,33 +197,61 @@ export async function sendRecoveryEmail(env: AppEnv, to: string, items: Recovery
   if (!res.ok && res.status !== 409) throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 300)}`);
 }
 
-// ---------------------------------------------------------------------------
-//  Commandes papier : alerte « à préparer » et email d'expédition
-// ---------------------------------------------------------------------------
+/* ===================================================================== */
+/*  Envoi générique (Resend) — utilisé par la séquence du quiz            */
+/* ===================================================================== */
 
-async function sendEmail(
-  env: AppEnv,
-  m: { to: string; subject: string; html: string; text: string; idempotencyKey: string; replyTo?: string },
-): Promise<void> {
+export interface SendOptions {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  idempotencyKey: string;
+  /** Date ISO d'envoi programmé (jusqu'à 30 jours). */
+  scheduledAt?: string;
+  /** Lien de désinscription (en-têtes List-Unsubscribe, désinscription en un clic). */
+  unsubscribeUrl?: string;
+  /** Adresse de réponse (par défaut EMAIL_REPLY_TO). */
+  replyTo?: string;
+}
+
+/** Envoie (ou programme) un email ; renvoie son identifiant Resend. */
+export async function sendEmail(env: AppEnv, o: SendOptions): Promise<string | null> {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${requireVar(env, "RESEND_API_KEY")}`,
       "Content-Type": "application/json",
-      "Idempotency-Key": m.idempotencyKey,
+      "Idempotency-Key": o.idempotencyKey,
     },
     body: JSON.stringify({
-      from: env.EMAIL_FROM ?? "La Petite IDE <commandes@lapetiteide.fr>",
-      to: [m.to],
-      reply_to: m.replyTo ?? env.EMAIL_REPLY_TO ?? SITE.contactEmail,
-      subject: m.subject,
-      html: m.html,
-      text: m.text,
+      from: env.EMAIL_FROM ?? "La Petite IDE <contact@lapetiteide.fr>",
+      to: [o.to],
+      reply_to: o.replyTo ?? env.EMAIL_REPLY_TO ?? SITE.contactEmail,
+      subject: o.subject,
+      html: o.html,
+      text: o.text,
+      ...(o.scheduledAt ? { scheduled_at: o.scheduledAt } : {}),
+      ...(o.unsubscribeUrl
+        ? { headers: { "List-Unsubscribe": `<${o.unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }
+        : {}),
     }),
   });
-  // 409 = même clé d'idempotence déjà utilisée : l'email est déjà parti.
-  if (!res.ok && res.status !== 409) throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  if (res.status === 409) return null; // déjà envoyé (même clé d'idempotence)
+  if (!res.ok) throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  const data = (await res.json()) as { id?: string };
+  return data.id ?? null;
 }
+
+/** Annule un email programmé (sans erreur s'il est déjà parti ou annulé). */
+export async function cancelEmail(env: AppEnv, id: string): Promise<void> {
+  await fetch(`https://api.resend.com/emails/${encodeURIComponent(id)}/cancel`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${requireVar(env, "RESEND_API_KEY")}` },
+  }).catch(() => {});
+}
+
+export { esc as escapeHtml };
 
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
@@ -254,6 +282,8 @@ export interface PrintOrderNotice {
   deliverable: boolean;
   adminUrl: string;
   sessionId: string;
+  /** Destinataire (défaut : ORDERS_NOTIFY_TO). Utilisé pour l'aperçu des emails. */
+  to?: string;
 }
 
 /** Alerte envoyée à La Petite IDE : une commande papier est à préparer. */
@@ -277,7 +307,7 @@ export async function sendPrintOrderNotice(env: AppEnv, n: PrintOrderNotice): Pr
     `Commandes à expédier : ${n.adminUrl}`,
   ].join("\n");
   await sendEmail(env, {
-    to: env.ORDERS_NOTIFY_TO ?? env.EMAIL_REPLY_TO ?? SITE.contactEmail,
+    to: n.to ?? env.ORDERS_NOTIFY_TO ?? env.EMAIL_REPLY_TO ?? SITE.contactEmail,
     replyTo: n.customerEmail,
     subject: `${n.deliverable ? "📦" : "⚠️"} Commande papier à préparer · ${n.reference}`,
     html,
@@ -370,7 +400,7 @@ export async function sendUpdateEmails(env: AppEnv, recipients: UpdateEmail[], m
       },
       body: JSON.stringify(
         chunk.map((u) => ({
-          from: env.EMAIL_FROM ?? "La Petite IDE <commandes@lapetiteide.fr>",
+          from: env.EMAIL_FROM ?? "La Petite IDE <contact@lapetiteide.fr>",
           to: [u.to],
           reply_to: env.EMAIL_REPLY_TO ?? SITE.contactEmail,
           subject: `Mise à jour de ton ${u.packName} ✨`,

@@ -1,12 +1,25 @@
 import type { Pack } from "@/content/packs";
 import { Icon } from "@/components/ui/Icon";
+import { quizzes } from "@/content/quiz";
+
+const quizCount = quizzes.filter((q) => q.status === "available").length;
 import { PackCover } from "./PackCover";
 import { SourceLink } from "./SourceLink";
 
 export type BlockVariant = "a" | "b" | "c";
 
 /** Bloc de la page de liens quand un seul pack est en vente : pack + quiz. */
-export function PackQuizBlock({ pack, variant }: { pack: Pack; variant: BlockVariant }) {
+export function PackQuizBlock({
+  pack,
+  variant,
+  showPack = true,
+  showQuiz = true,
+}: {
+  pack: Pack;
+  variant: BlockVariant;
+  showPack?: boolean;
+  showQuiz?: boolean;
+}) {
   const href = `/${pack.slug}`;
   const img = pack.images ? (
     // eslint-disable-next-line @next/next/no-img-element
@@ -19,6 +32,19 @@ export function PackQuizBlock({ pack, variant }: { pack: Pack; variant: BlockVar
   if (variant === "a") {
     return (
       <div className="pq pq--a">
+        {showQuiz ? (
+          <SourceLink href="/quiz" className="pq-quiz">
+            <span className="pq-quiz__icon" aria-hidden="true">🧠</span>
+            <span className="pq-quiz__text">
+              <strong>Quiz gratuits</strong>
+              <span>Teste-toi en 2 min · {quizCount} thèmes</span>
+            </span>
+            <span className="pq-quiz__go" aria-hidden="true">
+              <Icon name="arrow" />
+            </span>
+          </SourceLink>
+        ) : null}
+        {showPack ? (
         <SourceLink href={href} className="pq-a__pack">
           {img}
           <span className="pq-a__text">
@@ -27,10 +53,7 @@ export function PackQuizBlock({ pack, variant }: { pack: Pack; variant: BlockVar
           </span>
           <Icon name="arrow" />
         </SourceLink>
-        <SourceLink href="/quiz" className="pq-a__quiz">
-          <Icon name="quiz" />
-          <span><strong>Quiz gratuits</strong> · teste-toi en 2 min</span>
-        </SourceLink>
+        ) : null}
       </div>
     );
   }

@@ -5,6 +5,12 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 export interface R2BucketLike {
   get(key: string): Promise<{ body: ReadableStream; size: number } | null>;
   head(key: string): Promise<{ size: number } | null>;
+  put(key: string, value: string, options?: { httpMetadata?: { contentType?: string } }): Promise<unknown>;
+  list(options: { prefix?: string; startAfter?: string; cursor?: string; limit?: number }): Promise<{
+    objects: { key: string }[];
+    truncated: boolean;
+    cursor?: string;
+  }>;
 }
 
 /** Variables et secrets du Worker (wrangler.jsonc "vars" + `wrangler secret put`). */
@@ -23,6 +29,8 @@ export interface AppEnv {
   ORDERS_NOTIFY_TO?: string;
   /** Mot de passe de la page /admin (secret). Sans lui, la page est fermée. */
   ADMIN_PASSWORD?: string;
+  /** Clé Resend « Full access » pour lire l'historique des emails dans /admin (sinon RESEND_API_KEY). */
+  RESEND_ADMIN_KEY?: string;
   PDF_BUCKET?: R2BucketLike;
 }
 

@@ -11,19 +11,28 @@ import { PackGallery } from "@/components/shop/PackGallery";
 import { QuizCta } from "@/components/shop/QuizCta";
 import { StickyBuyBar } from "@/components/shop/StickyBuyBar";
 import { Icon } from "@/components/ui/Icon";
+import { getEnvAsync } from "@/lib/env";
 import { SITE, formatPrice } from "@/lib/format";
+import { applySettings, getSettings } from "@/lib/settings";
 import { jsonLd } from "@/lib/seo";
 
 type Params = Promise<{ slug: string }>;
 
 export const dynamicParams = false;
+// Rendu à chaque visite : la version papier s'active / se désactive depuis /admin (Réglages).
+export const dynamic = "force-dynamic";
+
+async function livePack(slug: string) {
+  const pack = getPack(slug);
+  return pack && applySettings(pack, await getSettings(await getEnvAsync()));
+}
 
 export function generateStaticParams() {
   return publishedPacks().map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
-  const pack = getPack((await params).slug);
+  const pack = await livePack((await params).slug);
   if (!pack) return {};
   return {
     title: pack.name,
@@ -60,7 +69,7 @@ const faqFor = (pack: Pack) => [
 ];
 
 export default async function PackPage({ params }: { params: Params }) {
-  const pack = getPack((await params).slug);
+  const pack = await livePack((await params).slug);
   if (!pack) notFound();
 
   const structured = {

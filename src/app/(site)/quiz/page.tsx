@@ -1,52 +1,56 @@
 import type { Metadata } from "next";
-import { quizzes } from "@/content/quiz";
-import { ModePicker } from "@/components/shop/Quiz";
+import Link from "next/link";
+import { QUIZ_MODES, quizzes } from "@/content/quiz";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
-import { Icon } from "@/components/ui/Icon";
 
 export const metadata: Metadata = {
   title: "Quiz gratuits pour étudiants infirmiers",
-  description: "Teste tes connaissances en 2 minutes : constantes, et bientôt pathologies, arrêt cardiaque, diabète…",
+  description: "Teste tes connaissances en 2 minutes : constantes, arrêt cardiaque, embolie pulmonaire, AVC, BPCO…",
   alternates: { canonical: "/quiz" },
 };
 
-// Page de choix du thème : chaque thème disponible ouvre son quiz.
+// Liste compacte des thèmes : une ligne par thème avec ses deux formats (lisible même avec beaucoup de thèmes).
 export default function QuizHubPage() {
+  const sorted = quizzes.filter((q) => q.status === "available");
   return (
-    <div className="container legal">
-      <header className="legal__head contact__head">
+    <div className="container qz-page">
+      <header className="qz-head">
         <Breadcrumb items={[{ label: "Quiz" }]} />
-        <h1>Teste tes connaissances 🧠</h1>
-        <p className="legal__intro">Choisis ton thème et ton format : Flash Quiz en 2 min, ou le Quiz des Pros.</p>
+        <h1>Quiz 🧠</h1>
+        <p>
+          ⚡ Flash : {QUIZ_MODES.flash.count} questions · 🏆 Pros : jusqu&apos;à {QUIZ_MODES.pros.count} questions
+        </p>
       </header>
-      <ul className="quiz-themes">
-        {quizzes.map((t) => (
-          <li key={t.slug}>
-            {t.status === "available" ? (
-              <div className="quiz-theme quiz-theme--open">
-                <div className="quiz-theme__row">
-                  <span className="quiz-theme__icon"><Icon name={t.icon} /></span>
-                  <span className="quiz-theme__text">
-                    <strong>{t.title}</strong>
-                    <span>{t.description}</span>
-                  </span>
-                </div>
-                <ModePicker themeSlug={t.slug} />
-              </div>
-            ) : (
-              <div className="quiz-theme quiz-theme--soon" aria-disabled="true">
-                <span className="quiz-theme__icon"><Icon name={t.icon} /></span>
-                <span className="quiz-theme__text">
-                  <strong>{t.title}</strong>
-                  <span>{t.description}</span>
+
+      <ul className="qz-list">
+        {sorted.map((t) => {
+          const soon = t.status !== "available";
+          return (
+            <li key={t.slug} className={soon ? "qz-row qz-row--soon" : "qz-row"}>
+              <span className="qz-row__emoji" aria-hidden="true">
+                {t.emoji}
+              </span>
+              <span className="qz-row__text">
+                <strong>{t.title}</strong>
+                <span>{t.description}</span>
+              </span>
+              {soon ? (
+                <span className="qz-row__soon">Bientôt</span>
+              ) : (
+                <span className="qz-row__modes">
+                  <Link href={`/quiz/${t.slug}?mode=flash`} className="qz-pill qz-pill--flash" aria-label={`${t.title} : Flash Quiz`}>
+                    ⚡ Flash
+                  </Link>
+                  <Link href={`/quiz/${t.slug}?mode=pros`} className="qz-pill qz-pill--pros" aria-label={`${t.title} : Quiz des Pros`}>
+                    🏆 Pros
+                  </Link>
                 </span>
-                <span className="quiz-theme__soon">Bientôt</span>
-              </div>
-            )}
-          </li>
-        ))}
+              )}
+            </li>
+          );
+        })}
       </ul>
-      <p className="contact__tip">À titre de révision : suis toujours les protocoles de ton service.</p>
+      <p className="qz-more">🛠️ D&apos;autres quiz sont en cours de préparation…</p>
     </div>
   );
 }

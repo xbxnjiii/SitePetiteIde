@@ -1,0 +1,517 @@
+import type { QuizQuestion } from "./quiz";
+
+// ============================================================================
+//  Quiz tirés des vidéos TikTok / Instagram de La Petite IDE.
+//  Chaque question a sa réponse dans le script de la vidéo du thème
+//  (voir le fichier des scripts). `answer` = index de la bonne réponse dans `choices`.
+// ============================================================================
+
+export const arretCardiaque: QuizQuestion[] = [
+  {
+    question: "Dès combien de minutes d'arrêt cardiaque le cerveau est-il en danger ?",
+    choices: ["3 minutes", "10 minutes", "30 minutes"],
+    answer: 0,
+    explanation: "Son cœur s'est arrêté : dès 3 minutes, le cerveau est en danger.",
+  },
+  {
+    question: "Chaque minute sans massage cardiaque, c'est…",
+    choices: ["1 % de chances de survie en moins", "10 % de chances de survie en moins", "50 % de chances de survie en moins"],
+    answer: 1,
+    explanation: "Chaque minute sans massage, c'est 10 % de chances de survie en moins.",
+  },
+  {
+    question: "Qu'est-ce qu'un arrêt cardiaque ?",
+    choices: ["Le cœur ne pompe plus le sang", "Le cœur bat trop vite", "Une douleur dans la poitrine"],
+    answer: 0,
+    explanation: "Un arrêt cardiaque, c'est quand le cœur ne pompe plus le sang : le cerveau n'a plus d'oxygène.",
+  },
+  {
+    question: "Le plus souvent, au lieu de battre, le cœur se met à trembler. Comment ça s'appelle ?",
+    choices: ["La fibrillation ventriculaire", "La tachycardie", "L'asystolie"],
+    answer: 0,
+    explanation: "Le plus souvent, le cœur tremble au lieu de battre : c'est la fibrillation ventriculaire.",
+  },
+  {
+    question: "Quels signes permettent de reconnaître un arrêt cardiaque ?",
+    choices: ["Il ne répond pas et ne respire pas (ou mal)", "Il a mal à la poitrine mais parle", "Il est pâle mais répond"],
+    answer: 0,
+    explanation: "Il ne répond pas, même stimulé, et il ne respire pas ou respire mal.",
+  },
+  {
+    question: "Pour regarder s'il respire, que fait-on d'abord ?",
+    choices: ["On bascule sa tête en arrière", "On le met en position assise", "On lui donne à boire"],
+    answer: 0,
+    explanation: "On bascule la tête en arrière, puis on regarde s'il respire.",
+  },
+  {
+    question: "Combien de temps, au maximum, pour vérifier la respiration ?",
+    choices: ["10 secondes", "1 minute", "3 minutes"],
+    answer: 0,
+    explanation: "On regarde s'il respire pendant 10 secondes maximum.",
+  },
+  {
+    question: "Que sont les « gasps » ?",
+    choices: ["Des respirations rares et bruyantes", "Une respiration normale", "Une toux"],
+    answer: 0,
+    explanation: "Les gasps sont des respirations rares et bruyantes : il respire mal, c'est un arrêt cardiaque.",
+  },
+  {
+    question: "Quels numéros appeler pour alerter ?",
+    choices: ["Le 15 ou le 112", "Le 17 ou le 18 uniquement", "Le 3615"],
+    answer: 0,
+    explanation: "On alerte tout de suite : le 15 ou le 112.",
+  },
+  {
+    question: "En alertant, que fait-on chercher ?",
+    choices: ["Un défibrillateur", "Un thermomètre", "Une couverture"],
+    answer: 0,
+    explanation: "On alerte et on fait chercher un défibrillateur.",
+  },
+  {
+    question: "Où masser ?",
+    choices: ["Au centre de la poitrine, bras tendus", "Sur le ventre", "Sur le côté gauche, coudes pliés"],
+    answer: 0,
+    explanation: "Au centre de la poitrine, bras tendus.",
+  },
+  {
+    question: "De combien enfonce-t-on la poitrine chez l'adulte ?",
+    choices: ["1 à 2 cm", "5 à 6 cm", "10 à 12 cm"],
+    answer: 1,
+    explanation: "Chez l'adulte, on enfonce de 5 à 6 centimètres.",
+  },
+  {
+    question: "Sur le rythme de quelle chanson masse-t-on ?",
+    choices: ["Staying Alive", "Joyeux anniversaire", "La Macarena"],
+    answer: 0,
+    explanation: "On masse sur le rythme de la chanson Staying Alive !",
+  },
+  {
+    question: "À quelle fréquence masse-t-on ?",
+    choices: ["60 à 80 par minute", "100 à 120 par minute", "150 à 180 par minute"],
+    answer: 1,
+    explanation: "On masse à 100 à 120 compressions par minute.",
+  },
+  {
+    question: "Que signifie RCP ?",
+    choices: ["Réanimation cardio-pulmonaire", "Respiration contrôlée par pression", "Rythme cardiaque perturbé"],
+    answer: 0,
+    explanation: "La RCP, c'est la réanimation cardio-pulmonaire.",
+  },
+  {
+    question: "Quel rythme pour la RCP ?",
+    choices: ["15 compressions, 2 insufflations", "30 compressions, 2 insufflations", "50 compressions, 5 insufflations"],
+    answer: 1,
+    explanation: "30 compressions, 2 insufflations.",
+  },
+  {
+    question: "Jusqu'à quand continue-t-on la RCP ?",
+    choices: ["Jusqu'à l'arrivée des secours", "Pendant 2 minutes seulement", "Jusqu'à être fatigué"],
+    answer: 0,
+    explanation: "On ne s'arrête pas jusqu'à l'arrivée des secours.",
+  },
+  {
+    question: "Le défibrillateur arrive : que fait-on ?",
+    choices: ["On l'allume et on suit sa voix", "On attend un médecin pour l'utiliser", "On lit la notice en entier"],
+    answer: 0,
+    explanation: "Dès qu'il arrive, on allume le défibrillateur et on suit sa voix.",
+  },
+  {
+    question: "À quoi sert le choc du défibrillateur ?",
+    choices: ["À arrêter la fibrillation", "À faire baisser la tension", "À réchauffer le patient"],
+    answer: 0,
+    explanation: "Il analyse le cœur et, si besoin, délivre un choc pour arrêter la fibrillation.",
+  },
+  {
+    question: "Pendant le choc électrique…",
+    choices: ["On continue de masser", "Personne ne touche le patient", "On tient la main du patient"],
+    answer: 1,
+    explanation: "Pendant le choc, personne ne touche le patient !",
+  },
+  {
+    question: "Dans quel ordre agir ?",
+    choices: ["Alerter, masser, défibriller", "Masser, attendre, alerter", "Défibriller, puis alerter le lendemain"],
+    answer: 0,
+    explanation: "Il ne répond pas, il ne respire pas : on alerte le 15, on masse, et on défibrille.",
+  },
+];
+
+export const embolie: QuizQuestion[] = [
+  {
+    question: "Après l'infarctus et l'AVC, l'embolie pulmonaire est…",
+    choices: ["La 3e cause de mort cardiovasculaire", "Une maladie toujours bénigne", "La 1re cause de mort cardiovasculaire"],
+    answer: 0,
+    explanation: "Après l'infarctus et l'AVC, c'est la troisième cause de mort cardiovasculaire.",
+  },
+  {
+    question: "Qu'est-ce qu'une embolie pulmonaire ?",
+    choices: ["Un caillot qui bouche une artère du poumon", "Une infection des poumons", "De l'eau dans les poumons"],
+    answer: 0,
+    explanation: "Une embolie pulmonaire, c'est un caillot qui bouche une artère du poumon.",
+  },
+  {
+    question: "D'où vient le plus souvent le caillot ?",
+    choices: ["D'une phlébite", "D'une bronchite", "Du cerveau"],
+    answer: 0,
+    explanation: "Le plus souvent, il vient d'une phlébite, dans une veine profonde de la jambe.",
+  },
+  {
+    question: "Qu'est-ce qu'une phlébite ?",
+    choices: ["Un caillot dans une veine profonde de la jambe", "Une plaie de la jambe", "Une crampe du mollet"],
+    answer: 0,
+    explanation: "Une phlébite, c'est un caillot dans une veine profonde de la jambe.",
+  },
+  {
+    question: "Quel trajet fait le caillot ?",
+    choices: ["Il se détache, remonte au cœur, puis se coince dans le poumon", "Il descend vers le pied", "Il reste toujours dans la jambe"],
+    answer: 0,
+    explanation: "Il se détache, remonte jusqu'au cœur, puis se coince dans le poumon.",
+  },
+  {
+    question: "Quand l'artère du poumon est bouchée…",
+    choices: ["Le sang ne passe plus et il manque d'oxygène", "Le cœur ralentit", "La température baisse"],
+    answer: 0,
+    explanation: "Là, le sang ne passe plus : il manque d'oxygène.",
+  },
+  {
+    question: "Comment arrivent souvent les signes ?",
+    choices: ["D'un coup", "Sur plusieurs années", "Seulement la nuit"],
+    answer: 0,
+    explanation: "Les signes arrivent souvent d'un coup.",
+  },
+  {
+    question: "Quel est le signe typique ?",
+    choices: ["Un essoufflement brutal", "Une démangeaison", "Une perte d'appétit"],
+    answer: 0,
+    explanation: "Essoufflement brutal, douleur dans la poitrine, cœur qui s'accélère.",
+  },
+  {
+    question: "La douleur dans la poitrine augmente quand…",
+    choices: ["On inspire", "On mange", "On dort"],
+    answer: 0,
+    explanation: "Une douleur dans la poitrine qui augmente quand on inspire.",
+  },
+  {
+    question: "Que fait le cœur ?",
+    choices: ["Il s'accélère", "Il ralentit", "Il s'arrête toujours"],
+    answer: 0,
+    explanation: "Le cœur s'accélère.",
+  },
+  {
+    question: "Quels autres signes peuvent apparaître ?",
+    choices: ["Il crache du sang et la saturation chute", "Il a de la fièvre et le nez qui coule", "Il a très faim"],
+    answer: 0,
+    explanation: "Parfois, il crache du sang, et la saturation chute.",
+  },
+  {
+    question: "Que regarde-t-on aussi aux jambes ?",
+    choices: ["Un mollet gonflé et douloureux", "La couleur des ongles", "La longueur des jambes"],
+    answer: 0,
+    explanation: "Un mollet gonflé et douloureux fait penser à une phlébite.",
+  },
+  {
+    question: "Suspicion d'embolie pulmonaire : que fait-on en premier ?",
+    choices: ["On alerte tout de suite (le 15 ou le médecin)", "On attend le lendemain", "On le fait marcher"],
+    answer: 0,
+    explanation: "C'est une urgence : on alerte tout de suite le 15, ou le médecin à l'hôpital.",
+  },
+  {
+    question: "Dans quelle position installer le patient ?",
+    choices: ["Demi-assise, au repos", "À plat ventre", "Debout"],
+    answer: 0,
+    explanation: "On l'installe en position demi-assise, au repos.",
+  },
+  {
+    question: "Que surveille-t-on ?",
+    choices: ["Sa saturation, son pouls et sa tension", "Seulement son poids", "Sa glycémie uniquement"],
+    answer: 0,
+    explanation: "On surveille sa saturation, son pouls et sa tension.",
+  },
+  {
+    question: "Quel examen confirme l'embolie pulmonaire ?",
+    choices: ["Un scanner des poumons", "Une prise de sang pour le sucre", "Une radio du genou"],
+    answer: 0,
+    explanation: "Pour la confirmer, on fait un scanner des poumons.",
+  },
+  {
+    question: "Quel est le traitement ?",
+    choices: ["Les anticoagulants", "Les antibiotiques", "Les vitamines"],
+    answer: 0,
+    explanation: "Le traitement, ce sont les anticoagulants.",
+  },
+  {
+    question: "À quoi servent les anticoagulants ?",
+    choices: ["À empêcher le caillot de grossir", "À faire baisser la fièvre", "À calmer la toux"],
+    answer: 0,
+    explanation: "Les anticoagulants empêchent le caillot de grossir.",
+  },
+  {
+    question: "Dans les cas graves, comment s'appelle le fait de dissoudre le caillot ?",
+    choices: ["La thrombolyse", "La transfusion", "La dialyse"],
+    answer: 0,
+    explanation: "Dans les cas graves, on peut dissoudre le caillot : c'est la thrombolyse.",
+  },
+  {
+    question: "Lequel est un facteur de risque ?",
+    choices: ["Rester longtemps immobile (alité, plâtré, en avion)", "Marcher tous les jours", "Boire de l'eau"],
+    answer: 0,
+    explanation: "Rester longtemps immobile : alité, plâtré, ou en avion.",
+  },
+  {
+    question: "Lequel est aussi un facteur de risque ?",
+    choices: ["La pilule ou la grossesse", "Le sport régulier", "Les lunettes"],
+    answer: 0,
+    explanation: "Une opération récente, un cancer, la pilule ou la grossesse.",
+  },
+  {
+    question: "Après une opération, comment prévenir l'embolie ?",
+    choices: ["Faire marcher tôt, avec des bas de compression", "Rester alité une semaine", "Éviter de boire"],
+    answer: 0,
+    explanation: "On fait marcher les patients tôt, avec des bas de compression. Pour la prévenir, on bouge !",
+  },
+];
+
+export const avc: QuizQuestion[] = [
+  {
+    question: "En France, à quelle fréquence quelqu'un fait-il un AVC ?",
+    choices: ["Toutes les 4 minutes", "Toutes les 4 heures", "Tous les 4 jours"],
+    answer: 0,
+    explanation: "Toutes les 4 minutes, en France, quelqu'un fait un AVC.",
+  },
+  {
+    question: "Chaque minute sans soins, combien de neurones le cerveau perd-il ?",
+    choices: ["Près de 2 000", "Près de 2 millions", "Aucun"],
+    answer: 1,
+    explanation: "Chaque minute sans soins, le cerveau perd près de 2 millions de neurones.",
+  },
+  {
+    question: "Que veut dire AVC ?",
+    choices: ["Accident vasculaire cérébral", "Arrêt du ventricule cardiaque", "Atteinte virale du cerveau"],
+    answer: 0,
+    explanation: "AVC : accident vasculaire cérébral, un accident des vaisseaux sanguins du cerveau.",
+  },
+  {
+    question: "Que se passe-t-il pendant un AVC ?",
+    choices: ["Une zone du cerveau ne reçoit plus de sang : ses neurones meurent", "Le cœur s'arrête", "Les poumons se bouchent"],
+    answer: 0,
+    explanation: "Une zone du cerveau ne reçoit plus de sang, donc plus d'oxygène : ses neurones meurent.",
+  },
+  {
+    question: "Dans combien de cas l'AVC est-il ischémique ?",
+    choices: ["2 cas sur 10", "5 cas sur 10", "8 cas sur 10"],
+    answer: 2,
+    explanation: "Dans 8 cas sur 10, c'est un AVC ischémique.",
+  },
+  {
+    question: "Qu'est-ce qu'un AVC ischémique ?",
+    choices: ["Un caillot bouche une artère", "Une artère se rompt", "Une infection du cerveau"],
+    answer: 0,
+    explanation: "AVC ischémique : un caillot bouche une artère, et le sang ne passe plus.",
+  },
+  {
+    question: "Qu'est-ce qu'un AVC hémorragique ?",
+    choices: ["Une artère se rompt et le sang s'échappe dans le cerveau", "Un caillot bouche une artère", "Une baisse de sucre"],
+    answer: 0,
+    explanation: "AVC hémorragique : une artère se rompt, et le sang s'échappe dans le cerveau.",
+  },
+  {
+    question: "Dans « VITE », que veut dire le V ?",
+    choices: ["Visage paralysé", "Vomissements", "Vertiges"],
+    answer: 0,
+    explanation: "V comme visage paralysé : la bouche tombe d'un côté.",
+  },
+  {
+    question: "Dans « VITE », que veut dire le I ?",
+    choices: ["Inertie d'un membre", "Infection", "Insomnie"],
+    answer: 0,
+    explanation: "I comme inertie d'un membre : un bras ou une jambe ne répond plus.",
+  },
+  {
+    question: "Dans « VITE », que veut dire le T ?",
+    choices: ["Température élevée", "Trouble de la parole", "Toux"],
+    answer: 1,
+    explanation: "T comme trouble de la parole : il parle mal, ou ne trouve plus ses mots.",
+  },
+  {
+    question: "Dans « VITE », que veut dire le E ?",
+    choices: ["En urgence : on appelle le 15", "Examen dans la semaine", "Eau à boire"],
+    answer: 0,
+    explanation: "E comme en urgence : on appelle le 15 !",
+  },
+  {
+    question: "Quelle information faut-il noter ?",
+    choices: ["L'heure du début des signes", "Son groupe sanguin", "Son dernier repas"],
+    answer: 0,
+    explanation: "On note l'heure du début des signes, car chaque minute compte.",
+  },
+  {
+    question: "Quel examen montre le type d'AVC ?",
+    choices: ["Un scanner ou une IRM", "Une prise de tension", "Un électrocardiogramme"],
+    answer: 0,
+    explanation: "À l'hôpital, un scanner ou une IRM montre le type d'AVC.",
+  },
+  {
+    question: "Si c'est un caillot, comment s'appelle le fait de le dissoudre avec un médicament ?",
+    choices: ["La thrombolyse", "La thrombectomie", "La transfusion"],
+    answer: 0,
+    explanation: "Dissoudre le caillot avec un médicament : c'est la thrombolyse.",
+  },
+  {
+    question: "Et comment s'appelle le fait d'aller retirer le caillot ?",
+    choices: ["La thrombolyse", "La thrombectomie", "La trachéotomie"],
+    answer: 1,
+    explanation: "Aller retirer le caillot : c'est la thrombectomie.",
+  },
+  {
+    question: "Lequel est un facteur de risque d'AVC ?",
+    choices: ["L'hypertension", "La myopie", "Les allergies au pollen"],
+    answer: 0,
+    explanation: "Ce qui augmente le risque : l'hypertension, le tabac, le diabète, le cholestérol, et certains troubles du rythme du cœur.",
+  },
+  {
+    question: "Lequel de ces éléments augmente aussi le risque d'AVC ?",
+    choices: ["Certains troubles du rythme du cœur", "Boire de l'eau", "Dormir 8 heures"],
+    answer: 0,
+    explanation: "Hypertension, tabac, diabète, cholestérol et certains troubles du rythme du cœur.",
+  },
+  {
+    question: "Au moindre doute d'AVC, que fait-on ?",
+    choices: ["On appelle le 15", "On attend que ça passe", "On donne à manger"],
+    answer: 0,
+    explanation: "Au moindre doute, on appelle le 15 !",
+  },
+];
+
+export const bpco: QuizQuestion[] = [
+  {
+    question: "Que veut dire BPCO ?",
+    choices: ["Bronchopneumopathie chronique obstructive", "Bronchite passagère du corps", "Blocage pulmonaire cardiaque obligatoire"],
+    answer: 0,
+    explanation: "BPCO : bronchopneumopathie chronique obstructive.",
+  },
+  {
+    question: "Qu'est-ce que la BPCO ?",
+    choices: ["Une maladie des bronches, à vie, où l'air passe mal", "Une infection qui guérit en 8 jours", "Une maladie du cœur"],
+    answer: 0,
+    explanation: "Une maladie des bronches, qui dure toute la vie, et où l'air passe mal.",
+  },
+  {
+    question: "Combien de malades de BPCO ne savent pas qu'ils l'ont ?",
+    choices: ["Au moins 1 sur 10", "Au moins 2 sur 3", "Aucun"],
+    answer: 1,
+    explanation: "Au moins deux malades sur trois ne le savent même pas.",
+  },
+  {
+    question: "Dans quel ordre l'air descend-il dans les poumons ?",
+    choices: ["Trachée, bronches, alvéoles", "Alvéoles, bronches, trachée", "Bronches, trachée, alvéoles"],
+    answer: 0,
+    explanation: "L'air descend par la trachée, puis par les bronches, jusqu'aux alvéoles.",
+  },
+  {
+    question: "Que sont les alvéoles ?",
+    choices: ["De tout petits sacs où l'oxygène passe dans le sang", "Des muscles de la respiration", "Des vaisseaux du cœur"],
+    answer: 0,
+    explanation: "Les alvéoles : de tout petits sacs, où l'oxygène passe dans le sang.",
+  },
+  {
+    question: "Dans la BPCO, que deviennent les bronches ?",
+    choices: ["Enflammées, pleines de mucus, elles rétrécissent", "Elles s'élargissent", "Elles restent normales"],
+    answer: 0,
+    explanation: "Les bronches sont enflammées, se remplissent de mucus, et rétrécissent.",
+  },
+  {
+    question: "Comment s'appelle la destruction des alvéoles ?",
+    choices: ["L'emphysème", "L'œdème", "L'embolie"],
+    answer: 0,
+    explanation: "Les alvéoles se cassent : c'est l'emphysème.",
+  },
+  {
+    question: "Quel est le résultat dans les poumons ?",
+    choices: ["L'air entre mais reste piégé", "L'air ne rentre plus du tout", "Les poumons se remplissent d'eau"],
+    answer: 0,
+    explanation: "Résultat : l'air entre… mais il reste piégé.",
+  },
+  {
+    question: "Quelle est la cause principale de la BPCO ?",
+    choices: ["Le tabac", "Le sucre", "Le stress"],
+    answer: 0,
+    explanation: "Le grand coupable : le tabac, dans huit cas sur dix.",
+  },
+  {
+    question: "Dans combien de cas le tabac est-il en cause ?",
+    choices: ["2 cas sur 10", "5 cas sur 10", "8 cas sur 10"],
+    answer: 2,
+    explanation: "Le tabac, dans huit cas sur dix.",
+  },
+  {
+    question: "Quelles autres causes sont possibles ?",
+    choices: ["Les poussières et produits chimiques au travail, la pollution", "Le froid seulement", "Le manque de sommeil"],
+    answer: 0,
+    explanation: "Aussi les poussières et les produits chimiques au travail, ou la pollution.",
+  },
+  {
+    question: "Comment évolue l'essoufflement ?",
+    choices: ["D'abord à l'effort, puis pour un rien", "D'abord au repos, puis il disparaît", "Il n'existe pas"],
+    answer: 0,
+    explanation: "Un essoufflement, d'abord à l'effort, puis pour un rien.",
+  },
+  {
+    question: "Quand la toux et les crachats sont-ils surtout présents ?",
+    choices: ["Le matin", "Après le repas", "Uniquement l'été"],
+    answer: 0,
+    explanation: "Une toux et des crachats, surtout le matin.",
+  },
+  {
+    question: "Quel autre signe revient chaque hiver ?",
+    choices: ["Des bronchites", "Des entorses", "Des migraines"],
+    answer: 0,
+    explanation: "Des bronchites qui reviennent chaque hiver.",
+  },
+  {
+    question: "Quel examen confirme la BPCO ?",
+    choices: ["La spirométrie", "La glycémie", "Le scanner du cerveau"],
+    answer: 0,
+    explanation: "Pour la confirmer : la spirométrie. Le patient souffle le plus fort possible dans un tube.",
+  },
+  {
+    question: "À la spirométrie, les bronches sont obstruées si le patient vide en une seconde…",
+    choices: ["Moins de 70 % de son air", "Plus de 90 % de son air", "Exactement 100 % de son air"],
+    answer: 0,
+    explanation: "S'il vide moins de 70 % de son air en une seconde, ses bronches sont obstruées.",
+  },
+  {
+    question: "La BPCO se guérit-elle ?",
+    choices: ["Oui, en quelques semaines", "Non, mais on peut la freiner", "Oui, avec des antibiotiques"],
+    answer: 1,
+    explanation: "Elle ne se guérit pas, mais on peut la freiner.",
+  },
+  {
+    question: "Lequel fait partie du traitement ?",
+    choices: ["L'arrêt du tabac et des inhalateurs qui ouvrent les bronches", "Un régime sans sel uniquement", "Le repos strict au lit"],
+    answer: 0,
+    explanation: "Arrêter de fumer, des inhalateurs qui ouvrent les bronches, la réhabilitation respiratoire et les vaccins.",
+  },
+  {
+    question: "À quoi sert la réhabilitation respiratoire ?",
+    choices: ["À réentraîner le souffle", "À retirer le mucus par chirurgie", "À remplacer les poumons"],
+    answer: 0,
+    explanation: "La réhabilitation respiratoire réentraîne le souffle.",
+  },
+  {
+    question: "Au stade avancé, comment donne-t-on l'oxygène ?",
+    choices: ["À petit débit", "À fort débit", "Jamais"],
+    answer: 0,
+    explanation: "Au stade avancé, on donne de l'oxygène, mais à petit débit.",
+  },
+  {
+    question: "Quelle saturation vise-t-on chez le patient BPCO sous oxygène ?",
+    choices: ["Entre 88 et 95 %", "Toujours 100 %", "Moins de 80 %"],
+    answer: 0,
+    explanation: "On vise une saturation entre 88 et 95 %, selon la prescription.",
+  },
+  {
+    question: "Qu'est-ce qu'une exacerbation ?",
+    choices: ["Une poussée de la maladie : on consulte vite", "Une guérison", "Un effet de l'inhalateur"],
+    answer: 0,
+    explanation: "Si tout s'aggrave d'un coup, c'est une exacerbation, une poussée de la maladie : on consulte vite !",
+  },
+];
