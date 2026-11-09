@@ -86,11 +86,31 @@ function publishableKey(env: AppEnv): string | undefined {
  * Prix Stripe du pack. Si le prix du site (src/content/packs.ts) a changé, un nouveau prix est créé
  * sur le même produit Stripe et récupère la clé du prix (l'ancien est archivé) : pas besoin de passer par Stripe.
  */
-async function syncedPrice(stripe: Stripe, lookupKey: string, cents: number): Promise<Stripe.Price> {
+async function syncedPrice(
+  stripe: Stripe,
+  lookupKey: string,
+  cents: number,
+  info: { name: string; description: string; taxCode: string; metadata: Record<string, string> },
+): Promise<Stripe.Price> {
   const { data } = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
   const current = data[0];
   if (current && current.unit_amount === cents && current.currency === "eur") return current;
-  if (!current) throw new PriceMismatch(`prix Stripe absent (${lookupKey}) : lancer npm run stripe:sync`);
+  if (!current) {
+    // Nouveau format vendu (ex. fiches à l'unité) : produit + prix créés dans Stripe au premier achat.
+    const productId = `lpi-${lookupKey}`;
+    await stripe.products.retrieve(productId).catch(() =>
+      stripe.products.create(
+        { id: productId, name: info.name, description: info.description, tax_code: info.taxCode, metadata: info.metadata },
+        { idempotencyKey: `produit-${productId}` },
+      ),
+    );
+    const created = await stripe.prices.create(
+      { product: productId, currency: "eur", unit_amount: cents, tax_behavior: "inclusive", lookup_key: lookupKey, transfer_lookup_key: true, metadata: info.metadata },
+      { idempotencyKey: `prix-${lookupKey}-${cents}` },
+    );
+    console.log("checkout: prix Stripe créé", lookupKey, cents);
+    return created;
+  }
   const product = typeof current.product === "string" ? current.product : current.product.id;
   const next = await stripe.prices.create(
     {
@@ -122,7 +142,12 @@ async function createSession(
   const stripe = stripeClient(env);
   // Le prix vient de Stripe (jamais du navigateur), et doit correspondre au prix affiché.
   const lookupKey = priceLookupKey(pack.slug, format);
-  const price = await syncedPrice(stripe, lookupKey, formatPriceCents(pack, format));
+  const price = await syncedPrice(stripe, lookupKey, formatPriceCents(pack, format), {
+    name: format === "fiches" ? `${pack.name} — fiche à l'unité` : format === "papier" ? `${pack.name} — fiches papier` : pack.name,
+    description: format === "fiches" ? "Une fiche numérique (PDF et image) au choix." : pack.tagline,
+    taxCode: format === "papier" ? "txcd_99999999" : "txcd_10000000",
+    metadata: { slug: pack.slug, format },
+  });
   const isPrint = format === "papier";
   // « fiches » : indices des fiches achetées à l'unité (dans pack.items), ex. « 0,2,5 ».
   const metadata = { pack: pack.slug, format, provenance: source ?? "direct", ...(fiches ? { fiches: fiches.join(",") } : {}) };
