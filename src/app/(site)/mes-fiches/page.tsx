@@ -4,7 +4,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Mascot } from "@/components/ui/Mascot";
 import { signDownloadToken, verifyDownloadToken } from "@/lib/download-token";
 import { getEnvAsync, requireVar } from "@/lib/env";
-import { downloadLinks, getOrder } from "@/lib/orders";
+import { allowedImages, downloadLinks, getOrder } from "@/lib/orders";
 import { stripeClient } from "@/lib/stripe";
 
 export const metadata: Metadata = { title: "Mes fiches en images", robots: { index: false, follow: false } };
@@ -34,16 +34,17 @@ export default async function MyFichesPage({ searchParams }: { searchParams: Sea
     );
   }
 
-  // Seules les images réellement présentes dans le bucket sont affichées.
+  // Images de la commande (toutes pour un pack, les fiches achetées sinon) réellement présentes dans le bucket.
   const files = order.pack.imageFiles ?? [];
-  const present = await Promise.all(files.map((f) => env.PDF_BUCKET?.head(f.key).catch(() => null) ?? null));
+  const allowed = new Set(allowedImages(order));
+  const present = await Promise.all(files.map((f, i) => (allowed.has(i) ? (env.PDF_BUCKET?.head(f.key).catch(() => null) ?? null) : null)));
   const images = await Promise.all(
     files.map(async (file, f) =>
       present[f] ? { label: file.label, url: `/telecharger?t=${await signDownloadToken({ s: claims.s, f, e: claims.e, t: "img" }, secret)}` } : null,
     ),
   );
   const available = images.filter((i): i is { label: string; url: string } => i !== null);
-  const pdf = (await downloadLinks(env, order, claims.e))[0];
+  const pdfs = await downloadLinks(env, order, claims.e);
 
   return (
     <Layout>
@@ -74,11 +75,11 @@ export default async function MyFichesPage({ searchParams }: { searchParams: Sea
       ) : (
         <p className="notice">Les fiches en images arrivent très bientôt. En attendant, ton PDF est disponible ci-dessous.</p>
       )}
-      {pdf ? (
-        <a href={pdf.url} className="btn btn--secondary btn--block fiches__pdf">
-          <Icon name="download" /> Télécharger aussi le PDF
+      {pdfs.map((pdf) => (
+        <a key={pdf.url} href={pdf.url} className="btn btn--secondary btn--block fiches__pdf">
+          <Icon name="download" /> {pdfs.length > 1 ? `PDF · ${pdf.label}` : "Télécharger aussi le PDF"}
         </a>
-      ) : null}
+      ))}
     </Layout>
   );
 }

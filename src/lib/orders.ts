@@ -1,6 +1,6 @@
 import "server-only";
 import type Stripe from "stripe";
-import { getPack, parseFormat, type Pack, type PackFormat } from "@/content/packs";
+import { getPack, parseFiches, parseFormat, type Pack, type PackFormat } from "@/content/packs";
 import { isDeliverable } from "@/content/shipping";
 import { SITE } from "./format";
 import { type AppEnv, requireVar, siteUrl } from "./env";
@@ -23,6 +23,8 @@ export interface Order {
   format: PackFormat;
   /** Adresse de livraison (papier uniquement). */
   shipping: ShippingInfo | null;
+  /** Achat à l'unité : indices des fiches achetées (dans pack.items). null = pack complet. */
+  fiches: number[] | null;
   /** Paiement confirmé par Stripe. */
   paid: boolean;
   /** Remboursé ou contesté : accès aux fichiers coupé. */
@@ -47,10 +49,13 @@ export async function getOrder(stripe: Stripe, sessionId: string): Promise<Order
 export function orderFromSession(session: Stripe.Checkout.Session): Order {
   const pi = session.payment_intent as Stripe.PaymentIntent | null;
   const charge = (pi?.latest_charge ?? null) as Stripe.Charge | null;
+  const pack = getPack(session.metadata?.pack ?? "");
+  const format = parseFormat(session.metadata?.format);
   return {
     session,
-    pack: getPack(session.metadata?.pack ?? ""),
-    format: parseFormat(session.metadata?.format),
+    pack,
+    fiches: format === "fiches" && pack ? parseFiches(pack, session.metadata?.fiches) : null,
+    format,
     shipping: shippingInfo(session),
     paid: session.status === "complete" && (session.payment_status === "paid" || session.payment_status === "no_payment_required"),
     revoked: Boolean(charge?.refunded || charge?.disputed),
@@ -67,6 +72,16 @@ export interface DownloadLink {
 export async function downloadLinks(env: AppEnv, order: Order, expiresAt: number = order.expiresAt): Promise<DownloadLink[]> {
   if (!order.pack || !order.paid || order.revoked) return [];
   const secret = requireVar(env, "DOWNLOAD_TOKEN_SECRET");
+  // À l'unité : un PDF par fiche achetée.
+  if (order.format === "fiches") {
+    const files = order.pack.unit?.files ?? [];
+    return Promise.all(
+      (order.fiches ?? []).filter((i) => files[i]).map(async (i) => ({
+        label: files[i].label,
+        url: `${siteUrl(env)}/telecharger?t=${await signDownloadToken({ s: order.session.id, f: i, e: expiresAt, t: "fiche" }, secret)}`,
+      })),
+    );
+  }
   return Promise.all(
     order.pack.files.map(async (file, index) => ({
       label: file.label,
@@ -86,6 +101,13 @@ export function shippingInfo(session: Stripe.Checkout.Session): ShippingInfo | n
     lines: [d.name, a.line1, a.line2, cityLine, a.country === "FR" ? "France" : a.country].filter((l): l is string => Boolean(l)),
     deliverable: isDeliverable(a),
   };
+}
+
+/** Images auxquelles la commande donne droit (indices dans pack.imageFiles) : toutes pour un pack, sinon les fiches achetées. */
+export function allowedImages(order: Order): number[] {
+  const count = order.pack?.imageFiles?.length ?? 0;
+  const all = Array.from({ length: count }, (_, i) => i);
+  return order.format === "fiches" ? all.filter((i) => order.fiches?.includes(i)) : all;
 }
 
 /** Lien vers la page « Mes fiches en images » (null si le pack n'a pas de version images). */

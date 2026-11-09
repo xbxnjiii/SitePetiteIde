@@ -42,8 +42,16 @@ export interface PackImages {
   gallery?: { src: string; width: number; height: number; alt: string; label?: string }[];
 }
 
-/** Format choisi à l'achat : PDF seul, ou fiches papier avec le PDF offert. */
-export type PackFormat = "pdf" | "papier";
+/** Format choisi à l'achat : pack numérique, fiches numériques à l'unité, ou fiches papier (numérique offert). */
+export type PackFormat = "pdf" | "fiches" | "papier";
+
+/** Vente des fiches numériques à l'unité (la fiche bonus reste réservée au pack). */
+export interface UnitSale {
+  /** Prix TTC d'une fiche. */
+  priceCents: number;
+  /** Un PDF par fiche, dans le même ordre que `items`. */
+  files: PackFile[];
+}
 
 /** Version papier d'un pack (expédiée, avec le PDF offert). */
 export interface PrintEdition {
@@ -84,6 +92,8 @@ export interface Pack {
   files: PackFile[];
   /** Version papier. Sans ce champ, le pack n'existe qu'en PDF. */
   print?: PrintEdition;
+  /** Vente à l'unité. Sans ce champ, le pack ne se vend qu'en entier. */
+  unit?: UnitSale;
   /**
    * Version « images » (une image PNG/JPG par fiche, pratique sur téléphone), livrée avec le PDF.
    * Affichées sur la page /mes-fiches ; une image absente du bucket R2 est simplement masquée.
@@ -94,6 +104,17 @@ export interface Pack {
   /** Statut : seuls les packs "published" sont visibles et achetables. */
   status: "published" | "draft";
 }
+
+/** Fiches du pack Constantes : nom de fichier et titre (même ordre que `items`). */
+const CONSTANTES_FICHES = [
+  ["01-frequence-cardiaque", "Fréquence cardiaque"],
+  ["02-frequence-respiratoire", "Fréquence respiratoire"],
+  ["03-temperature", "Température"],
+  ["04-tension-arterielle", "Tension artérielle"],
+  ["05-glycemie", "Glycémie"],
+  ["06-saturation", "Saturation (SpO2)"],
+  ["07-diurese", "Diurèse"],
+];
 
 export const packs: Pack[] = [
   {
@@ -108,7 +129,7 @@ export const packs: Pack[] = [
     },
     description:
       "Un mémo clair et synthétique pour chaque paramètre vital : valeurs normales, technique de mesure et signes d'alerte. Conçu pour réviser vite et bien, sur téléphone ou imprimé.",
-    priceCents: 299,
+    priceCents: 399,
     icon: "heart",
     tone: "pink",
     images: {
@@ -160,21 +181,22 @@ export const packs: Pack[] = [
         ? { src: "/img/packs/papier-illustration-preprod.webp", width: 623, height: 653, alt: "Exemple de fiches papier (illustration)" }
         : undefined,
     },
-    // Images à déposer dans le bucket R2 « la-petite-ide-pdfs », sous ces clés exactes.
-    imageFiles: [
-      ["01-frequence-cardiaque", "Fréquence cardiaque"],
-      ["02-frequence-respiratoire", "Fréquence respiratoire"],
-      ["03-temperature", "Température"],
-      ["04-tension-arterielle", "Tension artérielle"],
-      ["05-glycemie", "Glycémie"],
-      ["06-saturation", "Saturation (SpO2)"],
-      ["07-diurese", "Diurèse"],
-      ["08-fiche-bonus", "Fiche bonus"],
-    ].map(([name, label]) => ({
+    // Fichiers à déposer dans le bucket R2 « la-petite-ide-pdfs », sous ces clés exactes.
+    // Une image par fiche (même ordre que `items`, puis la fiche bonus).
+    imageFiles: [...CONSTANTES_FICHES, ["08-fiche-bonus", "Fiche bonus"]].map(([name, label]) => ({
       key: `pack-des-constantes/images/${name}.png`,
       downloadName: `La-Petite-IDE-Constantes-${name}.png`,
       label,
     })),
+    // ⚠️ Vente à l'unité : test en préprod (prix à valider).
+    unit: {
+      priceCents: 99,
+      files: CONSTANTES_FICHES.map(([name, label]) => ({
+        key: `pack-des-constantes/fiches/${name}.pdf`,
+        downloadName: `La-Petite-IDE-Constantes-${name}.pdf`,
+        label,
+      })),
+    },
     status: "published",
   },
 ];
@@ -182,11 +204,22 @@ export const packs: Pack[] = [
 export const publishedPacks = () => packs.filter((p) => p.status === "published");
 export const getPack = (slug: string) => publishedPacks().find((p) => p.slug === slug);
 
-/** Prix TTC d'un format (hors frais de port pour le papier). */
+/** Prix TTC d'un format (hors frais de port pour le papier ; prix d'UNE fiche pour l'unité). */
 export const formatPriceCents = (pack: Pack, format: PackFormat) =>
-  format === "papier" && pack.print ? pack.print.priceCents : pack.priceCents;
+  format === "papier" && pack.print ? pack.print.priceCents : format === "fiches" && pack.unit ? pack.unit.priceCents : pack.priceCents;
 
 /** Le format papier est-il achetable pour ce pack ? */
 export const canBuyPrint = (pack: Pack) => Boolean(pack.print && !pack.print.soldOut);
 
-export const parseFormat = (v: unknown): PackFormat => (v === "papier" ? "papier" : "pdf");
+export const parseFormat = (v: unknown): PackFormat => (v === "papier" ? "papier" : v === "fiches" ? "fiches" : "pdf");
+
+/**
+ * Fiches choisies (indices dans `items`), à partir de « 0,2,5 » ou d'un tableau.
+ * Renvoie null si la sélection est vide ou invalide.
+ */
+export function parseFiches(pack: Pack, v: unknown): number[] | null {
+  const raw = Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : [];
+  const ids = [...new Set(raw.map((x) => Number(x)))].sort((a, b) => a - b);
+  if (!ids.length || !pack.unit) return null;
+  return ids.every((i) => Number.isInteger(i) && i >= 0 && i < pack.items.length && i < pack.unit!.files.length) ? ids : null;
+}

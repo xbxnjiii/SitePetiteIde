@@ -9,10 +9,10 @@ import {
 } from "@stripe/react-stripe-js/checkout";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Icon } from "@/components/ui/Icon";
+import { Icon, type UiIcon } from "@/components/ui/Icon";
 import { formatPrice } from "@/lib/format";
 import { OFFER } from "@/content/offer";
-import type { PackFormat, PrintEdition } from "@/content/packs";
+import type { IconName, PackFormat, PrintEdition } from "@/content/packs";
 import { SHIPPING, isDeliverable } from "@/content/shipping";
 import { sourceFromLocation } from "@/lib/source";
 import { STRIPE_PUBLISHABLE_KEY } from "@/lib/stripe-public";
@@ -52,20 +52,125 @@ const appearance: Appearance = {
 const NOT_DELIVERABLE = "On livre seulement en France métropolitaine (Corse comprise) pour le moment.";
 
 /** Bloc d'achat : choix du format (si le pack existe en papier), puis paiement. */
-export function PackCheckout({ slug, priceCents, print }: { slug: string; priceCents: number; print?: PrintEdition | null }) {
+/** Vente à l'unité, telle qu'affichée dans le bloc d'achat. */
+export interface UnitOffer {
+  priceCents: number;
+  /** Fiches vendables à l'unité (dans l'ordre de pack.items). */
+  items: { title: string; icon: IconName }[];
+  /** Nombre de fiches du pack complet (fiche bonus comprise). */
+  packCount: number;
+}
+
+export function PackCheckout({
+  slug,
+  priceCents,
+  print,
+  unit,
+}: {
+  slug: string;
+  priceCents: number;
+  print?: PrintEdition | null;
+  unit?: UnitOffer | null;
+}) {
   const [format, setFormat] = useState<PackFormat>("pdf");
+  const [picked, setPicked] = useState<number[]>([]);
+  // La session de paiement n'est recréée qu'une fois la sélection stabilisée (pas à chaque clic).
+  const [fiches, setFiches] = useState<number[]>([]);
+  useEffect(() => {
+    const t = window.setTimeout(() => setFiches(picked), 600);
+    return () => window.clearTimeout(t);
+  }, [picked]);
+
+  const hasChoice = Boolean(print || unit);
+  const sessionPrice = format === "papier" && print ? print.priceCents : format === "fiches" && unit ? unit.priceCents * fiches.length : priceCents;
   return (
     <>
-      {print ? <FormatPicker slug={slug} pdfCents={priceCents} print={print} value={format} onChange={setFormat} /> : null}
-      {/* Une session de paiement par format : changer de format recrée la session. */}
-      <PackCheckoutSession
-        key={format}
-        slug={slug}
-        format={format}
-        priceCents={format === "papier" && print ? print.priceCents : priceCents}
-        showPrice={!print}
-      />
+      {hasChoice ? (
+        <FormatPicker slug={slug} pdfCents={priceCents} print={print ?? null} unit={unit ?? null} value={format} onChange={setFormat} />
+      ) : null}
+      {format === "fiches" && unit ? (
+        <FichePicker unit={unit} packCents={priceCents} picked={picked} onChange={setPicked} onPickPack={() => setFormat("pdf")} />
+      ) : null}
+      {format === "fiches" && (!fiches.length || fiches.join() !== picked.join()) ? (
+        picked.length ? <div className="checkout__loading" aria-label="Mise à jour du paiement" /> : null
+      ) : (
+        /* Une session de paiement par format (et par sélection de fiches) : un changement recrée la session. */
+        <PackCheckoutSession
+          key={format === "fiches" ? `fiches-${fiches.join(",")}` : format}
+          slug={slug}
+          format={format}
+          fiches={format === "fiches" ? fiches : null}
+          priceCents={sessionPrice}
+          showPrice={!hasChoice}
+        />
+      )}
     </>
+  );
+}
+
+/** Choix des fiches à l'unité, total en direct et rappel du pack complet. */
+function FichePicker({
+  unit,
+  packCents,
+  picked,
+  onChange,
+  onPickPack,
+}: {
+  unit: UnitOffer;
+  packCents: number;
+  picked: number[];
+  onChange: (p: number[]) => void;
+  onPickPack: () => void;
+}) {
+  const total = unit.priceCents * picked.length;
+  const diff = packCents - total;
+  const toggle = (i: number) => onChange(picked.includes(i) ? picked.filter((x) => x !== i) : [...picked, i].sort((a, b) => a - b));
+  return (
+    <div className="fiche-pick">
+      <p className="fiche-pick__label">Choisis tes fiches</p>
+      <div className="fiche-pick__grid" role="group" aria-label="Fiches à l'unité">
+        {unit.items.map((item, i) => (
+          <button
+            key={item.title}
+            type="button"
+            className={picked.includes(i) ? "fiche-chip fiche-chip--on" : "fiche-chip"}
+            aria-pressed={picked.includes(i)}
+            onClick={() => toggle(i)}
+          >
+            <Icon name={picked.includes(i) ? "check" : item.icon} />
+            <span>{item.title}</span>
+          </button>
+        ))}
+      </div>
+      <p className="fiche-pick__total" aria-live="polite">
+        {picked.length ? (
+          <>
+            {picked.length} fiche{picked.length > 1 ? "s" : ""} · <strong>{formatPrice(total)}</strong>
+          </>
+        ) : (
+          "Touche une fiche pour l'ajouter"
+        )}
+      </p>
+      {picked.length >= 3 ? (
+        <div className="fiche-pick__nudge">
+          <span>
+            <Icon name="gift" />{" "}
+            {diff > 0 ? (
+              <>
+                Pour <strong>{formatPrice(diff)}</strong> de plus : les {unit.items.length} fiches + la fiche bonus.
+              </>
+            ) : (
+              <>
+                Le pack complet est moins cher : <strong>{formatPrice(packCents)}</strong> les {unit.packCount} fiches.
+              </>
+            )}
+          </span>
+          <button type="button" className="btn btn--secondary btn--sm" onClick={onPickPack}>
+            Prendre le pack
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -73,25 +178,38 @@ function FormatPicker({
   slug,
   pdfCents,
   print,
+  unit,
   value,
   onChange,
 }: {
   slug: string;
   pdfCents: number;
-  print: PrintEdition;
+  print: PrintEdition | null;
+  unit: UnitOffer | null;
   value: PackFormat;
   onChange: (f: PackFormat) => void;
 }) {
-  const options: { id: PackFormat; title: string; badge?: string; price: string; note: string; disabled?: boolean }[] = [
-    { id: "pdf", title: "Numérique", price: formatPrice(pdfCents), note: "PDF ou image · accès immédiat" },
-    {
-      id: "papier",
-      title: "Papier",
-      badge: "+ numérique offert",
-      price: formatPrice(print.priceCents),
-      note: print.soldOut ? "Bientôt de retour" : `Livré chez toi · + ${formatPrice(SHIPPING.priceCents)} de port`,
-      disabled: print.soldOut,
-    },
+  type Option = { id: PackFormat; icon: UiIcon; title: string; badge?: string; price: string; per?: string; note: string; disabled?: boolean };
+  const options: Option[] = [
+    unit
+      ? { id: "pdf", icon: "download", title: "Pack complet", price: formatPrice(pdfCents), note: `${unit.packCount} fiches · PDF ou image` }
+      : { id: "pdf", icon: "download", title: "Numérique", price: formatPrice(pdfCents), note: "PDF ou image · accès immédiat" },
+    ...(unit
+      ? [{ id: "fiches" as const, icon: "note" as const, title: "À l'unité", price: formatPrice(unit.priceCents), per: "/fiche", note: "Choisis tes fiches" }]
+      : []),
+    ...(print
+      ? [
+          {
+            id: "papier" as const,
+            icon: "gift" as const,
+            title: "Papier",
+            badge: "+ numérique offert",
+            price: formatPrice(print.priceCents),
+            note: print.soldOut ? "Bientôt de retour" : `Livré chez toi · + ${formatPrice(SHIPPING.priceCents)} de port`,
+            disabled: print.soldOut,
+          },
+        ]
+      : []),
   ];
   return (
     <fieldset className="formats">
@@ -109,12 +227,15 @@ function FormatPicker({
           <span className="format__radio" aria-hidden="true" />
           <span className="format__main">
             <span className="format__title">
-              <Icon name={o.id === "pdf" ? "download" : "gift"} /> {o.title}
+              <Icon name={o.icon} /> {o.title}
               {o.badge ? <span className="format__badge">{o.badge}</span> : null}
             </span>
             <span className="format__note">{o.note}</span>
           </span>
-          <span className="format__price">{o.price}</span>
+          <span className="format__price">
+            {o.price}
+            {o.per ? <small>{o.per}</small> : null}
+          </span>
         </label>
       ))}
     </fieldset>
@@ -124,11 +245,14 @@ function FormatPicker({
 function PackCheckoutSession({
   slug,
   format,
+  fiches,
   priceCents,
   showPrice,
 }: {
   slug: string;
   format: PackFormat;
+  /** Achat à l'unité : fiches choisies (indices). */
+  fiches: number[] | null;
   priceCents: number;
   /** `false` quand le choix du format affiche déjà les prix (le prix n'est alors rappelé qu'en cas de réduction). */
   showPrice: boolean;
@@ -144,7 +268,7 @@ function PackCheckoutSession({
     const response = fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pack: slug, format, source: sourceFromLocation() }),
+        body: JSON.stringify({ pack: slug, format, fiches, source: sourceFromLocation() }),
       })
         .then(async (r) => {
           const data = (await r.json()) as { clientSecret?: string; publishableKey?: string };
@@ -168,7 +292,7 @@ function PackCheckoutSession({
     return (
       <>
         {showPrice ? <PriceRow priceCents={priceCents} format={format} /> : null}
-        <HostedFallback slug={slug} format={format} priceCents={priceCents} />
+        <HostedFallback slug={slug} format={format} fiches={fiches} priceCents={priceCents} />
       </>
     );
   if (!clientSecret || !stripe)
@@ -188,7 +312,7 @@ function PackCheckoutSession({
         //  La session n'autorise que la France, le pays est donc déjà fixé.)
         defaultValues: { billingAddress: { address: { country: "FR" } } },
       }}>
-      <CheckoutForm slug={slug} format={format} priceCents={priceCents} showPrice={showPrice} clientSecretRef={clientSecretRef} />
+      <CheckoutForm slug={slug} format={format} fiches={fiches} priceCents={priceCents} showPrice={showPrice} clientSecretRef={clientSecretRef} />
     </CheckoutElementsProvider>
   );
 }
@@ -196,12 +320,14 @@ function PackCheckoutSession({
 function CheckoutForm({
   slug,
   format,
+  fiches,
   priceCents,
   showPrice,
   clientSecretRef,
 }: {
   slug: string;
   format: PackFormat;
+  fiches: number[] | null;
   priceCents: number;
   showPrice: boolean;
   clientSecretRef: React.RefObject<string | null>;
@@ -304,7 +430,7 @@ function CheckoutForm({
     return (
       <>
         {showPrice ? <PriceRow priceCents={priceCents} format={format} /> : null}
-        <HostedFallback slug={slug} format={format} priceCents={priceCents} />
+        <HostedFallback slug={slug} format={format} fiches={fiches} priceCents={priceCents} />
       </>
     );
 
@@ -500,11 +626,12 @@ function CardModal({ title, onClose, children }: { title: string; onClose: () =>
 }
 
 /** Secours : bouton classique vers la page de paiement Stripe (fonctionne sans JavaScript). */
-function HostedFallback({ slug, format, priceCents }: { slug: string; format: PackFormat; priceCents: number }) {
+function HostedFallback({ slug, format, fiches, priceCents }: { slug: string; format: PackFormat; fiches: number[] | null; priceCents: number }) {
   return (
     <form method="post" action="/api/checkout" className="buy-form">
       <input type="hidden" name="pack" value={slug} />
       <input type="hidden" name="format" value={format} />
+      {fiches ? <input type="hidden" name="fiches" value={fiches.join(",")} /> : null}
       <SourceField />
       <label className="consent">
         <input type="checkbox" name="consent" required />

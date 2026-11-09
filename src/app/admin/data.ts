@@ -43,7 +43,7 @@ export type OrderStatus = "todo" | "late" | "shipped" | "refunded" | "pdf";
 
 export function statusOf(o: AdminOrder): OrderStatus {
   if (o.refunded) return "refunded";
-  if (o.format === "pdf") return "pdf";
+  if (o.format !== "papier") return "pdf";
   if (o.shippedAt) return "shipped";
   return o.businessDaysOld > LATE_AFTER_BUSINESS_DAYS ? "late" : "todo";
 }
@@ -66,6 +66,15 @@ export async function listOrders(stripe: Stripe): Promise<AdminOrder[]> {
 
 const isPaid = (s: Stripe.Checkout.Session) => s.payment_status === "paid" || s.payment_status === "no_payment_required";
 
+/** Nom du pack, avec le détail des fiches pour un achat à l'unité. */
+function packLabel(s: Stripe.Checkout.Session): string {
+  const pack = getPack(s.metadata?.pack ?? "");
+  const name = pack?.name ?? s.metadata?.pack ?? "?";
+  if (s.metadata?.format !== "fiches") return name;
+  const titles = (s.metadata?.fiches ?? "").split(",").map((i) => pack?.items[Number(i)]?.title).filter(Boolean);
+  return `${name} · à l'unité : ${titles.join(", ")}`;
+}
+
 function toAdminOrder(s: Stripe.Checkout.Session, now = Date.now()): AdminOrder {
   const pi = s.payment_intent as Stripe.PaymentIntent | null;
   const charge = (pi?.latest_charge ?? null) as Stripe.Charge | null;
@@ -76,7 +85,7 @@ function toAdminOrder(s: Stripe.Checkout.Session, now = Date.now()): AdminOrder 
     reference: orderReference(s.id),
     createdAt: s.created,
     format,
-    packName: getPack(s.metadata?.pack ?? "")?.name ?? s.metadata?.pack ?? "?",
+    packName: packLabel(s),
     amountCents: s.amount_total ?? 0,
     shippingCents: s.total_details?.amount_shipping ?? 0,
     discountCents: s.total_details?.amount_discount ?? 0,

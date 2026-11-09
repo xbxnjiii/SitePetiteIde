@@ -28,7 +28,7 @@ export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey">): st
     .map(
       (l) => `<tr><td style="padding:0 0 10px">
         <a href="${esc(l.url)}" style="display:block;background:#4E7AC7;color:#ffffff;text-decoration:none;font-weight:700;font-size:17px;line-height:22px;text-align:center;padding:16px 20px;border-radius:14px;font-family:${font}">
-          Télécharger mon PDF</a></td></tr>`,
+          ${o.links.length > 1 ? `PDF · ${esc(l.label)}` : "Télécharger mon PDF"}</a></td></tr>`,
     )
     .join("") +
     (o.imagesUrl
@@ -336,7 +336,7 @@ function updateEmailHtml(u: UpdateEmail, message: string): string {
     "Tes fiches ont été mises à jour ✨",
     `<p style="margin:0 0 14px;color:#5B6784">Bonne nouvelle : ton <strong style="color:#2D3A5A">${esc(u.packName)}</strong> a été amélioré. Voici la nouvelle version, offerte comme promis.</p>
       ${message ? `<p style="margin:0 0 18px;padding:12px 14px;background:#F8F9FC;border-radius:12px">${esc(message).replace(/\n/g, "<br>")}</p>` : ""}
-      ${u.links.map((l) => button(l.url, "Télécharger le nouveau PDF", true)).join("")}
+      ${u.links.map((l) => button(l.url, u.links.length > 1 ? `Nouveau PDF · ${l.label}` : "Télécharger le nouveau PDF", true)).join("")}
       ${u.imagesUrl ? button(u.imagesUrl, "📱 Voir les fiches en images", false) : ""}
       <p style="margin:12px 0 0;font-size:13px;line-height:20px;color:#5B6784">Liens valables jusqu'au ${esc(until)}. Pense à remplacer l'ancienne version sur ton téléphone.</p>`,
   );

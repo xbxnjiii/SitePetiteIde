@@ -128,7 +128,20 @@ export default async function PackPage({ params }: { params: Params }) {
             <Suspense>
               <CheckoutError />
             </Suspense>
-            <PackCheckout slug={pack.slug} priceCents={pack.priceCents} print={pack.print ?? null} />
+            <PackCheckout
+              slug={pack.slug}
+              priceCents={pack.priceCents}
+              print={pack.print ?? null}
+              unit={
+                pack.unit
+                  ? {
+                      priceCents: pack.unit.priceCents,
+                      items: pack.items.slice(0, pack.unit.files.length).map((i) => ({ title: i.title, icon: i.icon })),
+                      packCount: pack.items.length + (pack.bonus ? 1 : 0),
+                    }
+                  : null
+              }
+            />
           </div>
         </div>
       </section>

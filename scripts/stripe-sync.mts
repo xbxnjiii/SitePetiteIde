@@ -36,6 +36,20 @@ const entries = packs.flatMap((pack) => [
     active: pack.status === "published",
     metadata: { slug: pack.slug, format: "pdf" },
   },
+  ...(pack.unit
+    ? [
+        {
+          productId: `lpi-${pack.slug}-fiche`,
+          lookupKey: `${pack.slug}-fiche`,
+          name: `${pack.name} — fiche à l'unité`,
+          description: "Une fiche numérique (PDF et image) au choix.",
+          taxCode: "txcd_10000000",
+          priceCents: pack.unit.priceCents,
+          active: pack.status === "published",
+          metadata: { slug: pack.slug, format: "fiches" },
+        },
+      ]
+    : []),
   ...(pack.print
     ? [
         {

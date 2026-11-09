@@ -9,8 +9,11 @@ export interface DownloadClaims {
   s: string; // Checkout Session ID
   f: number; // index du fichier dans le pack
   e: number; // expiration (secondes Unix)
-  /** Type de lien : absent = PDF (pack.files) ; « img » = une image (pack.imageFiles) ; « gal » = page /mes-fiches. */
-  t?: "img" | "gal";
+  /**
+   * Type de lien : absent = PDF du pack (pack.files) ; « fiche » = PDF d'une fiche à l'unité (pack.unit.files) ;
+   * « img » = une image (pack.imageFiles) ; « gal » = page /mes-fiches.
+   */
+  t?: "img" | "gal" | "fiche";
 }
 
 const enc = new TextEncoder();
@@ -46,7 +49,7 @@ export async function verifyDownloadToken(token: string, secret: string): Promis
     if (!ok) return null;
     const claims = JSON.parse(new TextDecoder().decode(fromB64url(payload))) as DownloadClaims;
     if (typeof claims.s !== "string" || typeof claims.f !== "number" || typeof claims.e !== "number") return null;
-    if (claims.t !== undefined && claims.t !== "img" && claims.t !== "gal") return null;
+    if (claims.t !== undefined && claims.t !== "img" && claims.t !== "gal" && claims.t !== "fiche") return null;
     if (claims.e < Math.floor(Date.now() / 1000)) return null;
     return claims;
   } catch {

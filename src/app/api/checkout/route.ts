@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import { canBuyPrint, formatPriceCents, getPack, parseFormat, type Pack, type PackFormat } from "@/content/packs";
+import { canBuyPrint, formatPriceCents, getPack, parseFiches, parseFormat, type Pack, type PackFormat } from "@/content/packs";
 import { SHIPPING } from "@/content/shipping";
 import { type AppEnv, getEnvAsync, siteUrl } from "@/lib/env";
 import { isAllowedOrigin } from "@/lib/origin";
@@ -22,22 +22,30 @@ export async function POST(request: Request) {
 
   let slug = "";
   let format: PackFormat = "pdf";
+  let fichesRaw: unknown = null;
   let consent = false;
   let source: string | null = null;
   if (wantsJson) {
-    const body = (await request.json().catch(() => null)) as { pack?: unknown; format?: unknown; source?: unknown } | null;
+    const body = (await request.json().catch(() => null)) as { pack?: unknown; format?: unknown; fiches?: unknown; source?: unknown } | null;
     slug = typeof body?.pack === "string" ? body.pack : "";
     format = parseFormat(body?.format);
+    fichesRaw = body?.fiches;
     source = cleanSource(body?.source);
   } else {
     const form = await request.formData().catch(() => null);
     slug = String(form?.get("pack") ?? "");
     format = parseFormat(form?.get("format"));
+    fichesRaw = form?.get("fiches");
     consent = form?.get("consent") === "on";
     source = cleanSource(form?.get("source"));
   }
   const pack = getPack(slug);
   if (!pack) return wantsJson ? Response.json({ error: "Pack introuvable" }, { status: 404 }) : new Response("Pack introuvable", { status: 404 });
+  // À l'unité : au moins une fiche valide.
+  const fiches = format === "fiches" ? parseFiches(pack, fichesRaw) : null;
+  if (format === "fiches" && !fiches) {
+    return wantsJson ? Response.json({ error: "fiches" }, { status: 400 }) : Response.redirect(`${base}/${pack.slug}?erreur=fiches`, 303);
+  }
   if (format === "papier" && !canBuyPrint(pack)) {
     return wantsJson ? Response.json({ error: "indisponible" }, { status: 409 }) : Response.redirect(`${base}/${pack.slug}?erreur=indisponible`, 303);
   }
@@ -46,7 +54,7 @@ export async function POST(request: Request) {
   if (!wantsJson && !consent) return Response.redirect(`${base}/${pack.slug}?erreur=cgv`, 303);
 
   try {
-    const session = await createSession(env, base, pack, format, wantsJson ? "elements" : "hosted_page", source);
+    const session = await createSession(env, base, pack, format, fiches, wantsJson ? "elements" : "hosted_page", source);
     if (wantsJson) return Response.json({ clientSecret: session.client_secret, publishableKey: publishableKey(env) });
     return Response.redirect(session.url!, 303);
   } catch (err) {
@@ -77,6 +85,7 @@ async function createSession(
   base: string,
   pack: Pack,
   format: PackFormat,
+  fiches: number[] | null,
   uiMode: "elements" | "hosted_page",
   source: string | null,
 ): Promise<Stripe.Checkout.Session> {
@@ -89,11 +98,14 @@ async function createSession(
     throw new PriceMismatch(`prix Stripe absent ou différent du prix affiché (${lookupKey}, ${price?.unit_amount})`);
   }
   const isPrint = format === "papier";
-  const metadata = { pack: pack.slug, format, provenance: source ?? "direct" };
+  // « fiches » : indices des fiches achetées à l'unité (dans pack.items), ex. « 0,2,5 ».
+  const metadata = { pack: pack.slug, format, provenance: source ?? "direct", ...(fiches ? { fiches: fiches.join(",") } : {}) };
+  const description =
+    format === "papier" ? `${pack.name} — papier` : fiches ? `${pack.name} — ${fiches.map((i) => pack.items[i].title).join(", ")}` : pack.name;
 
   const common = {
     mode: "payment" as const,
-    line_items: [{ price: price.id, quantity: 1 }],
+    line_items: [{ price: price.id, quantity: fiches?.length ?? 1 }],
     // Carte bancaire uniquement : Apple Pay et Google Pay en font partie.
     allowed_payment_method_types: ["card"],
     // Pas de proposition d'enregistrement « Link » : formulaire le plus court possible.
@@ -107,7 +119,7 @@ async function createSession(
     // « provenance » : réseau d'origine de la visite (?src=tiktok, ?src=insta…), visible dans Stripe.
     // « format » : pdf ou papier (le papier est à expédier, voir /admin).
     metadata,
-    payment_intent_data: { metadata, description: isPrint ? `${pack.name} — papier` : pack.name },
+    payment_intent_data: { metadata, description: description.slice(0, 1000) },
     // Papier : adresse de livraison (France uniquement) + frais de port fixes.
     ...(isPrint
       ? {

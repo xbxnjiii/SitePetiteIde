@@ -1,6 +1,6 @@
 import { verifyDownloadToken } from "@/lib/download-token";
 import { getEnvAsync, requireVar, siteUrl } from "@/lib/env";
-import { getOrder } from "@/lib/orders";
+import { allowedImages, getOrder } from "@/lib/orders";
 import { stripeClient } from "@/lib/stripe";
 
 // GET /telecharger?t=<jeton signé>[&dl=1]
@@ -16,12 +16,17 @@ export async function GET(request: Request) {
   const claims = await verifyDownloadToken(token, requireVar(env, "DOWNLOAD_TOKEN_SECRET"));
   if (!claims || claims.t === "gal") return fail("lien");
   const isImage = claims.t === "img";
+  const isFiche = claims.t === "fiche";
 
   const order = await getOrder(stripeClient(env), claims.s);
   if (!order || !order.paid || !order.pack) return fail("commande");
   if (order.revoked) return fail("rembourse");
 
-  const file = isImage ? order.pack.imageFiles?.[claims.f] : order.pack.files[claims.f];
+  // Un achat à l'unité ne donne accès qu'aux fiches achetées ; le PDF du pack complet lui est refusé.
+  if (order.format === "fiches" && !isImage && !isFiche) return fail("lien");
+  if (isFiche && !order.fiches?.includes(claims.f)) return fail("lien");
+  if (isImage && !allowedImages(order).includes(claims.f)) return fail("lien");
+  const file = isImage ? order.pack.imageFiles?.[claims.f] : isFiche ? order.pack.unit?.files[claims.f] : order.pack.files[claims.f];
   const object = file ? await env.PDF_BUCKET?.get(file.key) : null;
   if (!file || !object) {
     console.error("telecharger: fichier introuvable dans R2", file?.key);

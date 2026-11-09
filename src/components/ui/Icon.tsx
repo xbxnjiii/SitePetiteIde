@@ -1,7 +1,7 @@
 // Jeu d'icônes en SVG (trait 2 px), dessiné pour le site : aucune dépendance.
 import type { IconName } from "@/content/packs";
 
-type UiIcon =
+export type UiIcon =
   | IconName
   | "clipboard"
   | "toolbox"
