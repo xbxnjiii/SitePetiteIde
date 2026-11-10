@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Fredoka, Inter, Nunito_Sans } from "next/font/google";
-import { CF_WEB_ANALYTICS_TOKEN, IS_LIVE, SITE } from "@/lib/format";
+import { cookies } from "next/headers";
+import { CF_WEB_ANALYTICS_TOKEN, IS_LIVE, IS_PREPROD, SITE } from "@/lib/format";
+import { getEnvAsync } from "@/lib/env";
+import { LOCK_COOKIE, isUnlocked } from "@/lib/preprod-lock";
 import "@/styles/tokens.css";
 import "@/styles/base.css";
 import "@/styles/components.css";
@@ -20,12 +23,14 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#4E7AC7", width: "device-width", initialScale: 1 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Préprod : page de mot de passe tant que le visiteur ne l'a pas saisi (jamais en production).
+  const locked = IS_PREPROD && !(await isUnlocked(await getEnvAsync(), (await cookies()).get(LOCK_COOKIE)?.value));
   return (
     <html lang="fr" className={`${fredoka.variable} ${nunito.variable} ${inter.variable}`}>
       <body>
         <a href="#contenu" className="skip-link">Aller au contenu</a>
-        {children}
+        {locked ? <PreprodLock /> : children}
         {CF_WEB_ANALYTICS_TOKEN ? (
           <script
             defer
@@ -35,5 +40,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         ) : null}
       </body>
     </html>
+  );
+}
+
+function PreprodLock() {
+  return (
+    <main className="lock">
+      <form className="lock__card" method="post" action="/api/verrou">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/img/logo-rond-256.webp" alt="" width={72} height={72} />
+        <h1>Préprod La Petite IDE</h1>
+        <p>Espace de test privé.</p>
+        <input type="hidden" name="next" value="/" data-next="" />
+        <input className="input" type="password" name="password" placeholder="Mot de passe" autoComplete="current-password" required autoFocus />
+        <button type="submit" className="btn btn--primary">Entrer</button>
+        <script dangerouslySetInnerHTML={{ __html: "var n=document.querySelector('[data-next]');var u=new URL(location.href);u.searchParams.delete('verrou');n.value=u.pathname+u.search;if(location.search.indexOf('verrou=erreur')>-1){document.querySelector('.lock__card p').textContent='Mot de passe incorrect.';}" }} />
+      </form>
+    </main>
   );
 }

@@ -29,6 +29,8 @@ export interface AppEnv {
   ORDERS_NOTIFY_TO?: string;
   /** Mot de passe de la page /admin (secret). Sans lui, la page est fermée. */
   ADMIN_PASSWORD?: string;
+  /** Mot de passe d'accès à la préprod (secret du Worker preprodlapetiteide). */
+  PREPROD_PASSWORD?: string;
   /** Clé Resend « Full access » pour lire l'historique des emails dans /admin (sinon RESEND_API_KEY). */
   RESEND_ADMIN_KEY?: string;
   PDF_BUCKET?: R2BucketLike;

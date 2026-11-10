@@ -132,11 +132,6 @@ export function QuizEmailCapture({
               </div>
             ) : (
               <form className="qz-mail" onSubmit={submit}>
-                <ul className="qz-mail__perks">
-                  <li>✅ Toutes tes réponses expliquées</li>
-                  <li>🎁 1 fiche mémo offerte</li>
-                  <li>💡 1 conseil de révision, puis l&apos;offre du pack</li>
-                </ul>
                 <div className="qz-mail__row">
                   <label htmlFor="qz-mail-input" className="visually-hidden">
                     Ton email
@@ -178,11 +173,9 @@ export function QuizEmailCapture({
                     onChange={(e) => setConsent(e.target.checked)}
                   />
                   <span>
-                    J&apos;accepte de recevoir ma correction, ma fiche gratuite
-                    et 2 emails de conseils et d&apos;offre de La Petite IDE.
-                    Désinscription en 1 clic.{" "}
-                    <Link href="/confidentialite" target="_blank">
-                      Confidentialité
+                    J&apos;accepte de recevoir les emails de La Petite IDE.{" "}
+                    <Link href="/confidentialite#finalites" target="_blank">
+                      En savoir plus
                     </Link>
                   </span>
                 </label>
