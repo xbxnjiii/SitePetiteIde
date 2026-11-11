@@ -1022,3 +1022,98 @@ img.bio__avatar { width: 128px; height: 128px; }
 .lock__card h1 { margin: 0; font-size: 1.3rem; }
 .lock__card p { margin: 0; color: var(--c-ink-soft); font-size: 0.9rem; }
 .lock__card .input, .lock__card .btn { width: 100%; }
+
+/* ===== Pied de page minimal : liens repliés dans « ••• » ================== */
+.mini-footer { padding: 18px var(--gutter) calc(18px + env(safe-area-inset-bottom)); }
+.mini-footer__row { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.mini-footer .social { margin-bottom: 0; }
+.mini-footer__copy { margin: 8px 0 0; font-size: 0.74rem; color: var(--c-ink-soft); }
+.mini-footer__row .mini-footer__copy { margin: 0; }
+.more { position: relative; }
+.more summary {
+  list-style: none; cursor: pointer; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%;
+  background: #fff; border: 1px solid var(--c-line); color: var(--c-ink-soft); font-size: 0.8rem; letter-spacing: 1px;
+  transition: background 0.15s, color 0.15s;
+}
+.more summary::-webkit-details-marker { display: none; }
+.more summary:hover, .more[open] summary { background: var(--c-primary); border-color: var(--c-primary); color: #fff; }
+.mini-footer--compact .more summary { width: 34px; height: 34px; }
+.more__menu {
+  position: absolute; z-index: 60; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); width: min(260px, calc(100vw - 32px));
+  display: grid; padding: 8px; border-radius: 18px; background: #fff; border: 1px solid var(--c-line); box-shadow: var(--shadow-lg);
+  text-align: left; animation: fade-in 0.15s;
+}
+.more__menu a { padding: 10px 12px; border-radius: 12px; color: var(--c-ink); text-decoration: none; font-weight: 600; font-size: 0.92rem; }
+.more__menu a:hover { background: var(--c-primary-50); color: var(--c-primary-dark); }
+.more__menu p { margin: 6px 0 0; padding: 8px 12px 4px; border-top: 1px solid var(--c-line); font-size: 0.72rem; line-height: 1.4; color: var(--c-ink-soft); max-width: none; }
+/* Sur la page de liens, le bouton est à droite du copyright : le menu s'aligne à droite. */
+.mini-footer--compact .more__menu { left: auto; right: -8px; transform: none; }
+
+/* ===== Page de vente : aperçus des fiches (défilement horizontal) ========= */
+.sale-sheets { margin: 2px calc(var(--gutter) * -1) 18px; }
+.sheets {
+  list-style: none; margin: 0; padding: 6px var(--gutter) 14px; display: flex; gap: 12px; overflow-x: auto;
+  scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.sheets::-webkit-scrollbar { display: none; }
+.sheets li { flex: none; width: min(56vw, 230px); scroll-snap-align: start; }
+.sheet {
+  position: relative; display: grid; gap: 8px; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; font: inherit; color: var(--c-ink); text-align: center;
+}
+.sheet img {
+  display: block; width: 100%; height: auto; aspect-ratio: 720 / 1019; object-fit: cover; object-position: top; border-radius: 14px; background: #fff;
+  border: 1px solid var(--c-line); box-shadow: 0 10px 24px rgb(45 58 90 / 14%); transition: transform 0.2s var(--ease), box-shadow 0.2s;
+}
+.sheet:hover img { transform: translateY(-3px); box-shadow: 0 14px 30px rgb(45 58 90 / 20%); }
+.sheet:active img { transform: scale(0.98); }
+.sheet__title { font-family: var(--font-title); font-weight: 800; font-size: 0.86rem; line-height: 1.2; }
+.sheet__tag { position: absolute; top: 8px; right: 8px; padding: 3px 9px; border-radius: var(--r-pill); background: var(--c-accent); color: #fff; font-size: 0.72rem; font-weight: 800; }
+.sale-sheets__note { margin: 0; padding-inline: var(--gutter); text-align: center; font-size: 0.82rem; color: var(--c-ink-soft); }
+/* Fiche agrandie */
+.sheet-modal .modal__panel { display: grid; gap: 10px; }
+.sheet-modal .modal__head { margin-bottom: 0; }
+.sheet-modal .modal__head small { margin-left: 6px; font-size: 0.8rem; font-weight: 600; color: var(--c-ink-soft); }
+.sheet-modal__view { position: relative; }
+.sheet-modal__view img { display: block; width: auto; max-width: 100%; max-height: 58vh; height: auto; margin: 0 auto; border-radius: 14px; border: 1px solid var(--c-line); }
+.sheet-modal__lock {
+  position: absolute; left: 50%; bottom: 14%; transform: translateX(-50%); white-space: nowrap; padding: 8px 14px; border-radius: var(--r-pill);
+  background: rgb(45 58 90 / 88%); color: #fff; font-weight: 700; font-size: 0.85rem;
+}
+.sheet-modal__nav {
+  position: absolute; top: 50%; width: 40px; height: 40px; margin-top: -20px; border-radius: 50%; border: 1px solid var(--c-line); background: #fff; color: var(--c-ink);
+  display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow-md);
+}
+.sheet-modal__nav svg { width: 18px; height: 18px; }
+.sheet-modal__nav--prev { left: 4px; } .sheet-modal__nav--prev svg { transform: rotate(180deg); }
+.sheet-modal__nav--next { right: 4px; }
+.sheet-modal__actions { display: grid; gap: 8px; }
+.sheet-modal__actions .btn { width: 100%; }
+/* Sur téléphone, les aperçus remplacent le grand visuel du pack (gain de place). */
+@media (max-width: 899px) {
+  .sale:has(.sale-sheets) .sale-main__visual { display: none; }
+  .sale:has(.sale-sheets) .sale-main { padding-top: 16px; gap: 0; }
+  .sale:has(.sale-sheets) .sale-main h1 { margin-bottom: 6px; }
+  .sale:has(.sale-sheets) .sale-main__promise { margin-bottom: 10px; font-size: 0.98rem; }
+}
+@media (min-width: 900px) {
+  .sale-sheets { margin-inline: 0; }
+  .sheets { padding-inline: 2px; scroll-padding-inline: 2px; }
+  .sheets li { width: 190px; }
+  .sale-sheets__note { padding-inline: 0; text-align: left; }
+}
+
+/* ===== Page de liens : soutien sur une seule ligne ======================= */
+.tip { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px 10px 14px; text-align: left; }
+.tip__title { font-size: 0.9rem; }
+.tip__text { display: none; }
+.tip__amounts { gap: 6px; }
+.tip__btn { min-width: 52px; min-height: 38px; padding: 4px 10px; }
+/* La liste défilante ne doit pas élargir la page. */
+.sale-main { grid-template-columns: minmax(0, 1fr); }
+.sale-main__info { min-width: 0; }
+.sale-sheets { max-width: calc(100% + var(--gutter) * 2); }
+@media (min-width: 900px) { .sale-main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .sale-sheets { max-width: 100%; } }
+/* Le menu « ••• » se centre sur la ligne du pied de page (il ne dépasse jamais de l'écran). */
+.mini-footer__row { position: relative; }
+.more { position: static; }
+.more__menu, .mini-footer--compact .more__menu { left: 50%; right: auto; transform: translateX(-50%); }

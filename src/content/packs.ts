@@ -95,6 +95,11 @@ export interface Pack {
   /** Vente à l'unité. Sans ce champ, le pack ne se vend qu'en entier. */
   unit?: UnitSale;
   /**
+   * Aperçus des fiches affichés sur la page de vente (dans public/), même ordre que `items`, puis la fiche bonus.
+   * ⚠️ Images FLOUTÉES dans le fichier lui-même (jamais la fiche complète en clair).
+   */
+  previews?: { src: string; width: number; height: number }[];
+  /**
    * Version « images » (une image PNG/JPG par fiche, pratique sur téléphone), livrée avec le PDF.
    * Affichées sur la page /mes-fiches ; une image absente du bucket R2 est simplement masquée.
    */
@@ -188,7 +193,8 @@ export const packs: Pack[] = [
       downloadName: `La-Petite-IDE-Constantes-${name}.png`,
       label,
     })),
-    // ⚠️ Vente à l'unité : test en préprod (prix à valider).
+    previews: [...CONSTANTES_FICHES.map(([name]) => ({ src: `/img/packs/apercus/${name}.webp`, width: 720, height: 1019 })), { src: "/img/packs/apercus/08-fiche-bonus.webp", width: 720, height: 729 }],
+    // Vente à l'unité (activable dans /admin › Réglages).
     unit: {
       priceCents: 99,
       files: CONSTANTES_FICHES.map(([name, label]) => ({

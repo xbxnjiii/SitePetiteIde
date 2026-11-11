@@ -81,6 +81,19 @@ export function PackCheckout({
     return () => window.clearTimeout(t);
   }, [picked]);
 
+  // Depuis l'aperçu d'une fiche : « Cette fiche seule » la sélectionne à l'unité.
+  useEffect(() => {
+    if (!unit) return;
+    const onPick = (e: Event) => {
+      const i = (e as CustomEvent<number>).detail;
+      if (!Number.isInteger(i) || i < 0 || i >= unit.items.length) return;
+      setFormat("fiches");
+      setPicked((list) => (list.includes(i) ? list : [...list, i].sort((a, b) => a - b)));
+    };
+    window.addEventListener("lpi:fiche", onPick);
+    return () => window.removeEventListener("lpi:fiche", onPick);
+  }, [unit]);
+
   const hasChoice = Boolean(print || unit);
   const sessionPrice = format === "papier" && print ? print.priceCents : format === "fiches" && unit ? unit.priceCents * fiches.length : priceCents;
   return (

@@ -9,7 +9,7 @@ export function TipBlock() {
   return (
     <section className="tip" aria-labelledby="tip-title">
       <p id="tip-title" className="tip__title">
-        💙 Soutenir La Petite IDE
+        💙 Nous soutenir
       </p>
       <p className="tip__text">Un petit geste pour nous aider à créer de nouvelles fiches et de nouveaux quiz.</p>
       <div className="tip__amounts">
