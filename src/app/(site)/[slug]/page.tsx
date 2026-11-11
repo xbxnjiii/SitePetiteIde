@@ -13,7 +13,7 @@ import { SheetPreviews } from "@/components/shop/SheetPreviews";
 import { StickyBuyBar } from "@/components/shop/StickyBuyBar";
 import { Icon } from "@/components/ui/Icon";
 import { getEnvAsync } from "@/lib/env";
-import { SITE, TEST_FEATURES, formatPrice } from "@/lib/format";
+import { SITE, formatPrice } from "@/lib/format";
 import { applySettings, getSettings } from "@/lib/settings";
 import { jsonLd } from "@/lib/seo";
 
@@ -66,7 +66,7 @@ const faqFor = (pack: Pack) => [
         a: "Les mises à jour de la version numérique sont gratuites : tu reçois la nouvelle version, même si tu as pris le format papier.",
       }
     : { q: "Et si les fiches sont améliorées ?", a: "Les mises à jour sont gratuites : tu reçois la nouvelle version des fiches que tu as achetées." },
-  { q: "Je n'ai pas reçu l'email", a: `Regarde dans tes spams. Sinon, va sur la page « Retrouver mon achat » (${TEST_FEATURES ? "menu ··· en bas de page" : "en bas de page"}) : tes liens te sont renvoyés.` },
+  { q: "Je n'ai pas reçu l'email", a: `Regarde dans tes spams. Sinon, va sur la page « Retrouver mon achat » (menu ··· en bas de page) : tes liens te sont renvoyés.` },
 ];
 
 export default async function PackPage({ params }: { params: Params }) {

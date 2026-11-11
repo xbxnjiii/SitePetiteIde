@@ -30,7 +30,7 @@ export const IS_LIVE = LAUNCHED && !IS_PREPROD;
 
 /**
  * Fonctionnalités EN TEST, visibles uniquement sur la préprod : aperçus des fiches sur la page de vente,
- * vente à l'unité, pied de page « ••• », soutien sur une ligne. Pour les mettre en production une fois
+ * soutien sur une ligne. Pour les mettre en production une fois
  * validées : retirer la condition à l'endroit concerné (rechercher TEST_FEATURES / IS_PREPROD).
  */
 export const TEST_FEATURES = IS_PREPROD;

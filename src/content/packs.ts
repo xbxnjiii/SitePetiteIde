@@ -195,8 +195,7 @@ export const packs: Pack[] = [
     })),
     // ⚠️ EN TEST (préprod uniquement) : aperçus des fiches sur la page de vente.
     previews: !IS_PREPROD ? undefined : [...CONSTANTES_FICHES.map(([name]) => ({ src: `/img/packs/apercus/${name}.webp`, width: 720, height: 1019 })), { src: "/img/packs/apercus/08-fiche-bonus.webp", width: 720, height: 729 }],
-    // Vente à l'unité : EN TEST, proposée seulement en préprod (voir applySettings dans src/lib/settings.ts).
-    // Les fichiers restent déclarés ici pour que les achats déjà faits restent téléchargeables.
+    // Vente à l'unité (activable dans /admin › Réglages).
     unit: {
       priceCents: 99,
       files: CONSTANTES_FICHES.map(([name, label]) => ({

@@ -2,7 +2,7 @@ import type Stripe from "stripe";
 import { getPack } from "@/content/packs";
 import { publishedPacks } from "@/content/packs";
 import { sendShippedEmail, sendUpdateEmails } from "@/lib/email";
-import { IS_LIVE, IS_PREPROD, SITE, TEST_FEATURES } from "@/lib/format";
+import { IS_LIVE, IS_PREPROD, SITE } from "@/lib/format";
 import { OFFER, isOfferActive } from "@/content/offer";
 import { type AppEnv, getEnvAsync, siteUrl } from "@/lib/env";
 import { downloadLinks, imagesLink, orderReference } from "@/lib/orders";
@@ -133,7 +133,7 @@ export async function GET(request: Request) {
                 .filter((p) => p.print)
                 .map((p) => ({ slug: p.slug, name: p.name, on: Boolean(applySettings(p, settings).print) })),
               unit: publishedPacks()
-                .filter((p) => p.unit && TEST_FEATURES)
+                .filter((p) => p.unit)
                 .map((p) => ({ slug: p.slug, name: p.name, on: Boolean(applySettings(p, settings).unit) })),
               quizEmails: settings.quizEmails,
               hiddenOrders: all.filter(trashed).length,

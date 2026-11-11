@@ -630,7 +630,7 @@ function settingsSection(s: SettingsView, site: SiteInfo): string {
     <p class="muted">Sur On : le choix « À l'unité » apparaît sur la page du pack (fiches au choix, la fiche bonus reste réservée au pack).
       Avant d'activer : déposer un PDF par fiche dans R2 (dossier « fiches » du pack).</p>
     ${s.unit.length ? s.unit.map((p) => toggle("unite", p.slug, p.on, p.name, p.on ? "En vente à l'unité" : "Pack entier uniquement")).join("") : `<p class="muted">Aucun pack n'est prévu pour la vente à l'unité.</p>`}
-  </section>` : "" /* vente à l'unité : en test, préprod uniquement */}
+  </section>` : ""}
 
   <section class="card">
     <header class="card__head"><h2>📩 Emails du quiz</h2></header>
