@@ -29,6 +29,13 @@ const LAUNCHED = true;
 export const IS_LIVE = LAUNCHED && !IS_PREPROD;
 
 /**
+ * Fonctionnalités EN TEST, visibles uniquement sur la préprod : aperçus des fiches sur la page de vente,
+ * vente à l'unité, pied de page « ••• », soutien sur une ligne. Pour les mettre en production une fois
+ * validées : retirer la condition à l'endroit concerné (rechercher TEST_FEATURES / IS_PREPROD).
+ */
+export const TEST_FEATURES = IS_PREPROD;
+
+/**
  * Cloudflare Web Analytics (statistiques de visites anonymes, sans cookie).
  * Laisser vide si l'injection automatique est activée dans Cloudflare ;
  * sinon coller ici le « token » du site (Cloudflare → Web Analytics → Manage site → JS snippet).

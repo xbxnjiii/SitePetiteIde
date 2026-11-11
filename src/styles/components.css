@@ -1024,9 +1024,9 @@ img.bio__avatar { width: 128px; height: 128px; }
 .lock__card .input, .lock__card .btn { width: 100%; }
 
 /* ===== Pied de page minimal : liens repliés dans « ••• » ================== */
-.mini-footer { padding: 18px var(--gutter) calc(18px + env(safe-area-inset-bottom)); }
+.mini-footer--menu { padding: 18px var(--gutter) calc(18px + env(safe-area-inset-bottom)); }
 .mini-footer__row { display: flex; align-items: center; justify-content: center; gap: 10px; }
-.mini-footer .social { margin-bottom: 0; }
+.mini-footer--menu .social { margin-bottom: 0; }
 .mini-footer__copy { margin: 8px 0 0; font-size: 0.74rem; color: var(--c-ink-soft); }
 .mini-footer__row .mini-footer__copy { margin: 0; }
 .more { position: relative; }
@@ -1102,12 +1102,12 @@ img.bio__avatar { width: 128px; height: 128px; }
   .sale-sheets__note { padding-inline: 0; text-align: left; }
 }
 
-/* ===== Page de liens : soutien sur une seule ligne ======================= */
-.tip { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px 10px 14px; text-align: left; }
-.tip__title { font-size: 0.9rem; }
-.tip__text { display: none; }
-.tip__amounts { gap: 6px; }
-.tip__btn { min-width: 52px; min-height: 38px; padding: 4px 10px; }
+/* ===== Page de liens : soutien sur une seule ligne (en test, préprod) ===== */
+.tip--compact { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px 10px 14px; text-align: left; }
+.tip--compact .tip__title { font-size: 0.9rem; }
+.tip--compact .tip__text { display: none; }
+.tip--compact .tip__amounts { gap: 6px; }
+.tip--compact .tip__btn { min-width: 52px; min-height: 38px; padding: 4px 10px; }
 /* La liste défilante ne doit pas élargir la page. */
 .sale-main { grid-template-columns: minmax(0, 1fr); }
 .sale-main__info { min-width: 0; }

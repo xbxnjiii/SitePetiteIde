@@ -13,7 +13,7 @@ import { SheetPreviews } from "@/components/shop/SheetPreviews";
 import { StickyBuyBar } from "@/components/shop/StickyBuyBar";
 import { Icon } from "@/components/ui/Icon";
 import { getEnvAsync } from "@/lib/env";
-import { SITE, formatPrice } from "@/lib/format";
+import { SITE, TEST_FEATURES, formatPrice } from "@/lib/format";
 import { applySettings, getSettings } from "@/lib/settings";
 import { jsonLd } from "@/lib/seo";
 
@@ -66,7 +66,7 @@ const faqFor = (pack: Pack) => [
         a: "Les mises à jour de la version numérique sont gratuites : tu reçois la nouvelle version, même si tu as pris le format papier.",
       }
     : { q: "Et si les fiches sont améliorées ?", a: "Les mises à jour sont gratuites : tu reçois la nouvelle version des fiches que tu as achetées." },
-  { q: "Je n'ai pas reçu l'email", a: "Regarde dans tes spams. Sinon, va sur la page « Retrouver mon achat » (menu ··· en bas de page) : tes liens te sont renvoyés." },
+  { q: "Je n'ai pas reçu l'email", a: `Regarde dans tes spams. Sinon, va sur la page « Retrouver mon achat » (${TEST_FEATURES ? "menu ··· en bas de page" : "en bas de page"}) : tes liens te sont renvoyés.` },
 ];
 
 export default async function PackPage({ params }: { params: Params }) {
@@ -88,6 +88,39 @@ export default async function PackPage({ params }: { params: Params }) {
       availability: "https://schema.org/InStock",
     },
   };
+
+  // Aperçus des fiches = format de page en test (préprod uniquement, voir src/content/packs.ts).
+  const testLayout = Boolean(pack.previews?.length);
+  const paperSpec = pack.print ? (
+    <div className={pack.print.photo ? "paper-spec paper-spec--photo" : "paper-spec"}>
+      {pack.print.photo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={pack.print.photo.src}
+          alt={pack.print.photo.alt}
+          width={pack.print.photo.width}
+          height={pack.print.photo.height}
+          className="paper-spec__photo"
+          loading="lazy"
+        />
+      ) : (
+        <span className="paper-spec__icon" aria-hidden="true">
+          <Icon name="note" />
+        </span>
+      )}
+      <div className="paper-spec__body">
+        <p className="paper-spec__title">Version papier</p>
+        <ul className="paper-spec__chips">
+          {pack.print.specs.map((s) => (
+            <li key={s}>{s}</li>
+          ))}
+        </ul>
+        <p className="paper-spec__note">
+          Numérique offert · Livraison {formatPrice(SHIPPING.priceCents)} · {SHIPPING.dispatch.toLowerCase()}
+        </p>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div className="has-sticky-buy sale">
@@ -128,13 +161,29 @@ export default async function PackPage({ params }: { params: Params }) {
               </p>
             </div>
           ) : (
-            <ul className="sale-main__points">
-              {pack.highlights.map((h) => (
-                <li key={h}>
-                  <Icon name="check" /> {h}
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className="sale-main__points">
+                {pack.highlights.map((h) => (
+                  <li key={h}>
+                    <Icon name="check" /> {h}
+                  </li>
+                ))}
+              </ul>
+              <p className="sale-main__update">
+                <Icon name="spark" /> Si on mets à jour une fiche, on te l&apos;envoi !
+              </p>
+
+              {pack.bonus ? (
+                <div className="bonus-card">
+                  <span className="bonus-card__icon" aria-hidden="true">
+                    <Icon name="gift" />
+                  </span>
+                  <p>
+                    <strong>{pack.bonus.title}</strong> {pack.bonus.text}
+                  </p>
+                </div>
+              ) : null}
+            </>
           )}
 
           <div className="sale-buy" id="acheter" data-buy-anchor="">
@@ -159,39 +208,45 @@ export default async function PackPage({ params }: { params: Params }) {
         </div>
       </section>
 
-      {pack.print ? (
-        <section className="container sale-content" aria-label="Version papier">
-          <div className={pack.print.photo ? "paper-spec paper-spec--photo" : "paper-spec"}>
-            {pack.print.photo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={pack.print.photo.src}
-                alt={pack.print.photo.alt}
-                width={pack.print.photo.width}
-                height={pack.print.photo.height}
-                className="paper-spec__photo"
-                loading="lazy"
-              />
-            ) : (
-              <span className="paper-spec__icon" aria-hidden="true">
-                <Icon name="note" />
-              </span>
-            )}
-            <div className="paper-spec__body">
-              <p className="paper-spec__title">Version papier</p>
-              <ul className="paper-spec__chips">
-                {pack.print.specs.map((s) => (
-                  <li key={s}>{s}</li>
-                ))}
-              </ul>
-              <p className="paper-spec__note">
-                Numérique offert · Livraison {formatPrice(SHIPPING.priceCents)} · {SHIPPING.dispatch.toLowerCase()}
-              </p>
-            </div>
-          </div>
+      {testLayout ? (
+        // Format en test (préprod) : les aperçus remplacent la liste « Dans le pack ».
+        pack.print ? (
+          <section className="container sale-content" aria-label="Version papier">
+            {paperSpec}
+          </section>
+        ) : null
+      ) : (
+        <section className="container sale-content" aria-labelledby="contenu-title">
+          <h2 id="contenu-title">Dans le pack</h2>
+          <ul className="sale-tiles">
+            {pack.items.map((item) => (
+              <li key={item.title} className="sale-tile">
+                <span className="sale-tile__icon" aria-hidden="true">
+                  <Icon name={item.icon} />
+                </span>
+                <span className="sale-tile__text">
+                  <strong>{item.title}</strong>
+                </span>
+              </li>
+            ))}
+            {pack.bonus ? (
+              <li className="sale-tile sale-tile--bonus">
+                <span className="sale-tile__icon" aria-hidden="true">
+                  <Icon name="gift" />
+                </span>
+                <span className="sale-tile__text">
+                  <strong>Fiche bonus</strong>
+                </span>
+              </li>
+            ) : null}
+          </ul>
+          <p className="sale-content__total">
+            {pack.items.length + (pack.bonus ? 1 : 0)} fiches ·{" "}
+            {pack.print ? "en numérique (PDF ou image) ou en papier" : "en PDF et en images, sur téléphone ou à imprimer"}
+          </p>
+          {paperSpec}
         </section>
-      ) : null}
-
+      )}
 
       <section className="container sale-faq" aria-labelledby="faq-title">
         <h2 id="faq-title">Questions fréquentes</h2>

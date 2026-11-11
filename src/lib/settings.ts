@@ -1,6 +1,7 @@
 import "server-only";
 import type { Pack } from "@/content/packs";
 import { type AppEnv, siteUrl } from "./env";
+import { TEST_FEATURES } from "./format";
 
 // Réglages modifiables depuis /admin (interrupteurs), sans base de données :
 // un petit fichier JSON dans le bucket R2, un par site (prod et préprod partagent le bucket).
@@ -123,6 +124,7 @@ export async function saveSettings(env: AppEnv, value: Settings): Promise<void> 
 export function applySettings(pack: Pack, s: Settings): Pack {
   let p = pack;
   if (p.print && !s.print[p.slug]) p = { ...p, print: undefined };
-  if (p.unit && !s.unit[p.slug]) p = { ...p, unit: undefined };
+  // Vente à l'unité : en test, jamais proposée hors préprod (même si l'interrupteur est sur On).
+  if (p.unit && (!TEST_FEATURES || !s.unit[p.slug])) p = { ...p, unit: undefined };
   return p;
 }
