@@ -419,7 +419,7 @@ function quizSection(v: QuizStatsView): string {
   <section class="kpis" aria-label="Chiffres clés des quiz">
     ${kpi("Quiz lancés", String(t.start), "", "kpi--hero")}
     ${kpi("Quiz terminés", String(t.finish), `${pctOf(t.finish, t.start)} des quiz lancés`)}
-    ${kpi("Emails récupérés", String(t.email), `${pctOf(t.email, t.finish)} des quiz terminés`)}
+    ${kpi("Nouveaux contacts", String(t.email), `${pctOf(t.email, t.finish)} des quiz terminés`)}
     ${kpi("Clics vers le pack", String(t.pack), `${pctOf(t.pack, t.finish)} des quiz terminés`)}
   </section>
 

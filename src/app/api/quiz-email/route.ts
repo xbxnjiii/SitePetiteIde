@@ -73,10 +73,11 @@ export async function POST(request: Request) {
     const freeExp = Math.floor(now / 1000) + FREE_SHEET.days * 86_400;
     const freeUrl = `${base}/fiche-gratuite?t=${await signToken({ f: 1 }, freeExp, secret, "free")}`;
     const first = correctionEmail({ themeTitle: theme.title, modeLabel: QUIZ_MODES[mode].label, items, freeUrl, packUrl, unsubscribeUrl: firstUnsub, aboutPack: Boolean(theme.packSlug) });
-    await sendEmail(env, { to: email, ...first, idempotencyKey: idem("first"), unsubscribeUrl: firstUnsub });
+    // null = même adresse déjà inscrite aujourd'hui (Resend ignore le doublon) : pas un nouveau contact.
+    const firstId = await sendEmail(env, { to: email, ...first, idempotencyKey: idem("first"), unsubscribeUrl: firstUnsub });
 
     console.log("quiz-email: séquence programmée", theme.slug, mode);
-    await recordQuizEvent(env, { event: "email", theme: theme.slug, mode, pct: null }).catch(() => {});
+    if (firstId) await recordQuizEvent(env, { event: "email", theme: theme.slug, mode, pct: null }).catch(() => {});
     return Response.json({ ok: true });
   } catch (err) {
     console.error("quiz-email:", err instanceof Error ? err.message : err);
