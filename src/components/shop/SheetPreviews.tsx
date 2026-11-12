@@ -63,7 +63,11 @@ export function SheetPreviews({
             <button type="button" className="sheet" onClick={() => setOpen(i)} aria-label={`Agrandir la fiche ${s.title}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={s.src} alt="" width={s.width} height={s.height} loading={i < 3 ? "eager" : "lazy"} />
-              {s.bonus ? <span className="sheet__tag">Bonus 🎁</span> : null}
+              {s.bonus ? (
+                <span className="sheet__tag">
+                  <Icon name="gift" /> Bonus
+                </span>
+              ) : null}
               <span className="sheet__title">{s.title}</span>
             </button>
           </li>
@@ -84,7 +88,8 @@ export function SheetPreviews({
             <div className="sheet-modal__view">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={current.src} alt={`Aperçu de la fiche ${current.title} (bas de la fiche flouté)`} width={current.width} height={current.height} />
-              <span className="sheet-modal__lock">🔒 La suite est dans {current.bonus ? "le pack" : "ta fiche"}</span>
+              <span className="sheet-modal__lock">
+                <Icon name="lock" /> La suite est dans {current.bonus ? "le pack" : "ta fiche"}</span>
               {sheets.length > 1 ? (
                 <>
                   <button type="button" className="sheet-modal__nav sheet-modal__nav--prev" onClick={() => setOpen((open - 1 + sheets.length) % sheets.length)} aria-label="Fiche précédente">

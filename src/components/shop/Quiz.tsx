@@ -420,11 +420,13 @@ function Result({
 
 /** Étapes du lancement : « 1, 2, 3, C'est parti ! ». */
 const STEPS = ["1", "2", "3", "C'est parti\u00a0!"];
-const STEP_MS = 800;
+const STEP_MS = 1000;
+/** Durée des transitions d'entrée et de sortie de l'écran de lancement (fondu + glissement). */
+const SLIDE_MS = 600;
 
 /**
  * Écran de lancement plein écran, façon application de quiz : couleur du thème, icône, puis 1, 2, 3 et « C'est parti ! »
- * (anneau qui se remplit, chiffres qui jaillissent, éclats). Un toucher passe directement à la première question.
+ * (anneau qui se remplit, chiffres qui jaillissent, éclats). Il arrive en glissant depuis la droite et repart vers la gauche.
  */
 function Countdown({
   tone,
@@ -448,29 +450,39 @@ function Countdown({
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const ms = reduced ? 450 : STEP_MS;
+    const ms = reduced ? 600 : STEP_MS;
+    const enter = reduced ? 0 : SLIDE_MS / 2; // le premier chiffre arrive pendant l'entrée de l'écran
     const timers: number[] = [];
     STEPS.forEach((_, i) => {
       timers.push(
         window.setTimeout(() => {
           setStep(i);
           buzz(i === STEPS.length - 1 ? [20, 40, 60] : 12);
-        }, i * ms),
+        }, enter + i * ms),
       );
     });
-    timers.push(window.setTimeout(() => setLeaving(true), STEPS.length * ms));
-    timers.push(window.setTimeout(() => doneRef.current(), STEPS.length * ms + 350));
+    const end = enter + STEPS.length * ms;
+    timers.push(window.setTimeout(() => setLeaving(true), end));
+    timers.push(window.setTimeout(() => doneRef.current(), end + (reduced ? 200 : SLIDE_MS)));
+
+    // Toute la page prend la couleur du thème (y compris derrière les barres de Safari), le temps du lancement.
+    const html = document.documentElement;
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    const before = { html: html.style.backgroundColor, body: document.body.style.backgroundColor, meta: meta?.content, overflow: document.body.style.overflow };
+    html.style.backgroundColor = tone[0];
+    document.body.style.backgroundColor = tone[0];
     document.body.style.overflow = "hidden";
+    if (meta) meta.content = tone[0];
     return () => {
       timers.forEach((t) => window.clearTimeout(t));
-      document.body.style.overflow = "";
+      html.style.backgroundColor = before.html;
+      document.body.style.backgroundColor = before.body;
+      document.body.style.overflow = before.overflow;
+      if (meta && before.meta !== undefined) meta.content = before.meta;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const skip = () => {
-    setLeaving(true);
-    window.setTimeout(() => doneRef.current(), 250);
-  };
   const go = step === STEPS.length - 1;
   const R = 70;
   const C = 2 * Math.PI * R;
@@ -482,7 +494,6 @@ function Countdown({
       role="dialog"
       aria-modal="true"
       aria-label={`${title} : le quiz commence`}
-      onClick={skip}
     >
       <span className="qz-cd__glow" aria-hidden="true" />
       <span className="qz-cd__rays" aria-hidden="true" />
@@ -523,7 +534,7 @@ function Countdown({
         ) : null}
       </div>
 
-      <p className="qz-cd__skip">Touche pour passer</p>
+      <p className="qz-cd__mode qz-cd__ready">Prête ?</p>
     </div>
   );
 }

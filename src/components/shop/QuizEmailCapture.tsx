@@ -90,7 +90,9 @@ export function QuizEmailCapture({
             <strong>Reçois ta correction</strong>
             <span>+ 1 fiche offerte, par email</span>
           </span>
-          <span className="qz-mailcta__tag">Gratuit</span>
+          <span className="qz-mailcta__tag qz-mailcta__tag--arrow" aria-hidden="true">
+            <Icon name="arrow" />
+          </span>
         </button>
       )}
       {open ? (
