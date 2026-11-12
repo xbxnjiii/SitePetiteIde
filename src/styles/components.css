@@ -1117,3 +1117,85 @@ img.bio__avatar { width: 128px; height: 128px; }
 .mini-footer__row { position: relative; }
 .more { position: static; }
 .more__menu, .mini-footer--compact .more__menu { left: 50%; right: auto; transform: translateX(-50%); }
+
+/* ===== Page « Quiz » : carrousel immersif =============================== */
+.qzc-page { padding-bottom: 12px; overflow-x: clip; }
+.qzc-head { padding-top: 10px; padding-bottom: 4px; text-align: center; }
+.qzc-head h1 { margin: 0; font-size: clamp(1.35rem, 3vw + 0.8rem, 2rem); line-height: 1.2; }
+.qzc-head p { margin: 0; font-size: 0.85rem; color: var(--c-ink-soft); }
+/* Carte ≈ 80 % de l'écran : hauteur visible moins l'en-tête du site, le titre et les points. */
+.qzc { position: relative; --slide-w: min(80vw, 420px); --card-h: clamp(440px, calc(100svh - var(--header-h) - 150px), 660px); }
+.qzc__track {
+  list-style: none; margin: 0; padding: 8px calc((100vw - var(--slide-w)) / 2) 12px; display: flex; gap: 12px;
+  overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch;
+}
+.qzc__track::-webkit-scrollbar { display: none; }
+.qzc__slide {
+  flex: none; width: var(--slide-w); scroll-snap-align: center; scroll-snap-stop: always;
+  transform: scale(0.93); opacity: 0.6; transition: transform 0.35s var(--ease), opacity 0.35s var(--ease);
+}
+.qzc__slide--on { transform: none; opacity: 1; }
+.qzc__card {
+  position: relative; display: flex; flex-direction: column; height: var(--card-h); padding: 18px 16px 16px;
+  border-radius: 32px; color: #fff; overflow: hidden; isolation: isolate;
+  background: linear-gradient(160deg, var(--from) 0%, var(--to) 100%); box-shadow: 0 20px 44px rgb(45 58 90 / 24%);
+}
+.qzc__card::before, .qzc__card::after { content: ""; position: absolute; z-index: -1; border-radius: 50%; background: rgb(255 255 255 / 13%); }
+.qzc__card::before { width: 260px; height: 260px; top: -90px; right: -90px; }
+.qzc__card::after { width: 180px; height: 180px; bottom: 120px; left: -80px; background: rgb(255 255 255 / 9%); }
+.qzc__count {
+  align-self: flex-start; padding: 5px 12px; border-radius: var(--r-pill); background: rgb(255 255 255 / 22%);
+  font-size: 0.78rem; font-weight: 800; letter-spacing: 0.02em; backdrop-filter: blur(4px);
+}
+.qzc__hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; padding: 8px 4px; }
+.qzc__emoji {
+  display: grid; place-items: center; width: clamp(96px, 15svh, 132px); aspect-ratio: 1; margin-bottom: 10px; border-radius: 36px; font-size: clamp(3.4rem, 8svh, 4.6rem); line-height: 1;
+  background: rgb(255 255 255 / 20%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 30%), 0 14px 30px rgb(0 0 0 / 12%);
+  filter: drop-shadow(0 4px 8px rgb(0 0 0 / 12%));
+}
+.qzc__slide--on .qzc__emoji { animation: qzc-float 4s ease-in-out infinite; }
+@keyframes qzc-float { 50% { transform: translateY(-6px) rotate(-2deg); } }
+.qzc__title { margin: 0; color: #fff; font-size: clamp(1.5rem, 6vw, 2.1rem); line-height: 1.1; text-wrap: balance; text-shadow: 0 2px 10px rgb(0 0 0 / 12%); }
+.qzc__desc { margin: 0; max-width: 30ch; font-size: 0.95rem; line-height: 1.4; opacity: 0.92; text-wrap: balance; }
+.qzc__modes { display: grid; gap: 10px; }
+.qzc__mode {
+  display: flex; align-items: center; gap: 12px; min-height: 62px; padding: 9px 14px; border-radius: 20px; text-decoration: none;
+  transition: transform 0.12s var(--ease), box-shadow 0.2s;
+}
+.qzc__mode:active { transform: scale(0.97); }
+.qzc__mode--flash { background: #fff; color: var(--c-ink); box-shadow: 0 10px 22px rgb(0 0 0 / 14%); }
+.qzc__mode--pros { background: rgb(255 255 255 / 18%); color: #fff; box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 55%); }
+.qzc__mode:hover { transform: translateY(-2px); }
+.qzc__mode-emoji { flex: none; width: 42px; height: 42px; border-radius: 14px; display: grid; place-items: center; font-size: 1.4rem; }
+.qzc__mode--flash .qzc__mode-emoji { background: var(--c-primary-50); }
+.qzc__mode--pros .qzc__mode-emoji { background: rgb(255 255 255 / 22%); }
+.qzc__mode-text { flex: 1; display: grid; line-height: 1.25; min-width: 0; }
+.qzc__mode-text strong { font-family: var(--font-title); font-weight: 800; font-size: 1.05rem; }
+.qzc__mode-text small { font-size: 0.8rem; opacity: 0.8; }
+.qzc__mode > svg { flex: none; width: 20px; height: 20px; }
+.qzc__nav {
+  position: absolute; top: calc(8px + var(--card-h) / 2); translate: 0 -50%; z-index: 2; width: 46px; height: 46px; border-radius: 50%; border: 0;
+  display: none; place-items: center; background: #fff; color: var(--c-ink); box-shadow: var(--shadow-md); cursor: pointer;
+}
+.qzc__nav:disabled { opacity: 0; pointer-events: none; }
+.qzc__nav svg { width: 20px; height: 20px; }
+.qzc__nav--prev { left: calc(50% - var(--slide-w) / 2 - 64px); } .qzc__nav--prev svg { rotate: 180deg; }
+.qzc__nav--next { right: calc(50% - var(--slide-w) / 2 - 64px); }
+@media (hover: hover) and (pointer: fine) and (min-width: 640px) { .qzc__nav { display: grid; } }
+.qzc__footer { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.qzc__dots { display: flex; gap: 2px; }
+.qzc__dot { width: 22px; height: 22px; padding: 0; border: 0; background: none; cursor: pointer; display: grid; place-items: center; }
+.qzc__dot::before { content: ""; width: 8px; height: 8px; border-radius: 99px; background: var(--c-primary-light); transition: width 0.2s var(--ease), background 0.2s; }
+.qzc__dot--on::before { width: 22px; background: var(--c-primary); }
+.qzc__counter { font-size: 0.82rem; font-weight: 700; color: var(--c-ink-soft); font-variant-numeric: tabular-nums; }
+.qzc-more { margin: 14px auto 0; text-align: center; font-size: 0.85rem; color: var(--c-ink-soft); }
+@media (prefers-reduced-motion: reduce) { .qzc__slide, .qzc__slide--on .qzc__emoji { transition: none; animation: none; } }
+/* Petits téléphones (iPhone SE…) : carte un peu plus large et plus basse, boutons compacts. */
+@media (max-width: 360px) {
+  .qzc { --slide-w: 86vw; --card-h: clamp(380px, calc(100svh - var(--header-h) - 130px), 660px); }
+  .qzc__card { padding: 14px 12px 12px; }
+  .qzc__mode { gap: 10px; min-height: 54px; padding: 8px 10px; }
+  .qzc__mode-emoji { width: 34px; height: 34px; border-radius: 11px; font-size: 1.15rem; }
+  .qzc__mode-text strong { font-size: 0.92rem; }
+  .qzc__mode-text small { font-size: 0.72rem; white-space: nowrap; }
+}

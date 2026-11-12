@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { QUIZ_MODES, quizzes } from "@/content/quiz";
-import { Breadcrumb } from "@/components/ui/Breadcrumb";
+import { QuizCarousel } from "@/components/shop/QuizCarousel";
 
 export const metadata: Metadata = {
   title: "Quiz gratuits pour étudiants infirmiers",
@@ -9,48 +8,23 @@ export const metadata: Metadata = {
   alternates: { canonical: "/quiz" },
 };
 
-// Liste compacte des thèmes : une ligne par thème avec ses deux formats (lisible même avec beaucoup de thèmes).
+// Page de tous les quiz : carrousel immersif, une grande carte par thème avec ses deux formats (Flash / Pros).
 export default function QuizHubPage() {
-  const sorted = quizzes.filter((q) => q.status === "available");
+  const slides = quizzes
+    .filter((q) => q.status === "available")
+    .map((q) => ({ slug: q.slug, emoji: q.emoji, title: q.title, description: q.description, total: q.questions.length }));
   return (
-    <div className="container qz-page">
-      <header className="qz-head">
-        <Breadcrumb items={[{ label: "Quiz" }]} />
+    <div className="qzc-page">
+      <header className="qzc-head container">
         <h1>Quiz 🧠</h1>
-        <p>
-          ⚡ Flash : {QUIZ_MODES.flash.count} questions · 🏆 Pros : jusqu&apos;à {QUIZ_MODES.pros.count} questions
-        </p>
+        <p>Choisis un thème, puis ton format</p>
       </header>
-
-      <ul className="qz-list">
-        {sorted.map((t) => {
-          const soon = t.status !== "available";
-          return (
-            <li key={t.slug} className={soon ? "qz-row qz-row--soon" : "qz-row"}>
-              <span className="qz-row__emoji" aria-hidden="true">
-                {t.emoji}
-              </span>
-              <span className="qz-row__text">
-                <strong>{t.title}</strong>
-                <span>{t.description}</span>
-              </span>
-              {soon ? (
-                <span className="qz-row__soon">Bientôt</span>
-              ) : (
-                <span className="qz-row__modes">
-                  <Link href={`/quiz/${t.slug}?mode=flash`} className="qz-pill qz-pill--flash" aria-label={`${t.title} : Flash Quiz`}>
-                    ⚡ Flash
-                  </Link>
-                  <Link href={`/quiz/${t.slug}?mode=pros`} className="qz-pill qz-pill--pros" aria-label={`${t.title} : Quiz des Pros`}>
-                    🏆 Pros
-                  </Link>
-                </span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-      <p className="qz-more">🛠️ D&apos;autres quiz sont en cours de préparation…</p>
+      <QuizCarousel
+        slides={slides}
+        flash={{ label: QUIZ_MODES.flash.label, count: QUIZ_MODES.flash.count, duration: QUIZ_MODES.flash.duration }}
+        pros={{ label: QUIZ_MODES.pros.label, count: QUIZ_MODES.pros.count, duration: QUIZ_MODES.pros.duration }}
+      />
+      <p className="qzc-more container">🛠️ D&apos;autres quiz arrivent bientôt</p>
     </div>
   );
 }
