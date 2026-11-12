@@ -92,7 +92,6 @@ export function QuizCarousel({ slides, flash, pros }: { slides: QuizSlide[]; fla
               aria-label={`${i + 1} sur ${slides.length} : ${s.title}`}
             >
               <article className="qzc__card" style={{ "--from": from, "--to": to } as React.CSSProperties}>
-                <span className="qzc__count">{s.total} questions</span>
                 <div className="qzc__hero">
                   <span className="qzc__emoji" aria-hidden="true">
                     {s.emoji}
