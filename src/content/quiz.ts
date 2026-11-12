@@ -439,13 +439,14 @@ export const quiz: QuizQuestion[] = [
 /** Message de fin selon le score. */
 export function quizVerdict(score: number, total: number) {
   const ratio = score / total;
-  if (ratio === 1) return { title: "Sans faute, bravo ! 🏆", text: "Tu maîtrises tes constantes. Garde-les sous la main avec le pack pour réviser en un clin d'œil." };
-  if (ratio >= 0.7) return { title: "Très bien ! 💪", text: "Encore quelques valeurs à consolider : le pack te les remet en tête en un coup d'œil." };
-  if (ratio >= 0.4) return { title: "Pas mal, mais… 🤔", text: "Les constantes, ça se révise ! Le pack réunit toutes les valeurs à retenir sur des fiches ultra-visuelles." };
-  return { title: "Il est temps de réviser 📚", text: "Pas de panique : le pack te donne l'essentiel des constantes, fiche par fiche." };
+  if (ratio === 1) return { art: "trophy" as const, title: "Sans faute, bravo !", text: "Tu maîtrises tes constantes. Garde-les sous la main avec le pack pour réviser en un clin d'œil." };
+  if (ratio >= 0.7) return { art: "flame" as const, title: "Très bien !", text: "Encore quelques valeurs à consolider : le pack te les remet en tête en un coup d'œil." };
+  if (ratio >= 0.4) return { art: "sparkles" as const, title: "Pas mal, mais…", text: "Les constantes, ça se révise ! Le pack réunit toutes les valeurs à retenir sur des fiches ultra-visuelles." };
+  return { art: "brain" as const, title: "Il est temps de réviser", text: "Pas de panique : le pack te donne l'essentiel des constantes, fiche par fiche." };
 }
 
-export type QuizIcon = "heart" | "lungs" | "drop" | "pill" | "syringe" | "book";
+/** Icône du thème (dessinée en SVG, voir src/components/shop/QuizArt.tsx). */
+export type QuizIcon = "heart-pulse" | "defib" | "lungs" | "brain" | "wind" | "tube";
 
 export interface QuizTheme {
   slug: string;
@@ -468,7 +469,7 @@ export const quizzes: QuizTheme[] = [
     emoji: "🫀",
     title: "Les constantes",
     description: "FC, FR, température, TA, SpO2, glycémie, diurèse",
-    icon: "heart",
+    icon: "heart-pulse",
     status: "available",
     questions: quiz,
     packSlug: QUIZ_PACK_SLUG,
@@ -479,7 +480,7 @@ export const quizzes: QuizTheme[] = [
     emoji: "🚑",
     title: "L'arrêt cardiaque",
     description: "Reconnaître, alerter, masser, défibriller",
-    icon: "heart",
+    icon: "defib",
     status: "available",
     questions: arretCardiaque,
   },
@@ -497,7 +498,7 @@ export const quizzes: QuizTheme[] = [
     emoji: "🧠",
     title: "L'AVC",
     description: "VITE, ischémique ou hémorragique, le 15",
-    icon: "book",
+    icon: "brain",
     status: "available",
     questions: avc,
   },
@@ -506,7 +507,7 @@ export const quizzes: QuizTheme[] = [
     emoji: "🌬️",
     title: "La BPCO",
     description: "Bronches, tabac, spirométrie, oxygène",
-    icon: "lungs",
+    icon: "wind",
     status: "available",
     questions: bpco,
   },
@@ -515,10 +516,26 @@ export const quizzes: QuizTheme[] = [
     emoji: "🩸",
     title: "Le matériel de prise de sang",
     description: "Vacutainer, tubes, garrot, OPCT, DASRI",
-    icon: "syringe",
+    icon: "tube",
     status: "available",
     questions: priseDeSang,
   },
 ];
 
 export const getQuiz = (slug: string) => quizzes.find((q) => q.slug === slug && q.status === "available");
+
+/** Dégradés des thèmes, dans l'ordre de la liste (carte du carrousel, écran de lancement). */
+const QUIZ_TONES: [string, string][] = [
+  ["#4E7AC7", "#7FA3E0"],
+  ["#B9466F", "#D9779D"],
+  ["#6A5ACD", "#9D8FE6"],
+  ["#23807C", "#46AFA4"],
+  ["#3A63AB", "#5FA8D3"],
+  ["#B4473D", "#DB7D60"],
+];
+
+/** Dégradé d'un thème, selon sa place parmi les quiz jouables. */
+export function quizTone(slug: string): [string, string] {
+  const i = quizzes.filter((q) => q.status === "available").findIndex((q) => q.slug === slug);
+  return QUIZ_TONES[Math.max(0, i) % QUIZ_TONES.length];
+}

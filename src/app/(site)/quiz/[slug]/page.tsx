@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { QUIZ_MODES, getQuiz, quizzes } from "@/content/quiz";
+import { QUIZ_MODES, getQuiz, quizTone, quizzes } from "@/content/quiz";
+import { QuizArt } from "@/components/shop/QuizArt";
 import { Quiz } from "@/components/shop/Quiz";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { getEnvAsync } from "@/lib/env";
@@ -30,15 +31,19 @@ export default async function QuizThemePage({ params }: { params: Params }) {
   const theme = getQuiz((await params).slug);
   if (!theme) notFound();
   const { quizEmails } = await getSettings(await getEnvAsync());
+  const tone = quizTone(theme.slug);
   return (
     <div className="container qz-page">
       <header className="qz-head">
         <Breadcrumb items={[{ label: "Quiz", href: "/quiz" }, { label: theme.title }]} />
         <h1>
-          <span aria-hidden="true">{theme.emoji}</span> {theme.title}
+          <span className="qz-head__badge" style={{ background: `linear-gradient(145deg, ${tone[0]}, ${tone[1]})` }}>
+            <QuizArt name={theme.icon} />
+          </span>{" "}
+          {theme.title}
         </h1>
       </header>
-      <Quiz theme={theme} emailCapture={quizEmails} />
+      <Quiz theme={theme} tone={tone} emailCapture={quizEmails} />
     </div>
   );
 }

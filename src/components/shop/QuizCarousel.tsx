@@ -2,10 +2,14 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
+import type { QuizIcon } from "@/content/quiz";
+import { QuizArt } from "./QuizArt";
 
 export interface QuizSlide {
   slug: string;
-  emoji: string;
+  icon: QuizIcon;
+  /** Dégradé de la carte [début, fin]. */
+  tone: [string, string];
   title: string;
   description: string;
   /** Nombre de questions du thème. */
@@ -18,15 +22,6 @@ export interface QuizModeInfo {
   duration: string;
 }
 
-/** Dégradés des cartes, attribués dans l'ordre des thèmes (palette de la marque et teintes voisines). */
-const TONES = [
-  ["#4E7AC7", "#7FA3E0"],
-  ["#B9466F", "#D9779D"],
-  ["#6A5ACD", "#9D8FE6"],
-  ["#23807C", "#46AFA4"],
-  ["#3A63AB", "#5FA8D3"],
-  ["#B4473D", "#DB7D60"],
-];
 
 /**
  * Carrousel immersif de la page « Quiz » : une grande carte par thème (≈ 80 % de l'écran),
@@ -82,7 +77,7 @@ export function QuizCarousel({ slides, flash, pros }: { slides: QuizSlide[]; fla
     >
       <ul className="qzc__track" ref={track}>
         {slides.map((s, i) => {
-          const [from, to] = TONES[i % TONES.length];
+          const [from, to] = s.tone;
           const prosCount = Math.min(pros.count, s.total);
           return (
             <li
@@ -93,15 +88,17 @@ export function QuizCarousel({ slides, flash, pros }: { slides: QuizSlide[]; fla
             >
               <article className="qzc__card" style={{ "--from": from, "--to": to } as React.CSSProperties}>
                 <div className="qzc__hero">
-                  <span className="qzc__emoji" aria-hidden="true">
-                    {s.emoji}
+                  <span className="qzc__emoji">
+                    <QuizArt name={s.icon} />
                   </span>
                   <h2 className="qzc__title">{s.title}</h2>
                   <p className="qzc__desc">{s.description}</p>
                 </div>
                 <div className="qzc__modes">
                   <Link href={`/quiz/${s.slug}?mode=flash`} className="qzc__mode qzc__mode--flash" tabIndex={i === index ? 0 : -1}>
-                    <span className="qzc__mode-emoji" aria-hidden="true">⚡</span>
+                    <span className="qzc__mode-emoji">
+                      <QuizArt name="bolt" />
+                    </span>
                     <span className="qzc__mode-text">
                       <strong>{flash.label}</strong>
                       <small>
@@ -111,7 +108,9 @@ export function QuizCarousel({ slides, flash, pros }: { slides: QuizSlide[]; fla
                     <Icon name="arrow" />
                   </Link>
                   <Link href={`/quiz/${s.slug}?mode=pros`} className="qzc__mode qzc__mode--pros" tabIndex={i === index ? 0 : -1}>
-                    <span className="qzc__mode-emoji" aria-hidden="true">🏆</span>
+                    <span className="qzc__mode-emoji">
+                      <QuizArt name="trophy" />
+                    </span>
                     <span className="qzc__mode-text">
                       <strong>{pros.label}</strong>
                       <small>

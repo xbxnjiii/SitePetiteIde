@@ -5,6 +5,7 @@ import { quizzes } from "@/content/quiz";
 const quizCount = quizzes.filter((q) => q.status === "available").length;
 import { PackCover } from "./PackCover";
 import { SourceLink } from "./SourceLink";
+import { QuizArt } from "./QuizArt";
 
 export type BlockVariant = "a" | "b" | "c";
 
@@ -34,7 +35,9 @@ export function PackQuizBlock({
       <div className="pq pq--a">
         {showQuiz ? (
           <SourceLink href="/quiz" className="pq-quiz">
-            <span className="pq-quiz__icon" aria-hidden="true">🧠</span>
+            <span className="pq-quiz__icon">
+              <QuizArt name="brain" />
+            </span>
             <span className="pq-quiz__text">
               <strong>Quiz gratuits</strong>
               <span>Teste-toi en 2 min · {quizCount} thèmes</span>

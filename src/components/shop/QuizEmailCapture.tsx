@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import type { QuizMode } from "@/content/quiz";
+import { QuizArt } from "./QuizArt";
 
 /** Fin de quiz : un bouton qui attire l'œil, puis une fenêtre pour recevoir la correction + 1 fiche gratuite (avec consentement). */
 export function QuizEmailCapture({
@@ -73,7 +74,7 @@ export function QuizEmailCapture({
     <>
       {state === "sent" ? (
         <p className="qz-mailcta qz-mailcta--sent" role="status">
-          <span aria-hidden="true">💌</span> Correction envoyée : regarde ta
+          <QuizArt name="mail" /> Correction envoyée : regarde ta
           boîte mail (et tes spams) !
         </p>
       ) : (
@@ -82,8 +83,8 @@ export function QuizEmailCapture({
           className="qz-mailcta"
           onClick={() => setOpen(true)}
         >
-          <span className="qz-mailcta__icon" aria-hidden="true">
-            📩
+          <span className="qz-mailcta__icon">
+            <QuizArt name="mail" />
           </span>
           <span className="qz-mailcta__text">
             <strong>Reçois ta correction</strong>
@@ -105,7 +106,9 @@ export function QuizEmailCapture({
             aria-labelledby="qz-mail-title"
           >
             <div className="modal__head">
-              <h2 id="qz-mail-title">📩 Ta correction + 1 fiche gratuite</h2>
+              <h2 id="qz-mail-title">
+                <QuizArt name="mail" /> Ta correction + 1 fiche gratuite
+              </h2>
               <button
                 type="button"
                 className="modal__close"
@@ -117,7 +120,9 @@ export function QuizEmailCapture({
             </div>
             {state === "sent" ? (
               <div className="qz-mail qz-mail--sent" role="status">
-                <p className="qz-mail__title">C&apos;est envoyé 💌</p>
+                <p className="qz-mail__title">
+                  C&apos;est envoyé <QuizArt name="sparkles" />
+                </p>
                 <p className="qz-mail__text">
                   Ta correction et ta fiche gratuite arrivent dans ta boîte
                   mail. Pense à regarder tes spams !

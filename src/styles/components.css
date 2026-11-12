@@ -1195,3 +1195,94 @@ img.bio__avatar { width: 128px; height: 128px; }
   .qzc__mode-text strong { font-size: 0.92rem; }
   .qzc__mode-text small { font-size: 0.72rem; white-space: nowrap; }
 }
+
+/* ===== Icônes des quiz (SVG, remplacent les emojis) ===================== */
+.qart { display: inline-block; width: 1.15em; height: 1.15em; flex: none; vertical-align: -0.2em; }
+.qzc-head__icon { width: 1em; height: 1em; color: var(--c-accent-dark); vertical-align: -0.12em; }
+.qzc-more { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.qzc-more .qart { color: var(--c-primary); }
+.qzc__emoji .qart { width: 62%; height: 62%; color: #fff; filter: drop-shadow(0 4px 8px rgb(0 0 0 / 15%)); }
+.qzc__mode-emoji .qart { width: 26px; height: 26px; }
+.qzc__mode--flash .qzc__mode-emoji { color: #E09B12; background: #FFF4DB; }
+.qzc__mode--pros .qzc__mode-emoji { color: #fff; }
+.qz-head__badge { display: inline-grid; place-items: center; width: 1.45em; height: 1.45em; border-radius: 0.42em; color: #fff; vertical-align: -0.3em; box-shadow: 0 6px 14px rgb(45 58 90 / 18%); }
+.qz-head__badge .qart { width: 70%; height: 70%; }
+.qz-mode__emoji .qart { width: 2.1rem; height: 2.1rem; color: #fff; }
+.qz-card__count .qart { color: var(--c-accent-dark); }
+.qz-streak { display: inline-flex; align-items: center; gap: 4px; }
+.qz-streak .qart { width: 18px; height: 18px; }
+.qz-streak--on .qart { color: #ea580c; animation: qz-flame 0.9s ease-in-out infinite; }
+@keyframes qz-flame { 50% { transform: scale(1.18) rotate(-6deg); } }
+.qz-feedback__title { display: flex; align-items: center; gap: 8px; }
+.qz-feedback__title .qart { width: 26px; height: 26px; animation: qz-bounce 0.5s var(--ease); }
+@keyframes qz-bounce { 0% { transform: scale(0.3); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+.qz-result__mode { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.qz-stats span { display: inline-flex; align-items: center; gap: 5px; }
+.qz-stats .qart { width: 16px; height: 16px; color: var(--c-primary); }
+.qz-actions button .qart { width: 28px; height: 28px; color: var(--c-primary); }
+.qz-actions__mode--pros .qart, .qz-actions__mode--flash .qart { color: var(--c-accent-dark); }
+.qz-pack__hook .qart { width: 1em; height: 1em; color: #E09B12; }
+.qz-mailcta__icon .qart { width: 24px; height: 24px; color: var(--c-accent-dark); }
+#qz-mail-title .qart, .qz-mail__title .qart, .qz-mailcta--sent .qart { color: var(--c-accent-dark); }
+.pq-quiz__icon .qart { width: 60%; height: 60%; color: var(--c-accent-dark); }
+
+/* ===== Lancement d'un quiz : « 1, 2, 3, C'est parti ! » ================= */
+.qz-cd {
+  position: fixed; inset: 0; z-index: 300; overflow: hidden; display: grid; grid-template-rows: auto 1fr auto; justify-items: center;
+  padding: max(28px, env(safe-area-inset-top)) 20px max(22px, env(safe-area-inset-bottom)); color: #fff; cursor: pointer; user-select: none;
+  background: radial-gradient(120% 80% at 50% 30%, var(--to) 0%, var(--from) 60%, color-mix(in srgb, var(--from) 70%, #1b2440) 100%);
+  animation: qz-cd-in 0.35s var(--ease);
+}
+.qz-cd--out { animation: qz-cd-out 0.35s var(--ease) forwards; }
+@keyframes qz-cd-in { from { opacity: 0; transform: scale(1.06); } }
+@keyframes qz-cd-out { to { opacity: 0; transform: scale(1.15); filter: blur(6px); } }
+.qz-cd__glow { position: absolute; left: 50%; top: 52%; width: 120vmax; height: 120vmax; translate: -50% -50%; border-radius: 50%; background: radial-gradient(circle, rgb(255 255 255 / 22%) 0%, transparent 45%); animation: qz-cd-breathe 0.8s ease-in-out infinite; pointer-events: none; }
+@keyframes qz-cd-breathe { 50% { transform: scale(1.12); opacity: 0.7; } }
+.qz-cd__rays { position: absolute; left: 50%; top: 52%; width: 160vmax; height: 160vmax; translate: -50% -50%; pointer-events: none; opacity: 0.12;
+  background: repeating-conic-gradient(from 0deg, #fff 0deg 6deg, transparent 6deg 24deg); animation: qz-cd-spin 12s linear infinite;
+  mask-image: radial-gradient(circle, #000 0%, transparent 55%); -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 55%); }
+@keyframes qz-cd-spin { to { rotate: 360deg; } }
+.qz-cd__head { position: relative; display: grid; justify-items: center; gap: 6px; text-align: center; animation: qz-cd-drop 0.6s var(--ease); }
+@keyframes qz-cd-drop { from { opacity: 0; transform: translateY(-24px); } }
+.qz-cd__icon { display: grid; place-items: center; width: 84px; height: 84px; border-radius: 26px; background: rgb(255 255 255 / 20%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 35%), 0 12px 30px rgb(0 0 0 / 15%); animation: qz-cd-bob 1.6s ease-in-out infinite; }
+.qz-cd__icon .qart { width: 60%; height: 60%; }
+@keyframes qz-cd-bob { 50% { transform: translateY(-6px) rotate(-4deg); } }
+.qz-cd__title { margin: 6px 0 0; font-family: var(--font-title); font-weight: 800; font-size: clamp(1.4rem, 5vw, 2rem); line-height: 1.15; text-wrap: balance; }
+.qz-cd__mode { margin: 0; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--r-pill); background: rgb(255 255 255 / 18%); font-weight: 700; font-size: 0.88rem; }
+.qz-cd__stage { position: relative; display: grid; place-items: center; width: min(70vw, 300px); aspect-ratio: 1; align-self: center; }
+.qz-cd__ring { position: absolute; inset: 0; width: 100%; height: 100%; rotate: -90deg; }
+.qz-cd__ring circle { fill: none; stroke-width: 10; stroke-linecap: round; }
+.qz-cd__ring-bg { stroke: rgb(255 255 255 / 18%); }
+.qz-cd__ring-fg { stroke: #fff; stroke-dashoffset: var(--c); animation: qz-cd-fill var(--d) linear forwards; filter: drop-shadow(0 0 8px rgb(255 255 255 / 60%)); }
+@keyframes qz-cd-fill { to { stroke-dashoffset: 0; } }
+.qz-cd__num {
+  font-family: var(--font-title); font-weight: 900; font-size: clamp(6rem, 34vw, 11rem); line-height: 1; text-shadow: 0 10px 30px rgb(0 0 0 / 20%);
+  animation: qz-cd-num 0.8s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+@keyframes qz-cd-num {
+  0% { opacity: 0; transform: scale(2.4) rotate(-12deg); filter: blur(8px); }
+  35% { opacity: 1; transform: scale(0.92) rotate(3deg); filter: blur(0); }
+  55% { transform: scale(1.06) rotate(0); }
+  80% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.6); }
+}
+.qz-cd__go {
+  position: relative; z-index: 1; padding: 0 8px; text-align: center; white-space: nowrap; font-family: var(--font-title); font-weight: 900; font-size: clamp(2.2rem, 11vw, 4.6rem); line-height: 1.05;
+  text-shadow: 0 8px 26px rgb(0 0 0 / 22%); animation: qz-cd-go 0.8s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+@keyframes qz-cd-go { 0% { opacity: 0; transform: scale(0.2) rotate(-8deg); } 60% { opacity: 1; transform: scale(1.12) rotate(2deg); } 100% { transform: scale(1); } }
+.qz-cd__stage--go::before { content: ""; position: absolute; inset: 10%; border-radius: 50%; border: 6px solid #fff; animation: qz-cd-shock 0.7s ease-out forwards; }
+@keyframes qz-cd-shock { from { transform: scale(0.3); opacity: 1; } to { transform: scale(1.8); opacity: 0; } }
+.qz-cd__burst { position: absolute; inset: 0; pointer-events: none; }
+.qz-cd__burst i {
+  position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px; border-radius: 4px; background: #fff;
+  rotate: var(--a); animation: qz-cd-shard 0.75s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+}
+.qz-cd__burst i:nth-child(3n) { background: #FFD166; }
+.qz-cd__burst i:nth-child(3n + 1) { background: var(--c-accent); border-radius: 50%; }
+@keyframes qz-cd-shard { from { transform: translateY(0) scale(1); opacity: 1; } to { transform: translateY(calc(-120px - var(--k) * 40px)) scale(0.4); opacity: 0; } }
+.qz-cd__skip { position: relative; margin: 0; font-size: 0.8rem; opacity: 0.75; }
+@media (prefers-reduced-motion: reduce) {
+  .qz-cd, .qz-cd--out, .qz-cd__head, .qz-cd__icon, .qz-cd__num, .qz-cd__go, .qz-cd__glow, .qz-cd__rays, .qz-cd__burst i, .qz-cd__stage--go::before { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
+.qz-result__title .qart { width: 1.1em; height: 1.1em; color: var(--c-accent-dark); vertical-align: -0.18em; animation: qz-bounce 0.6s var(--ease) 0.3s both; }

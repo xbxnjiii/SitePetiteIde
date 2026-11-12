@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { QUIZ_MODES, QUIZ_PACK_SLUG, type QuizMode, type QuizQuestion, type QuizTheme, quizVerdict } from "@/content/quiz";
 import { getPack } from "@/content/packs";
+import { QuizArt, type QuizArtName } from "./QuizArt";
 import { QuizEmailCapture } from "./QuizEmailCapture";
 
 /** Mélange de Fisher-Yates. */
@@ -47,7 +48,7 @@ function track(event: "start" | "finish" | "pack" | "share", theme: string, mode
 
 const isMode = (v: unknown): v is QuizMode => v === "flash" || v === "pros";
 const LETTERS = ["A", "B", "C", "D"];
-const MODE_EMOJI: Record<QuizMode, string> = { flash: "⚡", pros: "🏆" };
+const MODE_ART: Record<QuizMode, QuizArtName> = { flash: "bolt", pros: "trophy" };
 const fmt = (ms: number) => `${Math.floor(ms / 60000)}:${String(Math.round((ms % 60000) / 1000)).padStart(2, "0")}`;
 const buzz = (pattern: number | number[]) => {
   try {
@@ -65,8 +66,8 @@ export function ModePicker({ onPick, themeSlug, total }: { onPick?: (m: QuizMode
         const mode = QUIZ_MODES[m];
         const content = (
           <>
-            <span className="qz-mode__emoji" aria-hidden="true">
-              {MODE_EMOJI[m]}
+            <span className="qz-mode__emoji">
+              <QuizArt name={MODE_ART[m]} />
             </span>
             <strong>{mode.label}</strong>
             <span className="qz-mode__meta">
@@ -91,8 +92,19 @@ export function ModePicker({ onPick, themeSlug, total }: { onPick?: (m: QuizMode
   );
 }
 
-export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCapture?: boolean }) {
+export function Quiz({
+  theme,
+  tone,
+  emailCapture = true,
+}: {
+  theme: QuizTheme;
+  /** Dégradé du thème (écran de lancement). */
+  tone: [string, string];
+  emailCapture?: boolean;
+}) {
   const [mode, setMode] = useState<QuizMode | null>(null);
+  // Compte à rebours « 1, 2, 3, C'est parti ! » avant la première question.
+  const [countdown, setCountdown] = useState(false);
   const router = useRouter();
   const [questions, setQuestions] = useState<DrawnQuestion[]>([]);
   const [index, setIndex] = useState(0);
@@ -119,6 +131,7 @@ export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCa
     setBestStreak(0);
     setStartedAt(Date.now());
     setDone(false);
+    setCountdown(true);
     track("start", theme.slug, m);
     requestAnimationFrame(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
@@ -210,6 +223,19 @@ export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCa
 
   return (
     <div className="qz" ref={topRef}>
+      {countdown ? (
+        <Countdown
+          tone={tone}
+          icon={theme.icon}
+          title={theme.title}
+          mode={mode}
+          count={total}
+          onDone={() => {
+            setCountdown(false);
+            setStartedAt(Date.now()); // le chrono démarre à la première question
+          }}
+        />
+      ) : null}
       <div className="qz-play">
         <div className="qz-bar">
           <button type="button" className="qz-bar__quit" onClick={quit} aria-label="Quitter le quiz">
@@ -225,14 +251,14 @@ export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCa
               />
             ))}
           </div>
-          <span className={streak >= 2 ? "qz-streak qz-streak--on" : "qz-streak"} aria-label={`Série : ${streak}`}>
-            🔥 {streak}
+          <span className={streak >= 2 ? "qz-streak qz-streak--on" : "qz-streak"} aria-label={`Série : ${streak}`} key={`s${streak}`}>
+            <QuizArt name="flame" /> {streak}
           </span>
         </div>
 
         <div className="qz-card" key={index}>
           <p className="qz-card__count">
-            {MODE_EMOJI[mode]} {label} · {index + 1}/{total}
+            <QuizArt name={MODE_ART[mode]} /> {label} · {index + 1}/{total}
           </p>
           <h2 className="qz-card__q">{q.question}</h2>
           <div className="qz-answers" role="group" aria-label="Réponses">
@@ -252,7 +278,10 @@ export function Quiz({ theme, emailCapture = true }: { theme: QuizTheme; emailCa
 
         {answered ? (
           <div className={good ? "qz-feedback qz-feedback--ok" : "qz-feedback qz-feedback--ko"} role="status">
-            <p className="qz-feedback__title">{good ? (streak >= 3 ? `🔥 ${streak} d'affilée !` : "✅ Bien joué !") : "❌ Pas tout à fait"}</p>
+            <p className="qz-feedback__title">
+              <QuizArt name={good ? (streak >= 3 ? "flame" : "check") : "cross"} />
+              {good ? (streak >= 3 ? `${streak} d'affilée !` : "Bien joué !") : "Pas tout à fait"}
+            </p>
             <p className="qz-feedback__text">{q.explanation}</p>
             <button type="button" className="qz-feedback__btn" onClick={next} autoFocus>
               {index + 1 >= total ? "Voir mon score" : "Continuer"} <Icon name="arrow" />
@@ -318,7 +347,7 @@ function Result({
     <div className="qz-result">
       {ratio >= 0.7 ? <Confetti /> : null}
       <p className="qz-result__mode">
-        {MODE_EMOJI[mode]} {label}
+        <QuizArt name={MODE_ART[mode]} /> {label}
       </p>
       <div className="qz-ring" role="img" aria-label={`Score : ${score} sur ${total}`}>
         <svg viewBox="0 0 120 120" aria-hidden="true">
@@ -330,12 +359,20 @@ function Result({
           <small>/{total}</small>
         </span>
       </div>
-      <h2 className="qz-result__title">{verdict.title}</h2>
+      <h2 className="qz-result__title">
+        <QuizArt name={verdict.art} /> {verdict.title}
+      </h2>
 
       <div className="qz-stats">
-        <span>✅ {score} bonne{score > 1 ? "s" : ""}</span>
-        <span>⏱ {fmt(elapsed)}</span>
-        <span>🔥 série de {bestStreak}</span>
+        <span>
+          <QuizArt name="check" /> {score} bonne{score > 1 ? "s" : ""}
+        </span>
+        <span>
+          <QuizArt name="timer" /> {fmt(elapsed)}
+        </span>
+        <span>
+          <QuizArt name="flame" /> série de {bestStreak}
+        </span>
       </div>
 
       {emailCapture ? <QuizEmailCapture theme={theme.slug} mode={mode} answers={answers} /> : null}
@@ -349,7 +386,7 @@ function Result({
           ) : null}
           <span className="qz-pack__body">
             <span className="qz-pack__hook">
-              {theme.packSlug ? (score < total ? "Corrige tes erreurs ✨" : "Garde ce niveau ✨") : "Révise tes constantes ✨"}
+              {theme.packSlug ? (score < total ? "Corrige tes erreurs" : "Garde ce niveau") : "Révise tes constantes"} <QuizArt name="sparkles" />
             </span>
             <span className="qz-pack__name">{pack.name}</span>
           </span>
@@ -361,15 +398,15 @@ function Result({
 
       <div className="qz-actions">
         <button type="button" onClick={onReplay}>
-          <span aria-hidden="true">🔁</span>
+          <QuizArt name="replay" />
           Rejouer
         </button>
         <button type="button" onClick={challenge}>
-          <span aria-hidden="true">⚔️</span>
+          <QuizArt name="duel" />
           {copied ? "Lien copié" : "Défier"}
         </button>
         <button type="button" onClick={onOther} className={`qz-actions__mode qz-actions__mode--${other}`}>
-          <span aria-hidden="true">{MODE_EMOJI[other]}</span>
+          <QuizArt name={MODE_ART[other]} />
           {other === "pros" ? "Mode Pros" : "Mode Flash"}
         </button>
       </div>
@@ -377,6 +414,116 @@ function Result({
       <Link href="/quiz" className="qz-other">
         Autres thèmes
       </Link>
+    </div>
+  );
+}
+
+/** Étapes du lancement : « 1, 2, 3, C'est parti ! ». */
+const STEPS = ["1", "2", "3", "C'est parti\u00a0!"];
+const STEP_MS = 800;
+
+/**
+ * Écran de lancement plein écran, façon application de quiz : couleur du thème, icône, puis 1, 2, 3 et « C'est parti ! »
+ * (anneau qui se remplit, chiffres qui jaillissent, éclats). Un toucher passe directement à la première question.
+ */
+function Countdown({
+  tone,
+  icon,
+  title,
+  mode,
+  count,
+  onDone,
+}: {
+  tone: [string, string];
+  icon: QuizTheme["icon"];
+  title: string;
+  mode: QuizMode;
+  count: number;
+  onDone: () => void;
+}) {
+  const [step, setStep] = useState(0);
+  const [leaving, setLeaving] = useState(false);
+  const doneRef = useRef(onDone);
+  doneRef.current = onDone;
+
+  useEffect(() => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const ms = reduced ? 450 : STEP_MS;
+    const timers: number[] = [];
+    STEPS.forEach((_, i) => {
+      timers.push(
+        window.setTimeout(() => {
+          setStep(i);
+          buzz(i === STEPS.length - 1 ? [20, 40, 60] : 12);
+        }, i * ms),
+      );
+    });
+    timers.push(window.setTimeout(() => setLeaving(true), STEPS.length * ms));
+    timers.push(window.setTimeout(() => doneRef.current(), STEPS.length * ms + 350));
+    document.body.style.overflow = "hidden";
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t));
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  const skip = () => {
+    setLeaving(true);
+    window.setTimeout(() => doneRef.current(), 250);
+  };
+  const go = step === STEPS.length - 1;
+  const R = 70;
+  const C = 2 * Math.PI * R;
+
+  return (
+    <div
+      className={leaving ? "qz-cd qz-cd--out" : "qz-cd"}
+      style={{ "--from": tone[0], "--to": tone[1] } as React.CSSProperties}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${title} : le quiz commence`}
+      onClick={skip}
+    >
+      <span className="qz-cd__glow" aria-hidden="true" />
+      <span className="qz-cd__rays" aria-hidden="true" />
+      <div className="qz-cd__head">
+        <span className="qz-cd__icon">
+          <QuizArt name={icon} />
+        </span>
+        <p className="qz-cd__title">{title}</p>
+        <p className="qz-cd__mode">
+          <QuizArt name={MODE_ART[mode]} /> {QUIZ_MODES[mode].label} · {count} questions
+        </p>
+      </div>
+
+      <div className={go ? "qz-cd__stage qz-cd__stage--go" : "qz-cd__stage"} aria-live="assertive">
+        {!go ? (
+          <svg className="qz-cd__ring" viewBox="0 0 160 160" aria-hidden="true">
+            <circle cx="80" cy="80" r={R} className="qz-cd__ring-bg" />
+            <circle
+              key={step}
+              cx="80"
+              cy="80"
+              r={R}
+              className="qz-cd__ring-fg"
+              strokeDasharray={C}
+              style={{ "--c": C, "--d": `${STEP_MS}ms` } as React.CSSProperties}
+            />
+          </svg>
+        ) : null}
+        <span key={step} className={go ? "qz-cd__go" : "qz-cd__num"}>
+          {STEPS[step]}
+        </span>
+        {go ? (
+          <span className="qz-cd__burst" aria-hidden="true">
+            {Array.from({ length: 14 }, (_, i) => (
+              <i key={i} style={{ "--a": `${(360 / 14) * i}deg`, "--k": i % 3 } as React.CSSProperties} />
+            ))}
+          </span>
+        ) : null}
+      </div>
+
+      <p className="qz-cd__skip">Touche pour passer</p>
     </div>
   );
 }

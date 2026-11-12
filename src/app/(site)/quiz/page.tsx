@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { QUIZ_MODES, quizzes } from "@/content/quiz";
+import { QUIZ_MODES, quizTone, quizzes } from "@/content/quiz";
+import { QuizArt } from "@/components/shop/QuizArt";
 import { QuizCarousel } from "@/components/shop/QuizCarousel";
 
 export const metadata: Metadata = {
@@ -12,11 +13,13 @@ export const metadata: Metadata = {
 export default function QuizHubPage() {
   const slides = quizzes
     .filter((q) => q.status === "available")
-    .map((q) => ({ slug: q.slug, emoji: q.emoji, title: q.title, description: q.description, total: q.questions.length }));
+    .map((q) => ({ slug: q.slug, icon: q.icon, tone: quizTone(q.slug), title: q.title, description: q.description, total: q.questions.length }));
   return (
     <div className="qzc-page">
       <header className="qzc-head container">
-        <h1>Quiz 🧠</h1>
+        <h1>
+          Quiz <QuizArt name="brain" className="qzc-head__icon" />
+        </h1>
         <p>Choisis un thème, puis ton format</p>
       </header>
       <QuizCarousel
@@ -24,7 +27,9 @@ export default function QuizHubPage() {
         flash={{ label: QUIZ_MODES.flash.label, count: QUIZ_MODES.flash.count, duration: QUIZ_MODES.flash.duration }}
         pros={{ label: QUIZ_MODES.pros.label, count: QUIZ_MODES.pros.count, duration: QUIZ_MODES.pros.duration }}
       />
-      <p className="qzc-more container">🛠️ D&apos;autres quiz arrivent bientôt</p>
+      <p className="qzc-more container">
+        <QuizArt name="tools" /> D&apos;autres quiz arrivent bientôt
+      </p>
     </div>
   );
 }
