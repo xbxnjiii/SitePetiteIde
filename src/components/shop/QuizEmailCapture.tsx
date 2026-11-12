@@ -23,6 +23,15 @@ export function QuizEmailCapture({
     "idle",
   );
   const [message, setMessage] = useState<string | null>(null);
+  // Déjà inscrite sur cet appareil : la fiche gratuite a déjà été envoyée, on ne la promet plus.
+  const [returning, setReturning] = useState(false);
+  useEffect(() => {
+    try {
+      setReturning(localStorage.getItem("lpi-fiche-recue") === "1");
+    } catch {
+      /* stockage indisponible */
+    }
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +47,7 @@ export function QuizEmailCapture({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, consent, theme, mode, answers, website }),
       });
-      const d = (await r.json().catch(() => ({}))) as { error?: string };
+      const d = (await r.json().catch(() => ({}))) as { error?: string; first?: boolean };
       if (!r.ok) {
         setState("error");
         setMessage(
@@ -47,6 +56,13 @@ export function QuizEmailCapture({
             : "L'envoi n'a pas fonctionné, réessaie dans un instant.",
         );
         return;
+      }
+      // « first » = première correction pour cette adresse (celle qui contient la fiche gratuite).
+      if (d.first === false) setReturning(true);
+      try {
+        localStorage.setItem("lpi-fiche-recue", "1");
+      } catch {
+        /* stockage indisponible */
       }
       setState("sent");
     } catch {
@@ -88,7 +104,7 @@ export function QuizEmailCapture({
           </span>
           <span className="qz-mailcta__text">
             <strong>Reçois ta correction</strong>
-            <span>+ 1 fiche offerte, par email</span>
+            <span>{returning ? "Par email, en un instant" : "+ 1 fiche offerte, par email"}</span>
           </span>
           <span className="qz-mailcta__tag qz-mailcta__tag--arrow" aria-hidden="true">
             <Icon name="arrow" />
@@ -109,7 +125,7 @@ export function QuizEmailCapture({
           >
             <div className="modal__head">
               <h2 id="qz-mail-title">
-                <QuizArt name="mail" /> Ta correction + 1 fiche gratuite
+                <QuizArt name="mail" /> {returning ? "Ta correction par email" : "Ta correction + 1 fiche gratuite"}
               </h2>
               <button
                 type="button"
@@ -126,8 +142,9 @@ export function QuizEmailCapture({
                   C&apos;est envoyé <QuizArt name="sparkles" />
                 </p>
                 <p className="qz-mail__text">
-                  Ta correction et ta fiche gratuite arrivent dans ta boîte
-                  mail. Pense à regarder tes spams !
+                  {returning
+                    ? "Ta correction arrive dans ta boîte mail. Ta fiche gratuite, elle, t'a déjà été envoyée avec ta première correction."
+                    : "Ta correction et ta fiche gratuite arrivent dans ta boîte mail. Pense à regarder tes spams !"}
                 </p>
                 <button
                   type="button"

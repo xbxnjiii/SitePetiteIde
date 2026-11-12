@@ -42,12 +42,13 @@ function button(href: string, label: string, color = "#4E7AC7") {
 const p = (html: string, extra = "") =>
   `<p style="margin:0 0 14px;font-size:15px;line-height:23px;color:#5B6784;${extra}">${html}</p>`;
 
-/* ---------- Email 1 : correction détaillée + fiche gratuite ---------- */
+/* ---------- Email de correction (avec la fiche gratuite la première fois seulement) ---------- */
 export function correctionEmail(o: {
   themeTitle: string;
   modeLabel: string;
   items: CorrectionItem[];
-  freeUrl: string;
+  /** Lien de la fiche gratuite : uniquement pour la première correction (null ensuite : la fiche a déjà été envoyée). */
+  freeUrl: string | null;
   packUrl: string;
   unsubscribeUrl: string;
   /** Le quiz porte sur le contenu du pack (sinon : texte d'introduction plus général). */
@@ -71,16 +72,25 @@ export function correctionEmail(o: {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>`
     : p("🏆 Sans faute : rien à corriger, bravo !", "margin-top:12px;font-weight:700;color:#1f6b4f");
   const body = `${p(`<strong style="color:#4E7AC7;font-size:18px">${score}/${total}</strong> au ${esc(o.modeLabel)} « ${esc(o.themeTitle)} ».`)}
-${button(o.freeUrl, "🎁 Télécharger ma fiche gratuite")}
+${
+    o.freeUrl
+      ? button(o.freeUrl, "🎁 Télécharger ma fiche gratuite")
+      : `<p style="margin:0 0 4px;padding:10px 12px;border-radius:12px;background:#F8F9FC;font-size:13px;line-height:19px;color:#5B6784">🎁 Ta fiche gratuite t'a déjà été envoyée avec ta première correction : retrouve-la dans tes emails.</p>`
+  }
 ${correction}
 ${pack ? `<p style="margin:18px 0 0;font-size:14px;line-height:21px;color:#5B6784">Tout l'essentiel des constantes en ${pack.items.length} fiches : <a href="${esc(o.packUrl)}" style="color:#4E7AC7;font-weight:700">découvrir le ${esc(pack.name)}</a></p>` : ""}`;
   return {
-    subject: `Ta correction (${score}/${total}) + ta fiche gratuite 🎁`,
-    html: layout({ preheader: "Ta fiche gratuite et la correction de tes erreurs.", title: "Ta correction + ta fiche gratuite 🎁", body, unsubscribeUrl: o.unsubscribeUrl }),
+    subject: o.freeUrl ? `Ta correction (${score}/${total}) + ta fiche gratuite 🎁` : `Ta correction : ${score}/${total} au quiz « ${o.themeTitle} » 📝`,
+    html: layout({
+      preheader: o.freeUrl ? "Ta fiche gratuite et la correction de tes erreurs." : "La correction de tes erreurs.",
+      title: o.freeUrl ? "Ta correction + ta fiche gratuite 🎁" : "Ta correction 📝",
+      body,
+      unsubscribeUrl: o.unsubscribeUrl,
+    }),
     text: [
       `${score}/${total} au ${o.modeLabel} « ${o.themeTitle} ».`,
       "",
-      `Ta fiche gratuite : ${o.freeUrl}`,
+      o.freeUrl ? `Ta fiche gratuite : ${o.freeUrl}` : "Ta fiche gratuite t'a déjà été envoyée avec ta première correction.",
       "",
       ...(mistakes.length
         ? ["Tes erreurs, corrigées :", ...mistakes.map(({ q }) => `- ${q.question}\n  Bonne réponse : ${q.choices[q.answer]} · ${q.explanation}`)]

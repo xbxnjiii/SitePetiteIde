@@ -705,7 +705,7 @@ function toolsSection(t: Tools): string {
   <section class="card">
     <header class="card__head"><h2>📬 Aperçu des emails</h2></header>
     <p class="muted">Reçois un exemple de chacun des ${t.previewCount} emails du site (commande numérique et papier, alerte papier, colis expédié,
-      retrouver mon achat, mise à jour, et les 3 emails du quiz), avec une fausse commande « LPI-EXEMPLE ». Aucun client n'est concerné.</p>
+      retrouver mon achat, mise à jour, et les 4 emails du quiz), avec une fausse commande « LPI-EXEMPLE ». Aucun client n'est concerné.</p>
     <form method="post" class="row" data-confirm="Envoyer les ${t.previewCount} emails d'exemple ?">
       ${hiddenFields("outils", "", { action: "apercu-emails" })}
       <input type="email" name="to" required value="${esc(t.testTo)}" aria-label="Adresse qui reçoit les exemples" class="row__grow">

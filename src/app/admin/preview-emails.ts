@@ -9,7 +9,7 @@ import { signToken } from "@/lib/signed";
 // Outils › « Aperçu des emails » : envoie un exemple de CHAQUE email du site à une adresse,
 // avec des données fictives (commande LPI-EXEMPLE…). Aucun client n'est concerné.
 
-export const PREVIEW_COUNT = 9;
+export const PREVIEW_COUNT = 10;
 
 const pause = () => new Promise((r) => setTimeout(r, 600)); // limite Resend : 2 envois / seconde
 
@@ -74,7 +74,7 @@ export async function sendAllPreviews(env: AppEnv, to: string): Promise<number> 
         "Exemple de message : nouvelle fiche ajoutée, valeurs précisées.",
         key("maj"),
       ),
-    // 7 à 9. Séquence du quiz (envoyée tout de suite pour l'aperçu, au lieu de J+2 et J+5)
+    // 7 à 10. Emails du quiz (envoyée tout de suite pour l'aperçu, au lieu de J+2 et J+5)
     () =>
       sendEmail(env, {
         to,
@@ -88,6 +88,22 @@ export async function sendAllPreviews(env: AppEnv, to: string): Promise<number> 
           aboutPack: Boolean(theme.packSlug),
         }),
         idempotencyKey: key("quiz-1"),
+        unsubscribeUrl: unsub,
+      }),
+    // Correction d'un quiz suivant : sans la fiche gratuite (déjà envoyée avec la première)
+    () =>
+      sendEmail(env, {
+        to,
+        ...correctionEmail({
+          themeTitle: theme.title,
+          modeLabel: QUIZ_MODES.pros.label,
+          items,
+          freeUrl: null,
+          packUrl: `${base}/${pack.slug}?src=email`,
+          unsubscribeUrl: unsub,
+          aboutPack: Boolean(theme.packSlug),
+        }),
+        idempotencyKey: key("quiz-1bis"),
         unsubscribeUrl: unsub,
       }),
     () => sendEmail(env, { to, ...tipsEmail({ quizUrl: `${base}/quiz?src=email`, unsubscribeUrl: unsub }), idempotencyKey: key("quiz-2"), unsubscribeUrl: unsub }),
