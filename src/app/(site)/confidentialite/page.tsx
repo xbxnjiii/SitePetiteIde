@@ -61,7 +61,8 @@ export default function PrivacyPage() {
               <li>Données de commande : 10 ans (obligations comptables).</li>
               <li>
                 Emails du quiz : ton adresse n&apos;est enregistrée dans aucune base de données ; elle reste uniquement dans
-                l&apos;historique d&apos;envoi de Resend (30 jours maximum). Les envois programmés sont annulés dès ta désinscription.
+                l&apos;historique d&apos;envoi de Resend (30 jours maximum). Seule une empreinte chiffrée et irréversible de l&apos;adresse est
+                gardée, pour ne pas te renvoyer deux fois la série de conseils. Les envois programmés sont annulés dès ta désinscription.
               </li>
               <li>Journaux techniques du site : quelques jours.</li>
             </ul>

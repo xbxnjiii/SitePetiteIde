@@ -52,32 +52,47 @@ export async function POST(request: Request) {
     const tipsAt = new Date(now + SEQUENCE_DELAYS.tips * day);
     const offerAt = new Date(now + SEQUENCE_DELAYS.offer * day);
     const unsubExp = Math.floor(now / 1000) + 400 * 86_400;
-    // Une seule séquence par adresse et par jour (clé d'idempotence Resend).
-    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(email));
-    const key = Array.from(new Uint8Array(digest).slice(0, 12), (b) => b.toString(16).padStart(2, "0")).join("");
+    const hex = (buf: ArrayBuffer, n: number) => Array.from(new Uint8Array(buf).slice(0, n), (b) => b.toString(16).padStart(2, "0")).join("");
+    const emailHash = hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(email)), 32);
+    const key = emailHash.slice(0, 24);
+    // Empreinte du quiz joué : une correction par quiz (rejouer le même quiz avec les mêmes réponses n'envoie rien de plus).
+    const quizHash = hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify([theme.slug, mode, items.map((i) => [theme.questions.indexOf(i.q), i.picked])]))), 8);
     const idem = (n: string) => `quiz-${n}-${key}-${Math.floor(now / day)}`;
     const unsub = async (ids: (string | null)[]) =>
       `${base}/api/desinscription?t=${await signToken({ ids: ids.filter(Boolean) }, unsubExp, secret, "unsub")}`;
     const packUrl = theme.packSlug ? `${base}/${theme.packSlug}?src=email` : `${base}/?src=email`;
 
-    // Ordre inverse : chaque email connaît les identifiants des envois suivants à annuler.
-    const offerUnsub = await unsub([]);
-    const offer = offerEmail({ packUrl, sendAt: offerAt, unsubscribeUrl: offerUnsub });
-    const offerId = await sendEmail(env, { to: email, ...offer, scheduledAt: offerAt.toISOString(), idempotencyKey: idem("offer"), unsubscribeUrl: offerUnsub });
+    // La série « conseils puis offre » n'est programmée qu'une fois par adresse : un repère anonyme
+    // (empreinte de l'email, jamais l'adresse elle-même) est gardé dans R2.
+    const leadKey = `leads/${new URL(base).hostname}/${emailHash}`;
+    const known = Boolean(await env.PDF_BUCKET?.head(leadKey).catch(() => null));
 
-    const tipsUnsub = await unsub([offerId]);
-    const tips = tipsEmail({ quizUrl: `${base}/quiz?src=email`, unsubscribeUrl: tipsUnsub });
-    const tipsId = await sendEmail(env, { to: email, ...tips, scheduledAt: tipsAt.toISOString(), idempotencyKey: idem("tips"), unsubscribeUrl: tipsUnsub });
+    let tipsId: string | null = null;
+    let offerId: string | null = null;
+    if (!known) {
+      // Ordre inverse : chaque email connaît les identifiants des envois suivants à annuler.
+      const offerUnsub = await unsub([]);
+      const offer = offerEmail({ packUrl, sendAt: offerAt, unsubscribeUrl: offerUnsub });
+      offerId = await sendEmail(env, { to: email, ...offer, scheduledAt: offerAt.toISOString(), idempotencyKey: idem("offer"), unsubscribeUrl: offerUnsub });
 
+      const tipsUnsub = await unsub([offerId]);
+      const tips = tipsEmail({ quizUrl: `${base}/quiz?src=email`, unsubscribeUrl: tipsUnsub });
+      tipsId = await sendEmail(env, { to: email, ...tips, scheduledAt: tipsAt.toISOString(), idempotencyKey: idem("tips"), unsubscribeUrl: tipsUnsub });
+    }
+
+    // La correction de CE quiz, à chaque fois (avec la fiche gratuite).
     const firstUnsub = await unsub([tipsId, offerId]);
     const freeExp = Math.floor(now / 1000) + FREE_SHEET.days * 86_400;
     const freeUrl = `${base}/fiche-gratuite?t=${await signToken({ f: 1 }, freeExp, secret, "free")}`;
     const first = correctionEmail({ themeTitle: theme.title, modeLabel: QUIZ_MODES[mode].label, items, freeUrl, packUrl, unsubscribeUrl: firstUnsub, aboutPack: Boolean(theme.packSlug) });
-    // null = même adresse déjà inscrite aujourd'hui (Resend ignore le doublon) : pas un nouveau contact.
-    const firstId = await sendEmail(env, { to: email, ...first, idempotencyKey: idem("first"), unsubscribeUrl: firstUnsub });
+    await sendEmail(env, { to: email, ...first, idempotencyKey: `quiz-correction-${key}-${quizHash}`, unsubscribeUrl: firstUnsub });
 
-    console.log("quiz-email: séquence programmée", theme.slug, mode);
-    if (firstId) await recordQuizEvent(env, { event: "email", theme: theme.slug, mode, pct: null }).catch(() => {});
+    if (!known) {
+      await env.PDF_BUCKET?.put(leadKey, JSON.stringify({ at: new Date(now).toISOString() }), { httpMetadata: { contentType: "application/json" } }).catch(() => {});
+      // « Nouveaux contacts » de l'admin : une seule fois par adresse.
+      await recordQuizEvent(env, { event: "email", theme: theme.slug, mode, pct: null }).catch(() => {});
+    }
+    console.log("quiz-email:", known ? "correction envoyée (contact connu)" : "nouveau contact, séquence programmée", theme.slug, mode);
     return Response.json({ ok: true });
   } catch (err) {
     console.error("quiz-email:", err instanceof Error ? err.message : err);
