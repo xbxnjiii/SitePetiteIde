@@ -193,8 +193,8 @@ export const packs: Pack[] = [
       downloadName: `La-Petite-IDE-Constantes-${name}.png`,
       label,
     })),
-    // ⚠️ EN TEST (préprod uniquement) : aperçus des fiches sur la page de vente.
-    previews: !IS_PREPROD ? undefined : [...CONSTANTES_FICHES.map(([name]) => ({ src: `/img/packs/apercus/${name}.webp`, width: 720, height: 1019 })), { src: "/img/packs/apercus/08-fiche-bonus.webp", width: 720, height: 729 }],
+    // Aperçus des fiches sur la page de vente (floutés sous le bandeau titre ; fiche bonus entièrement floutée).
+    previews: [...CONSTANTES_FICHES.map(([name]) => ({ src: `/img/packs/apercus/${name}.webp`, width: 720, height: 1019 })), { src: "/img/packs/apercus/08-fiche-bonus.webp", width: 720, height: 729 }],
     // Vente à l'unité (activable dans /admin › Réglages).
     unit: {
       priceCents: 99,

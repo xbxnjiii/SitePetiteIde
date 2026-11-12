@@ -1075,7 +1075,8 @@ img.bio__avatar { width: 128px; height: 128px; }
 .sheet__tag svg { width: 13px; height: 13px; }
 @keyframes sheet-tag { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .sheet__tag { animation: none; } }
-.sheet-modal__lock svg { width: 15px; height: 15px; vertical-align: -2px; }
+.sheet-modal__lock { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.sheet-modal__lock svg { display: block; width: 15px; height: 15px; flex: none; }
 .sale-sheets__note { margin: 0; padding-inline: var(--gutter); text-align: center; font-size: 0.82rem; color: var(--c-ink-soft); }
 /* Fiche agrandie */
 .sheet-modal .modal__panel { display: grid; gap: 10px; }

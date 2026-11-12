@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { TEST_FEATURES } from "@/lib/format";
 import { sourceFromLocation } from "@/lib/source";
 
 /** Soutien volontaire (1, 2 ou 5 €) — bas de la page de liens. */
@@ -8,10 +7,9 @@ export function TipBlock() {
   const [src, setSrc] = useState("");
   useEffect(() => setSrc(sourceFromLocation() ?? ""), []);
   return (
-    // Soutien « sur une ligne » : en test, préprod uniquement.
-    <section className={TEST_FEATURES ? "tip tip--compact" : "tip"} aria-labelledby="tip-title">
+    <section className="tip tip--compact" aria-labelledby="tip-title">
       <p id="tip-title" className="tip__title">
-        {TEST_FEATURES ? "💙 Nous soutenir" : "💙 Soutenir La Petite IDE"}
+        💙 Nous soutenir
       </p>
       <p className="tip__text">Un petit geste pour nous aider à créer de nouvelles fiches et de nouveaux quiz.</p>
       <div className="tip__amounts">
