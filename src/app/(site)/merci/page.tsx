@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AutoRefresh } from "@/components/shop/AutoRefresh";
+import { RememberOrder } from "@/components/shop/MyFiches";
 import { Icon } from "@/components/ui/Icon";
 import { Mascot, type MascotPose } from "@/components/ui/Mascot";
 import { SHIPPING } from "@/content/shipping";
@@ -89,6 +90,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
           {order.email ? <> Tu vas aussi recevoir ton lien par email à <strong>{order.email}</strong>.</> : null}
         </p>
       )}
+      {!expired ? <RememberOrder id={order.session.id} name={order.pack.name} until={order.expiresAt} /> : null}
       {!expired && links.length === 0 ? (
         <p className="notice">Ton lien de téléchargement t&apos;arrive par email dans quelques instants.</p>
       ) : null}

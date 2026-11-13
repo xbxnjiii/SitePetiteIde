@@ -446,7 +446,7 @@ export function quizVerdict(score: number, total: number) {
 }
 
 /** Icône du thème (dessinée en SVG, voir src/components/shop/QuizArt.tsx). */
-export type QuizIcon = "heart-pulse" | "defib" | "lungs" | "brain" | "wind" | "tube";
+export type QuizIcon = "heart-pulse" | "defib" | "lungs" | "brain" | "wind" | "tube" | "mix";
 
 export interface QuizTheme {
   slug: string;
@@ -522,6 +522,21 @@ export const quizzes: QuizTheme[] = [
   },
 ];
 
+/** Thèmes « simples » (sans le grand mix) : sert aux succès et aux compteurs. */
+export const BASE_THEME_SLUGS = quizzes.filter((q) => q.status === "available").map((q) => q.slug);
+
+// Le grand mix : toutes les questions de tous les thèmes, tirées au hasard.
+quizzes.push({
+  slug: "grand-mix",
+  emoji: "🎲",
+  title: "Le grand mix",
+  description: "Tous les thèmes mélangés, pour se tester en conditions réelles",
+  icon: "mix",
+  status: "available",
+  questions: quizzes.filter((q) => q.status === "available").flatMap((q) => q.questions),
+});
+
+
 export const getQuiz = (slug: string) => quizzes.find((q) => q.slug === slug && q.status === "available");
 
 /** Dégradés des thèmes, dans l'ordre de la liste (carte du carrousel, écran de lancement). */
@@ -532,6 +547,7 @@ const QUIZ_TONES: [string, string][] = [
   ["#23807C", "#46AFA4"],
   ["#3A63AB", "#5FA8D3"],
   ["#B4473D", "#DB7D60"],
+  ["#2D3A5A", "#5B6FA8"],
 ];
 
 /** Dégradé d'un thème, selon sa place parmi les quiz jouables. */

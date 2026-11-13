@@ -18,7 +18,14 @@ export type QuizArtName =
   | "duel"
   | "mail"
   | "sparkles"
-  | "tools";
+  | "tools"
+  | "mix"
+  | "sound"
+  | "mute"
+  | "calendar"
+  | "star"
+  | "medal"
+  | "phone";
 
 const FILL = { fill: "currentColor", fillOpacity: 0.2, stroke: "none" } as const;
 
@@ -137,6 +144,55 @@ const ART: Record<QuizArtName, React.ReactNode> = {
     <>
       <path {...FILL} d="M20 6c1.5 8.5 4.5 11.5 13 13-8.5 1.5-11.5 4.5-13 13-1.5-8.5-4.5-11.5-13-13 8.5-1.5 11.5-4.5 13-13z" />
       <path d="M20 6c1.5 8.5 4.5 11.5 13 13-8.5 1.5-11.5 4.5-13 13-1.5-8.5-4.5-11.5-13-13 8.5-1.5 11.5-4.5 13-13zM36 30c.7 3.6 2.4 5.3 6 6-3.6.7-5.3 2.4-6 6-.7-3.6-2.4-5.3-6-6 3.6-.7 5.3-2.4 6-6z" />
+    </>
+  ),
+  mix: (
+    <>
+      <path d="M6 14h7c6 0 9 20 17 20h10M6 34h7c2.4 0 4.3-1.6 6-4M30 14h10M24.5 19c1.6-2.8 3.3-5 5.5-5" />
+      <path d="m36 9 5 5-5 5M36 29l5 5-5 5" />
+    </>
+  ),
+  sound: (
+    <>
+      <path {...FILL} d="M8 19h7l9-8v26l-9-8H8z" />
+      <path d="M8 19h7l9-8v26l-9-8H8z" />
+      <path d="M31 18a9 9 0 0 1 0 12M36 13a16 16 0 0 1 0 22" />
+    </>
+  ),
+  mute: (
+    <>
+      <path {...FILL} d="M8 19h7l9-8v26l-9-8H8z" />
+      <path d="M8 19h7l9-8v26l-9-8H8z" />
+      <path d="m32 19 10 10M42 19 32 29" />
+    </>
+  ),
+  calendar: (
+    <>
+      <rect {...FILL} x="7" y="10" width="34" height="31" rx="6" />
+      <rect x="7" y="10" width="34" height="31" rx="6" />
+      <path d="M7 20h34M16 6v8M32 6v8" />
+      <path d="m18 30 4 4 8-8" />
+    </>
+  ),
+  star: (
+    <>
+      <path {...FILL} d="m24 5 5.8 12 13.2 1.8-9.6 9.2 2.4 13L24 34.7 12.2 41l2.4-13L5 18.8 18.2 17z" />
+      <path d="m24 5 5.8 12 13.2 1.8-9.6 9.2 2.4 13L24 34.7 12.2 41l2.4-13L5 18.8 18.2 17z" />
+    </>
+  ),
+  medal: (
+    <>
+      <path d="M16 5l5 13M32 5l-5 13M14 5h20" />
+      <circle {...FILL} cx="24" cy="30" r="12" />
+      <circle cx="24" cy="30" r="12" />
+      <path d="m24 24 1.9 3.8 4.1.600-3 2.9.700 4.200L24 33.500l-3.7 2 .700-4.2-3-2.9 4.1-.600z" />
+    </>
+  ),
+  phone: (
+    <>
+      <rect {...FILL} x="13" y="4" width="22" height="40" rx="5" />
+      <rect x="13" y="4" width="22" height="40" rx="5" />
+      <path d="M24 17v12m0 0-4.5-4.500M24 29l4.5-4.500M20 36h8" />
     </>
   ),
   tools: (

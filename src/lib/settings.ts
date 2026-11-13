@@ -32,6 +32,7 @@ export const BIO_ITEMS = [
   { key: "mail", label: "Icône email", help: "Réseaux sous le logo" },
   { key: "packs", label: "Pack(s) en vente", help: "Le gros bouton vers la page du pack" },
   { key: "quiz", label: "Bouton « Quiz gratuits »", help: "Lien vers les quiz" },
+  { key: "daily", label: "Question du jour", help: "Une question par jour, sous le bouton des quiz" },
   { key: "soon", label: "« D'autres packs arrivent bientôt »", help: "Encart avec la mascotte" },
   { key: "tip", label: "Soutien (1, 2 ou 5 €)", help: "Bloc en bas de page" },
 ] as const;

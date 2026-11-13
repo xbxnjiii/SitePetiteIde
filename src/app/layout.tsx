@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { CF_WEB_ANALYTICS_TOKEN, IS_LIVE, IS_PREPROD, SITE } from "@/lib/format";
 import { getEnvAsync } from "@/lib/env";
 import { LOCK_COOKIE, isUnlocked } from "@/lib/preprod-lock";
+import { PwaSetup } from "@/components/layout/PwaSetup";
 import "@/styles/tokens.css";
 import "@/styles/base.css";
 import "@/styles/components.css";
@@ -31,6 +32,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <a href="#contenu" className="skip-link">Aller au contenu</a>
         {locked ? <PreprodLock /> : children}
+        {locked ? null : <PwaSetup />}
         {CF_WEB_ANALYTICS_TOKEN ? (
           <script
             defer

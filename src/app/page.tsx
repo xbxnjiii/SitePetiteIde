@@ -11,6 +11,8 @@ import { Mascot } from "@/components/ui/Mascot";
 import { getEnvAsync } from "@/lib/env";
 import { SITE } from "@/lib/format";
 import { getSettings } from "@/lib/settings";
+import { DailyQuestionButton } from "@/components/shop/DailyQuestion";
+import { MyFichesLink } from "@/components/shop/MyFiches";
 
 export const metadata = { alternates: { canonical: "/" } };
 
@@ -48,6 +50,7 @@ export default async function BioPage() {
 
         <section aria-labelledby="packs-title" className="bio__section">
           <h2 id="packs-title" className="visually-hidden">Nos packs de fiches</h2>
+          <MyFichesLink />
           {packs.length === 1 || (!packs.length && show.quiz) ? (
             // Un seul pack : pack + quiz réunis (tout tient sur un écran).
             <PackQuizBlock pack={packs[0] ?? publishedPacks()[0]} variant={BLOCK_VARIANT} showPack={packs.length > 0} showQuiz={show.quiz} />
@@ -77,6 +80,7 @@ export default async function BioPage() {
               </ul>
             </>
           ) : null}
+          {show.daily ? <DailyQuestionButton /> : null}
           {links.length ? (
             <ul className="bio-links">
               {links.map((l) => {

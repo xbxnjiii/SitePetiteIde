@@ -3,7 +3,22 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import type { QuizIcon } from "@/content/quiz";
+import { useProgress } from "@/lib/progress";
 import { QuizArt } from "./QuizArt";
+
+/** Étoiles du meilleur score (0 à 3) : la moitié, 80 %, sans faute. */
+function Stars({ best }: { best?: { score: number; total: number } }) {
+  if (!best) return null;
+  const r = best.score / best.total;
+  const n = r === 1 ? 3 : r >= 0.8 ? 2 : r >= 0.5 ? 1 : 0;
+  return (
+    <span className="qzc__stars" aria-label={`Meilleur score : ${best.score} sur ${best.total}`}>
+      {[0, 1, 2].map((i) => (
+        <QuizArt key={i} name="star" className={i < n ? "qzc__star qzc__star--on" : "qzc__star"} />
+      ))}
+    </span>
+  );
+}
 
 export interface QuizSlide {
   slug: string;
@@ -30,6 +45,7 @@ export interface QuizModeInfo {
 export function QuizCarousel({ slides, flash, pros }: { slides: QuizSlide[]; flash: QuizModeInfo; pros: QuizModeInfo }) {
   const track = useRef<HTMLUListElement>(null);
   const [index, setIndex] = useState(0);
+  const progress = useProgress();
 
   // Carte active = celle la plus proche du centre de la zone de défilement.
   useEffect(() => {
@@ -105,6 +121,7 @@ export function QuizCarousel({ slides, flash, pros }: { slides: QuizSlide[]; fla
                         {flash.count} questions · {flash.duration}
                       </small>
                     </span>
+                    <Stars best={progress?.best[`${s.slug}:flash`]} />
                     <Icon name="arrow" />
                   </Link>
                   <Link href={`/quiz/${s.slug}?mode=pros`} className="qzc__mode qzc__mode--pros" tabIndex={i === index ? 0 : -1}>
@@ -117,6 +134,7 @@ export function QuizCarousel({ slides, flash, pros }: { slides: QuizSlide[]; fla
                         {prosCount} questions · {pros.duration}
                       </small>
                     </span>
+                    <Stars best={progress?.best[`${s.slug}:pros`]} />
                     <Icon name="arrow" />
                   </Link>
                 </div>

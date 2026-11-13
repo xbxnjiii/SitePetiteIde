@@ -3,7 +3,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
-import { QUIZ_MODES, QUIZ_PACK_SLUG, type QuizMode, type QuizQuestion, type QuizTheme, quizVerdict } from "@/content/quiz";
+import { BADGES, type GameOutcome, loadProgress, recordGame, setSound, useProgress } from "@/lib/progress";
+import { sfx } from "@/lib/sounds";
+import { BASE_THEME_SLUGS, QUIZ_MODES, QUIZ_PACK_SLUG, type QuizMode, type QuizQuestion, type QuizTheme, quizVerdict } from "@/content/quiz";
 import { getPack } from "@/content/packs";
 import { QuizArt, type QuizArtName } from "./QuizArt";
 import { QuizEmailCapture } from "./QuizEmailCapture";
@@ -25,8 +27,8 @@ interface DrawnQuestion extends QuizQuestion {
 }
 
 /** Tire `n` questions au hasard et mélange l'ordre des réponses. */
-function draw(all: QuizQuestion[], n: number): DrawnQuestion[] {
-  return shuffle(all.map((q, index) => ({ q, index })))
+function draw(all: QuizQuestion[], n: number, only?: number[]): DrawnQuestion[] {
+  return shuffle(all.map((q, index) => ({ q, index })).filter((x) => !only || only.includes(x.index)))
     .slice(0, Math.min(n, all.length))
     .map(({ q, index }) => {
       const order = shuffle(q.choices.map((_, i) => i));
@@ -116,13 +118,29 @@ export function Quiz({
   const [startedAt, setStartedAt] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [done, setDone] = useState(false);
+  // Révision : on rejoue les questions ratées (enregistrées sur l'appareil).
+  const [review, setReview] = useState(false);
+  const [outcome, setOutcome] = useState<GameOutcome | null>(null);
+  const progress = useProgress();
   const topRef = useRef<HTMLDivElement>(null);
+  const keyRef = useRef<(e: KeyboardEvent) => void>(() => {});
+
+  // Clavier (ordinateur) : A / B / C ou 1 / 2 / 3 pour répondre, Entrée pour continuer.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => keyRef.current(e);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
 
-  const start = (m: QuizMode) => {
+  const start = (m: QuizMode, revise = false) => {
     // Tirage côté navigateur uniquement (évite un écart entre le rendu serveur et le navigateur).
+    const errors = revise ? (loadProgress().wrong[theme.slug] ?? []) : undefined;
+    const isReview = Boolean(errors?.length);
     setMode(m);
-    setQuestions(draw(theme.questions, QUIZ_MODES[m].count));
+    setReview(isReview);
+    setOutcome(null);
+    setQuestions(draw(theme.questions, isReview ? 10 : QUIZ_MODES[m].count, isReview ? errors : undefined));
     setIndex(0);
     setPicked(null);
     setResults([]);
@@ -132,7 +150,7 @@ export function Quiz({
     setStartedAt(Date.now());
     setDone(false);
     setCountdown(true);
-    track("start", theme.slug, m);
+    if (!isReview) track("start", theme.slug, m);
     requestAnimationFrame(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
 
@@ -142,7 +160,8 @@ export function Quiz({
   // Format demandé dans l'adresse (?mode=flash / ?mode=pros), depuis la page des thèmes.
   useEffect(() => {
     const m = new URLSearchParams(window.location.search).get("mode");
-    if (isMode(m)) start(m);
+    if (m === "revision") start("flash", true);
+    else if (isMode(m)) start(m);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -160,7 +179,7 @@ export function Quiz({
 
   const total = questions.length;
   const score = results.filter(Boolean).length;
-  const label = QUIZ_MODES[mode].label;
+  const label = review ? "Révision" : QUIZ_MODES[mode].label;
 
   /* ---------- Résultat ---------- */
   if (done) {
@@ -174,7 +193,11 @@ export function Quiz({
           elapsed={elapsed}
           bestStreak={bestStreak}
           answers={answers}
-          emailCapture={emailCapture}
+          emailCapture={emailCapture && !review}
+          review={review}
+          outcome={outcome}
+          toReview={progress?.wrong[theme.slug]?.length ?? 0}
+          onReview={() => start("flash", true)}
           onReplay={() => start(mode)}
           onOther={() => start(mode === "flash" ? "pros" : "flash")}
         />
@@ -198,9 +221,11 @@ export function Quiz({
       setStreak(s);
       setBestStreak((b) => Math.max(b, s));
       buzz(15);
+      sfx.good();
     } else {
       setStreak(0);
       buzz([30, 40, 30]);
+      sfx.bad();
     }
   };
 
@@ -208,7 +233,24 @@ export function Quiz({
     if (index + 1 >= total) {
       setElapsed(Date.now() - startedAt);
       setDone(true);
-      track("finish", theme.slug, mode, (results.filter(Boolean).length / total) * 100);
+      const good = results.filter(Boolean).length;
+      // Progression enregistrée sur l'appareil : record, points, série de jours, succès, erreurs à réviser.
+      setOutcome(
+        recordGame({
+          slug: theme.slug,
+          mode,
+          score: good,
+          total,
+          right: questions.filter((_, i) => results[i]).map((x) => x.index),
+          wrong: questions.filter((_, i) => !results[i]).map((x) => x.index),
+          run: bestStreak,
+          review,
+          themes: BASE_THEME_SLUGS,
+        }),
+      );
+      if (good / total >= 0.7) sfx.win();
+      else sfx.end();
+      if (!review) track("finish", theme.slug, mode, (good / total) * 100);
       requestAnimationFrame(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
     } else {
       setIndex(index + 1);
@@ -221,6 +263,14 @@ export function Quiz({
     }
   };
 
+  keyRef.current = (e) => {
+    if (countdown || e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    const i = "abcd".includes(k) && k.length === 1 ? "abcd".indexOf(k) : "1234".includes(k) && k.length === 1 ? "1234".indexOf(k) : -1;
+    if (!answered && i >= 0 && i < q.choices.length) choose(i);
+  };
+  const soundOn = progress?.sound ?? true;
+
   return (
     <div className="qz" ref={topRef}>
       {countdown ? (
@@ -230,6 +280,7 @@ export function Quiz({
           title={theme.title}
           mode={mode}
           count={total}
+          label={review ? "Révision" : undefined}
           onDone={() => {
             setCountdown(false);
             setStartedAt(Date.now()); // le chrono démarre à la première question
@@ -254,11 +305,20 @@ export function Quiz({
           <span className={streak >= 2 ? "qz-streak qz-streak--on" : "qz-streak"} aria-label={`Série : ${streak}`} key={`s${streak}`}>
             <QuizArt name="flame" /> {streak}
           </span>
+          <button
+            type="button"
+            className="qz-bar__quit qz-bar__sound"
+            onClick={() => setSound(!soundOn)}
+            aria-label={soundOn ? "Couper le son" : "Activer le son"}
+            aria-pressed={soundOn}
+          >
+            <QuizArt name={soundOn ? "sound" : "mute"} />
+          </button>
         </div>
 
         <div className="qz-card" key={index}>
           <p className="qz-card__count">
-            <QuizArt name={MODE_ART[mode]} /> {label} · {index + 1}/{total}
+            <QuizArt name={review ? "replay" : MODE_ART[mode]} /> {label} · {index + 1}/{total}
           </p>
           <h2 className="qz-card__q">{q.question}</h2>
           <div className="qz-answers" role="group" aria-label="Réponses">
@@ -303,6 +363,10 @@ function Result({
   bestStreak,
   answers,
   emailCapture,
+  review,
+  outcome,
+  toReview,
+  onReview,
   onReplay,
   onOther,
 }: {
@@ -314,11 +378,16 @@ function Result({
   bestStreak: number;
   answers: { q: number; a: number }[];
   emailCapture: boolean;
+  review: boolean;
+  outcome: GameOutcome | null;
+  /** Nombre de questions ratées encore à réviser sur ce thème. */
+  toReview: number;
+  onReview: () => void;
   onReplay: () => void;
   onOther: () => void;
 }) {
   const [copied, setCopied] = useState(false);
-  const label = QUIZ_MODES[mode].label;
+  const label = review ? "Révision" : QUIZ_MODES[mode].label;
   const ratio = score / total;
   const verdict = quizVerdict(score, total);
   const other: QuizMode = mode === "flash" ? "pros" : "flash";
@@ -396,6 +465,54 @@ function Result({
         </Link>
       ) : null}
 
+      {outcome ? (
+        <ul className="qz-rewards" aria-label="Récompenses">
+          <li className="qz-reward qz-reward--xp">
+            <QuizArt name="star" /> +{outcome.xp} points
+          </li>
+          {outcome.streak > 1 ? (
+            <li className="qz-reward">
+              <QuizArt name="flame" /> {outcome.streak} jours d&apos;affilée
+            </li>
+          ) : null}
+          {outcome.newBest ? (
+            <li className="qz-reward qz-reward--gold">
+              <QuizArt name="trophy" /> Nouveau record
+            </li>
+          ) : null}
+          {outcome.levelUp ? (
+            <li className="qz-reward qz-reward--gold">
+              <QuizArt name="sparkles" /> Niveau {outcome.levelUp} !
+            </li>
+          ) : null}
+          {outcome.badges.map((id) => {
+            const b = BADGES.find((x) => x.id === id);
+            return b ? (
+              <li key={id} className="qz-reward qz-reward--badge">
+                <QuizArt name="medal" /> Succès : {b.title}
+              </li>
+            ) : null;
+          })}
+        </ul>
+      ) : null}
+
+      {toReview > 0 ? (
+        <button type="button" className="qz-review" onClick={onReview}>
+          <QuizArt name="replay" />
+          <span>
+            <strong>Réviser mes erreurs</strong>
+            <small>
+              {toReview} question{toReview > 1 ? "s" : ""} à retravailler
+            </small>
+          </span>
+          <Icon name="arrow" />
+        </button>
+      ) : review ? (
+        <p className="qz-review qz-review--done">
+          <QuizArt name="check" /> Plus aucune erreur à réviser sur ce thème !
+        </p>
+      ) : null}
+
       <div className="qz-actions">
         <button type="button" onClick={onReplay}>
           <QuizArt name="replay" />
@@ -434,8 +551,11 @@ function Countdown({
   title,
   mode,
   count,
+  label,
   onDone,
 }: {
+  /** Libellé à la place du nom du format (ex. « Révision »). */
+  label?: string;
   tone: [string, string];
   icon: QuizTheme["icon"];
   title: string;
@@ -458,6 +578,8 @@ function Countdown({
         window.setTimeout(() => {
           setStep(i);
           buzz(i === STEPS.length - 1 ? [20, 40, 60] : 12);
+          if (i === STEPS.length - 1) sfx.go();
+          else sfx.tick();
         }, enter + i * ms),
       );
     });
@@ -503,7 +625,7 @@ function Countdown({
         </span>
         <p className="qz-cd__title">{title}</p>
         <p className="qz-cd__mode">
-          <QuizArt name={MODE_ART[mode]} /> {QUIZ_MODES[mode].label} · {count} questions
+          <QuizArt name={MODE_ART[mode]} /> {label ?? QUIZ_MODES[mode].label} · {count} question{count > 1 ? "s" : ""}
         </p>
       </div>
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { QUIZ_MODES, quizTone, quizzes } from "@/content/quiz";
 import { QuizArt } from "@/components/shop/QuizArt";
+import { QuizProfile } from "@/components/shop/QuizProfile";
 import { QuizCarousel } from "@/components/shop/QuizCarousel";
 
 export const metadata: Metadata = {
@@ -20,7 +21,7 @@ export default function QuizHubPage() {
         <h1>
           Quiz <QuizArt name="brain" className="qzc-head__icon" />
         </h1>
-        <p>Choisis un thème, puis ton format</p>
+        <QuizProfile themes={slides.map((s) => ({ slug: s.slug, title: s.title }))} />
       </header>
       <QuizCarousel
         slides={slides}
