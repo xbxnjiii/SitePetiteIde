@@ -181,9 +181,9 @@ export const packs: Pack[] = [
       specs: ["Format de poche", "Plastifiées", "Carton épais"],
       // Vraies photos des fiches papier (carrousel de la page de vente, quand la version papier est en vente).
       photos: [
-        { src: "/img/packs/papier-poche.webp", width: 1200, height: 1200, alt: "Les fiches papier sur leur anneau, dans la poche d'une tenue d'infirmière" },
-        { src: "/img/packs/papier-glycemie.webp", width: 1200, height: 1200, alt: "Les fiches papier empilées sur leur anneau, fiche Glycémie devant" },
-        { src: "/img/packs/papier-eventail.webp", width: 1200, height: 1200, alt: "Les fiches papier du pack Constantes en éventail sur leur anneau" },
+         { src: "/img/packs/papier-poche.webp", width: 1200, height: 1200, alt: "Les fiches papier sur leur anneau, dans la poche d'une tenue d'infirmière" },
+        //{ src: "/img/packs/papier-glycemie.webp", width: 1200, height: 1200, alt: "Les fiches papier empilées sur leur anneau, fiche Glycémie devant" },
+        //{ src: "/img/packs/papier-eventail.webp", width: 1200, height: 1200, alt: "Les fiches papier du pack Constantes en éventail sur leur anneau" },
       ],
     },
     // Fichiers à déposer dans le bucket R2 « la-petite-ide-pdfs », sous ces clés exactes.
