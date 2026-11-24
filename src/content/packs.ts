@@ -175,13 +175,12 @@ export const packs: Pack[] = [
     // ⚠️ Prix et caractéristiques PROVISOIRES, à valider par La Petite IDE.
     print: {
       priceCents: 990,
-      specs: ["Format A6", "Carton épais", "Plastifiées", "Coins arrondis"],
+      specs: ["Format de poche", "Plastifiées", "Carton épais"],
       // Vraies photos des fiches papier (carrousel de la page de vente, quand la version papier est en vente).
       photos: [
-        { src: "/img/packs/papier-3-glycemie.webp", width: 1400, height: 1292, alt: "Fiche papier Glycémie plastifiée, sur son anneau" },
-        { src: "/img/packs/papier-1-eventail.webp", width: 1400, height: 1370, alt: "Les fiches papier du pack Constantes en éventail sur leur anneau" },
-        { src: "/img/packs/papier-2-en-main.webp", width: 1400, height: 1308, alt: "Les fiches papier tenues en main, format de poche" },
-        { src: "/img/packs/papier-4-les-7-fiches.webp", width: 1400, height: 1310, alt: "Les 7 fiches papier du pack Constantes et leur anneau" },
+        { src: "/img/packs/papier-glycemie.webp", width: 1200, height: 1200, alt: "Fiche papier Glycémie plastifiée, sur son anneau" },
+        { src: "/img/packs/papier-eventail.webp", width: 1200, height: 1200, alt: "Les fiches papier du pack Constantes en éventail sur leur anneau" },
+        { src: "/img/packs/papier-les-7-fiches.webp", width: 1200, height: 1200, alt: "Les 7 fiches papier du pack Constantes et leur anneau" },
       ],
     },
     // Fichiers à déposer dans le bucket R2 « la-petite-ide-pdfs », sous ces clés exactes.

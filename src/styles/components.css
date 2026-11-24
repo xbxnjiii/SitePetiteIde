@@ -1312,5 +1312,5 @@ img.bio__avatar { width: 128px; height: 128px; }
 }
 .paper-photos::-webkit-scrollbar { display: none; }
 .paper-photos li { flex: none; width: 72vw; max-width: 300px; scroll-snap-align: start; }
-.paper-photos img { display: block; width: 100%; height: auto; aspect-ratio: 1.07; object-fit: cover; border-radius: 18px; box-shadow: var(--shadow-md); }
+.paper-photos img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 18px; box-shadow: var(--shadow-md); }
 @media (min-width: 900px) { .paper-photos { display: none; } }
