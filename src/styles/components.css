@@ -1304,3 +1304,13 @@ img.bio__avatar { width: 128px; height: 128px; }
 .qz-cd:not(.qz-cd--out) ~ .qz-play { visibility: hidden; }
 .qz-cd--out ~ .qz-play { animation: qz-play-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
 @keyframes qz-play-in { from { opacity: 0; transform: translateX(40px); } }
+
+/* ===== Photos des fiches papier (téléphone ; sur ordinateur elles sont dans le carrousel) ===== */
+.paper-photos {
+  list-style: none; display: flex; gap: 10px; margin: 12px calc(var(--gutter) * -1) 0; padding: 0 var(--gutter) 6px;
+  overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); scrollbar-width: none;
+}
+.paper-photos::-webkit-scrollbar { display: none; }
+.paper-photos li { flex: none; width: 72vw; max-width: 300px; scroll-snap-align: start; }
+.paper-photos img { display: block; width: 100%; height: auto; aspect-ratio: 1.07; object-fit: cover; border-radius: 18px; box-shadow: var(--shadow-md); }
+@media (min-width: 900px) { .paper-photos { display: none; } }

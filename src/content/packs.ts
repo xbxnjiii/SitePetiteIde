@@ -8,9 +8,6 @@
 //  ⚠️ Textes provisoires à relire et valider par La Petite IDE.
 // ============================================================================
 
-/** Préprod (variable de build, voir src/lib/format.ts). Pas d'import : ce fichier est aussi lu par scripts/stripe-sync.mts. */
-const IS_PREPROD = process.env.NEXT_PUBLIC_SITE_ENV === "preprod";
-
 export type IconName = "heart" | "lungs" | "thermo" | "gauge" | "drop" | "layers" | "note" | "syringe" | "book";
 export type Tone = "blue" | "sky" | "pink";
 
@@ -59,8 +56,8 @@ export interface PrintEdition {
   priceCents: number;
   /** Caractéristiques courtes (2 à 4 mots chacune), affichées en pastilles : format, papier, finition… */
   specs: string[];
-  /** Photo des fiches papier (dans public/). Uniquement une photo des VRAIES fiches La Petite IDE. */
-  photo?: { src: string; width: number; height: number; alt: string };
+  /** Photos des fiches papier (dans public/), la première sert de vignette. Uniquement les VRAIES fiches La Petite IDE. */
+  photos?: { src: string; width: number; height: number; alt: string }[];
   /** `true` : affiché « Bientôt de retour » et non achetable. */
   soldOut?: boolean;
 }
@@ -179,12 +176,13 @@ export const packs: Pack[] = [
     print: {
       priceCents: 990,
       specs: ["Format A6", "Carton épais", "Plastifiées", "Coins arrondis"],
-      // ⚠️ Photo d'ILLUSTRATION provisoire (ce ne sont pas nos fiches) : affichée en PRÉPROD UNIQUEMENT.
-      //    À remplacer par une vraie photo des fiches Constantes, puis supprimer
-      //    public/img/packs/papier-illustration-preprod.webp avant la mise en production.
-      photo: IS_PREPROD
-        ? { src: "/img/packs/papier-illustration-preprod.webp", width: 623, height: 653, alt: "Exemple de fiches papier (illustration)" }
-        : undefined,
+      // Vraies photos des fiches papier (carrousel de la page de vente, quand la version papier est en vente).
+      photos: [
+        { src: "/img/packs/papier-3-glycemie.webp", width: 1400, height: 1292, alt: "Fiche papier Glycémie plastifiée, sur son anneau" },
+        { src: "/img/packs/papier-1-eventail.webp", width: 1400, height: 1370, alt: "Les fiches papier du pack Constantes en éventail sur leur anneau" },
+        { src: "/img/packs/papier-2-en-main.webp", width: 1400, height: 1308, alt: "Les fiches papier tenues en main, format de poche" },
+        { src: "/img/packs/papier-4-les-7-fiches.webp", width: 1400, height: 1310, alt: "Les 7 fiches papier du pack Constantes et leur anneau" },
+      ],
     },
     // Fichiers à déposer dans le bucket R2 « la-petite-ide-pdfs », sous ces clés exactes.
     // Une image par fiche (même ordre que `items`, puis la fiche bonus).

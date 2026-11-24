@@ -92,14 +92,14 @@ export default async function PackPage({ params }: { params: Params }) {
   // Aperçus des fiches = format de page en test (préprod uniquement, voir src/content/packs.ts).
   const testLayout = Boolean(pack.previews?.length);
   const paperSpec = pack.print ? (
-    <div className={pack.print.photo ? "paper-spec paper-spec--photo" : "paper-spec"}>
-      {pack.print.photo ? (
+    <div className={pack.print.photos?.length ? "paper-spec paper-spec--photo" : "paper-spec"}>
+      {pack.print.photos?.length ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={pack.print.photo.src}
-          alt={pack.print.photo.alt}
-          width={pack.print.photo.width}
-          height={pack.print.photo.height}
+          src={pack.print.photos[0].src}
+          alt={pack.print.photos[0].alt}
+          width={pack.print.photos[0].width}
+          height={pack.print.photos[0].height}
           className="paper-spec__photo"
           loading="lazy"
         />
@@ -122,18 +122,30 @@ export default async function PackPage({ params }: { params: Params }) {
     </div>
   ) : null;
 
+  // Sur téléphone, le carrousel est masqué : les photos des fiches papier défilent sous le bloc « Version papier ».
+  const paperPhotos = pack.print?.photos?.length ? (
+    <ul className="paper-photos" aria-label="Photos des fiches papier">
+      {pack.print.photos.map((p) => (
+        <li key={p.src}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={p.src} alt={p.alt} width={p.width} height={p.height} loading="lazy" />
+        </li>
+      ))}
+    </ul>
+  ) : null;
+
   return (
     <div className="has-sticky-buy sale">
       <OfferBanner />
       <section className="container sale-main">
         <div className="sale-main__visual">
           {pack.images ? (
-            // Carrousel : visuel du pack, aperçus (PDF), puis photo du format papier s'il y en a une.
+            // Carrousel : visuel du pack, aperçus (PDF), puis photos du format papier (si le papier est en vente).
             <PackGallery
               slides={[
                 { src: pack.images.card, alt: pack.images.alt, width: 800, height: 800 },
                 ...(pack.images.gallery ?? []),
-                ...(pack.print?.photo ? [{ ...pack.print.photo, label: "Format papier" }] : []),
+                ...(pack.print?.photos ?? []).map((p) => ({ ...p, label: "Format papier" })),
               ]}
             />
           ) : (
@@ -213,6 +225,7 @@ export default async function PackPage({ params }: { params: Params }) {
         pack.print ? (
           <section className="container sale-content" aria-label="Version papier">
             {paperSpec}
+            {paperPhotos}
           </section>
         ) : null
       ) : (
@@ -245,6 +258,7 @@ export default async function PackPage({ params }: { params: Params }) {
             {pack.print ? "en numérique (PDF ou image) ou en papier" : "en PDF et en images, sur téléphone ou à imprimer"}
           </p>
           {paperSpec}
+          {paperPhotos}
         </section>
       )}
 
