@@ -131,7 +131,7 @@ export const packs: Pack[] = [
     },
     description:
       "Un mémo clair et synthétique pour chaque paramètre vital : valeurs normales, technique de mesure et signes d'alerte. Conçu pour réviser vite et bien, sur téléphone ou imprimé.",
-    priceCents: 399,
+    priceCents: 299,
     icon: "heart",
     tone: "pink",
     images: {
@@ -179,7 +179,8 @@ export const packs: Pack[] = [
       specs: ["Format de poche", "Plastifiées", "Carton épais"],
       // Vraies photos des fiches papier (carrousel de la page de vente, quand la version papier est en vente).
       photos: [
-        { src: "/img/packs/papier-glycemie.webp", width: 1200, height: 1200, alt: "Fiche papier Glycémie plastifiée, sur son anneau" },
+        { src: "/img/packs/papier-poche.webp", width: 1200, height: 1200, alt: "Les fiches papier sur leur anneau, dans la poche d'une tenue d'infirmière" },
+        { src: "/img/packs/papier-glycemie.webp", width: 1200, height: 1200, alt: "Les fiches papier empilées sur leur anneau, fiche Glycémie devant" },
         { src: "/img/packs/papier-eventail.webp", width: 1200, height: 1200, alt: "Les fiches papier du pack Constantes en éventail sur leur anneau" },
       ],
     },
