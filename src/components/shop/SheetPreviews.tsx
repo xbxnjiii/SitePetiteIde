@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { requestBuy } from "./buy-event";
 
 export interface SheetPreview {
   title: string;
@@ -10,9 +11,6 @@ export interface SheetPreview {
   /** Fiche réservée au pack complet (fiche bonus). */
   bonus?: boolean;
 }
-
-/** Événement écouté par le bloc de paiement : sélectionne une fiche à l'unité. */
-export const PICK_FICHE_EVENT = "lpi:fiche";
 
 /**
  * Aperçus des fiches (le bas de chaque image est flouté dans le fichier lui-même).
@@ -24,7 +22,7 @@ export function SheetPreviews({
   unitLabel,
 }: {
   sheets: SheetPreview[];
-  /** Ex. « Tout le pack · 3,99 € ». */
+  /** Ex. « Obtenir le pack · dès 3,99 € ». */
   packLabel: string;
   /** Ex. « Cette fiche · 0,99 € » (absent si la vente à l'unité est désactivée). */
   unitLabel?: string | null;
@@ -47,10 +45,10 @@ export function SheetPreviews({
     };
   }, [open, sheets.length]);
 
+  // Pack : montre les versions (ou ouvre le paiement) ; fiche seule : ouvre le paiement à l'unité.
   const goBuy = (fiche: number | null) => {
     setOpen(null);
-    if (fiche !== null) window.dispatchEvent(new CustomEvent(PICK_FICHE_EVENT, { detail: fiche }));
-    requestAnimationFrame(() => document.getElementById("acheter")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    requestBuy(fiche);
   };
 
   const current = open === null ? null : sheets[open];

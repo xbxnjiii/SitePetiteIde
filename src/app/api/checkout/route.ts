@@ -179,7 +179,7 @@ async function createSession(
             {
               shipping_rate_data: {
                 type: "fixed_amount" as const,
-                display_name: SHIPPING.name,
+                display_name: SHIPPING.priceCents === 0 ? `Livraison offerte · ${SHIPPING.name}` : SHIPPING.name,
                 fixed_amount: { amount: SHIPPING.priceCents, currency: "eur" },
                 tax_behavior: "inclusive" as const,
                 delivery_estimate: {

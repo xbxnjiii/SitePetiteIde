@@ -1,6 +1,7 @@
 import { FREE_SHEET } from "@/content/lead";
 import { QUIZ_MODES, QUIZ_PACK_SLUG, quizzes } from "@/content/quiz";
 import { getPack } from "@/content/packs";
+import { SHIPPING } from "@/content/shipping";
 import { sendEmail, sendOrderEmail, sendPrintOrderNotice, sendRecoveryEmail, sendShippedEmail, sendUpdateEmails } from "@/lib/email";
 import { type AppEnv, requireVar, siteUrl } from "@/lib/env";
 import { correctionEmail, offerEmail, tipsEmail } from "@/lib/quiz-emails";
@@ -41,7 +42,7 @@ export async function sendAllPreviews(env: AppEnv, to: string): Promise<number> 
       sendOrderEmail(env, {
         to,
         packName: pack.name,
-        amountCents: (pack.print?.priceCents ?? 990) + 399,
+        amountCents: (pack.print?.priceCents ?? 1290) + SHIPPING.priceCents,
         reference,
         links,
         imagesUrl,
@@ -55,7 +56,7 @@ export async function sendAllPreviews(env: AppEnv, to: string): Promise<number> 
         to,
         reference,
         packName: pack.name,
-        amountCents: 1389,
+        amountCents: (pack.print?.priceCents ?? 1290) + SHIPPING.priceCents,
         customerEmail: to,
         shippingLines: address,
         deliverable: true,

@@ -52,7 +52,7 @@ export interface UnitSale {
 
 /** Version papier d'un pack (expédiée, avec le PDF offert). */
 export interface PrintEdition {
-  /** Prix TTC des fiches papier, hors frais de port (voir src/content/shipping.ts). */
+  /** Prix TTC des fiches papier (frais de port en plus seulement s'ils ne sont pas à 0 dans src/content/shipping.ts). */
   priceCents: number;
   /** Caractéristiques courtes (2 à 4 mots chacune), affichées en pastilles : format, papier, finition… */
   specs: string[];
@@ -174,7 +174,8 @@ export const packs: Pack[] = [
     ],
     // ⚠️ Prix et caractéristiques PROVISOIRES, à valider par La Petite IDE.
     print: {
-      priceCents: 990,
+      // Prix unique, livraison offerte (voir src/content/shipping.ts).
+      priceCents: 1290,
       specs: ["Format de poche", "Plastifiées", "Carton épais"],
       // Vraies photos des fiches papier (carrousel de la page de vente, quand la version papier est en vente).
       photos: [

@@ -5,7 +5,8 @@ import { getPack, publishedPacks, type Pack } from "@/content/packs";
 import { SHIPPING } from "@/content/shipping";
 import { CheckoutError } from "@/components/shop/CheckoutError";
 import { OfferBanner } from "@/components/shop/OfferBanner";
-import { PackCheckout } from "@/components/shop/PackCheckout";
+import { BuyButton } from "@/components/shop/BuyButton";
+import { PackOffers } from "@/components/shop/PackOffers";
 import { PackCover } from "@/components/shop/PackCover";
 import { PackGallery } from "@/components/shop/PackGallery";
 import { QuizCta } from "@/components/shop/QuizCta";
@@ -51,13 +52,13 @@ const faqFor = (pack: Pack) => [
   pack.print
     ? {
         q: "Comment je reçois mon pack ?",
-        a: `En numérique (PDF et images) : juste après le paiement, bouton de téléchargement immédiat et lien par email (valable 30 jours). En papier : ${SHIPPING.dispatch.toLowerCase()} par ${SHIPPING.name} (${formatPrice(SHIPPING.priceCents)}), avec les fiches numériques offertes tout de suite.`,
+        a: `En numérique (PDF et images) : juste après le paiement, bouton de téléchargement immédiat et lien par email (valable 30 jours). En fiches de poche : ${SHIPPING.dispatch.toLowerCase()} par ${SHIPPING.name}, livraison offerte, avec les fiches numériques offertes tout de suite.`,
       }
     : { q: "Comment je reçois mon pack ?", a: "Juste après le paiement : bouton de téléchargement immédiat et lien envoyé par email (valable 30 jours)." },
   pack.print
     ? {
         q: "C'est un format papier ?",
-        a: `Les deux au choix ! En numérique (PDF et images), ou en fiches papier (${pack.print.specs.join(", ").toLowerCase()}) livrées en ${SHIPPING.zone}, avec la version numérique offerte.`,
+        a: `Les deux au choix ! En numérique (PDF et images), ou en fiches de poche (${pack.print.specs.join(", ").toLowerCase()}) livrées gratuitement en ${SHIPPING.zone}, avec la version numérique offerte.`,
       }
     : { q: "C'est un format papier ?", a: "Non, numérique : tu reçois le PDF (idéal pour imprimer) et les fiches en images (idéal sur téléphone)." },
   pack.print
@@ -89,63 +90,26 @@ export default async function PackPage({ params }: { params: Params }) {
     },
   };
 
-  // Aperçus des fiches = format de page en test (préprod uniquement, voir src/content/packs.ts).
-  const testLayout = Boolean(pack.previews?.length);
-  const paperSpec = pack.print ? (
-    <div className={pack.print.photos?.length ? "paper-spec paper-spec--photo" : "paper-spec"}>
-      {pack.print.photos?.length ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={pack.print.photos[0].src}
-          alt={pack.print.photos[0].alt}
-          width={pack.print.photos[0].width}
-          height={pack.print.photos[0].height}
-          className="paper-spec__photo"
-          loading="lazy"
-        />
-      ) : (
-        <span className="paper-spec__icon" aria-hidden="true">
-          <Icon name="note" />
-        </span>
-      )}
-      <div className="paper-spec__body">
-        <p className="paper-spec__title">Version papier</p>
-        <ul className="paper-spec__chips">
-          {pack.print.specs.map((s) => (
-            <li key={s}>{s}</li>
-          ))}
-        </ul>
-        <p className="paper-spec__note">
-          Numérique offert · Livraison {formatPrice(SHIPPING.priceCents)} · {SHIPPING.dispatch.toLowerCase()}
-        </p>
-      </div>
-    </div>
-  ) : null;
-
-  // Sur téléphone, le carrousel est masqué : les photos des fiches papier défilent sous le bloc « Version papier ».
-  const paperPhotos = pack.print?.photos?.length ? (
-    <ul className="paper-photos" aria-label="Photos des fiches papier">
-      {pack.print.photos.map((p) => (
-        <li key={p.src}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={p.src} alt={p.alt} width={p.width} height={p.height} loading="lazy" />
-        </li>
-      ))}
-    </ul>
-  ) : null;
+  const packCount = pack.items.length + (pack.bonus ? 1 : 0);
+  const paperPhotos = pack.print?.photos ?? [];
 
   return (
     <div className="has-sticky-buy sale">
       <OfferBanner />
-      <section className="container sale-main">
-        <div className="sale-main__visual">
+      <section className="container pdp">
+        <header className="pdp__head">
+          <h1>{pack.headline}</h1>
+          <p className="pdp__promise">{pack.promise}</p>
+        </header>
+
+        <div className="pdp__media">
           {pack.images ? (
-            // Carrousel : visuel du pack, aperçus (PDF), puis photos du format papier (si le papier est en vente).
+            // Carrousel : la vraie photo des fiches papier d'abord (si le papier est en vente), puis le visuel du pack et l'aperçu.
             <PackGallery
               slides={[
+                ...paperPhotos.map((p) => ({ ...p, label: "Fiches de poche" })),
                 { src: pack.images.card, alt: pack.images.alt, width: 800, height: 800 },
                 ...(pack.images.gallery ?? []),
-                ...(pack.print?.photos ?? []).map((p) => ({ ...p, label: "Format papier" })),
               ]}
             />
           ) : (
@@ -153,84 +117,78 @@ export default async function PackPage({ params }: { params: Params }) {
           )}
         </div>
 
-        <div className="sale-main__info">
-          <h1>{pack.headline}</h1>
-          <p className="sale-main__promise">{pack.promise}</p>
+        <div className="pdp__body">
+          <ul className="pdp__benefits">
+            {pack.highlights.map((h) => (
+              <li key={h}>
+                <Icon name="check" /> {h}
+              </li>
+            ))}
+          </ul>
 
-          {pack.previews?.length ? (
-            <div className="sale-sheets">
-              <SheetPreviews
-                sheets={pack.previews.map((p, n) => ({
-                  ...p,
-                  title: pack.items[n]?.title ?? "Fiche bonus",
-                  bonus: n >= pack.items.length,
-                }))}
-                packLabel={`Tout le pack · ${formatPrice(pack.priceCents)}`}
-                unitLabel={pack.unit ? `Cette fiche seule · ${formatPrice(pack.unit.priceCents)}` : null}
-              />
-              <p className="sale-sheets__note">
-                {pack.items.length + (pack.bonus ? 1 : 0)} fiches{pack.bonus ? " dont 1 bonus 🎁" : ""} · PDF et images · sur téléphone ou à imprimer
-              </p>
-            </div>
-          ) : (
-            <>
-              <ul className="sale-main__points">
-                {pack.highlights.map((h) => (
-                  <li key={h}>
-                    <Icon name="check" /> {h}
-                  </li>
-                ))}
-              </ul>
-              <p className="sale-main__update">
-                <Icon name="spark" /> Si on mets à jour une fiche, on te l&apos;envoi !
-              </p>
+          <Suspense>
+            <CheckoutError />
+          </Suspense>
+          <PackOffers
+            slug={pack.slug}
+            packName={pack.name.replace(/^Pack Mémos : /, "Pack ")}
+            packCents={pack.priceCents}
+            packCount={packCount}
+            packImage={pack.images ? { src: pack.images.card, width: 800, height: 800, alt: pack.images.alt } : null}
+            print={
+              pack.print
+                ? { priceCents: pack.print.priceCents, specs: pack.print.specs, photo: paperPhotos[0] ?? null, soldOut: Boolean(pack.print.soldOut) }
+                : null
+            }
+            unit={
+              pack.unit
+                ? {
+                    priceCents: pack.unit.priceCents,
+                    items: pack.items.slice(0, pack.unit.files.length).map((i) => ({ title: i.title, icon: i.icon })),
+                    packCount,
+                  }
+                : null
+            }
+          />
 
-              {pack.bonus ? (
-                <div className="bonus-card">
-                  <span className="bonus-card__icon" aria-hidden="true">
-                    <Icon name="gift" />
-                  </span>
-                  <p>
-                    <strong>{pack.bonus.title}</strong> {pack.bonus.text}
-                  </p>
-                </div>
-              ) : null}
-            </>
-          )}
-
-          <div className="sale-buy" id="acheter" data-buy-anchor="">
-            <Suspense>
-              <CheckoutError />
-            </Suspense>
-            <PackCheckout
-              slug={pack.slug}
-              priceCents={pack.priceCents}
-              print={pack.print ?? null}
-              unit={
-                pack.unit
-                  ? {
-                      priceCents: pack.unit.priceCents,
-                      items: pack.items.slice(0, pack.unit.files.length).map((i) => ({ title: i.title, icon: i.icon })),
-                      packCount: pack.items.length + (pack.bonus ? 1 : 0),
-                    }
-                  : null
-              }
-            />
-          </div>
+          <ul className="pdp__trust">
+            <li>
+              <Icon name="shield" /> Paiement sécurisé
+            </li>
+            <li>
+              <Icon name="spark" /> Mises à jour offertes
+            </li>
+            {pack.print ? (
+              <li>
+                <Icon name="clock" /> Papier : 14 j pour changer d&apos;avis
+              </li>
+            ) : (
+              <li>
+                <Icon name="mail" /> Reçu par email
+              </li>
+            )}
+          </ul>
         </div>
       </section>
 
-      {testLayout ? (
-        // Format en test (préprod) : les aperçus remplacent la liste « Dans le pack ».
-        pack.print ? (
-          <section className="container sale-content" aria-label="Version papier">
-            {paperSpec}
-            {paperPhotos}
-          </section>
-        ) : null
-      ) : (
-        <section className="container sale-content" aria-labelledby="contenu-title">
-          <h2 id="contenu-title">Dans le pack</h2>
+      <section className="container sale-content" aria-labelledby="contenu-title">
+        <h2 id="contenu-title">Dans le pack</h2>
+        {pack.previews?.length ? (
+          <div className="sale-sheets">
+            <SheetPreviews
+              sheets={pack.previews.map((p, n) => ({
+                ...p,
+                title: pack.items[n]?.title ?? "Fiche bonus",
+                bonus: n >= pack.items.length,
+              }))}
+              packLabel={pack.print ? `Obtenir le pack · dès ${formatPrice(pack.priceCents)}` : `Tout le pack · ${formatPrice(pack.priceCents)}`}
+              unitLabel={pack.unit ? `Cette fiche seule · ${formatPrice(pack.unit.priceCents)}` : null}
+            />
+            <p className="sale-sheets__note">
+              {packCount} fiches{pack.bonus ? " dont 1 bonus 🎁" : ""} · touche une fiche pour l&apos;agrandir
+            </p>
+          </div>
+        ) : (
           <ul className="sale-tiles">
             {pack.items.map((item) => (
               <li key={item.title} className="sale-tile">
@@ -253,14 +211,18 @@ export default async function PackPage({ params }: { params: Params }) {
               </li>
             ) : null}
           </ul>
-          <p className="sale-content__total">
-            {pack.items.length + (pack.bonus ? 1 : 0)} fiches ·{" "}
-            {pack.print ? "en numérique (PDF ou image) ou en papier" : "en PDF et en images, sur téléphone ou à imprimer"}
-          </p>
-          {paperSpec}
-          {paperPhotos}
-        </section>
-      )}
+        )}
+        {pack.bonus ? (
+          <div className="bonus-card">
+            <span className="bonus-card__icon" aria-hidden="true">
+              <Icon name="gift" />
+            </span>
+            <p>
+              <strong>{pack.bonus.title}</strong> {pack.bonus.text}
+            </p>
+          </div>
+        ) : null}
+      </section>
 
       <section className="container sale-faq" aria-labelledby="faq-title">
         <h2 id="faq-title">Questions fréquentes</h2>
@@ -279,9 +241,9 @@ export default async function PackPage({ params }: { params: Params }) {
       </section>
 
       <StickyBuyBar>
-        <a href="#acheter" className="btn btn--primary btn--buy sticky-buy__btn">
-          Obtenir
-        </a>
+        <BuyButton className="btn btn--primary btn--buy sticky-buy__btn">
+          {pack.print ? "Choisir ma version" : <>Obtenir · {formatPrice(pack.priceCents)}</>}
+        </BuyButton>
       </StickyBuyBar>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(structured)} />

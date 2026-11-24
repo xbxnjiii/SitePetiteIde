@@ -4,8 +4,8 @@
 // ============================================================================
 
 export const SHIPPING = {
-  /** Frais de port TTC, quel que soit le nombre de fiches. */
-  priceCents: 399,
+  /** Frais de port TTC, quel que soit le nombre de fiches. 0 = livraison offerte (comprise dans le prix des fiches). */
+  priceCents: 0,
   /** Nom affiché dans le paiement et dans Stripe. */
   name: "Lettre suivie La Poste",
   /** Délai de préparation annoncé au client. */
@@ -17,6 +17,9 @@ export const SHIPPING = {
   /** Codes postaux refusés : outre-mer (97…, 98…). */
   excludedPostalPrefixes: ["97", "98"],
 };
+
+/** Livraison offerte ? (prix des fiches papier « livraison comprise ») */
+export const FREE_SHIPPING = SHIPPING.priceCents === 0;
 
 /** Adresse livrable : France métropolitaine uniquement. */
 export function isDeliverable(address: { country?: string | null; postal_code?: string | null } | null | undefined): boolean {

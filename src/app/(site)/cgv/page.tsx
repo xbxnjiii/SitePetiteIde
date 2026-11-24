@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { InfoList, LegalPage } from "@/components/content/LegalPage";
-import { SHIPPING } from "@/content/shipping";
+import { FREE_SHIPPING, SHIPPING } from "@/content/shipping";
 import { LEGAL, SITE, formatPrice } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Conditions générales de vente", alternates: { canonical: "/cgv" } };
@@ -54,9 +54,15 @@ export default function CgvPage() {
           title: "Prix",
           content: (
             <p>
-              Les prix sont indiqués en euros. {LEGAL.vat}. Le prix applicable est celui affiché au moment de la commande. Pour le format
-              papier, des frais de livraison de {formatPrice(SHIPPING.priceCents)} s&apos;ajoutent ; ils sont indiqués avant le
-              paiement.
+              Les prix sont indiqués en euros. {LEGAL.vat}. Le prix applicable est celui affiché au moment de la commande.{" "}
+              {FREE_SHIPPING ? (
+                <>Pour le format papier, la livraison est offerte : le prix affiché est le prix total.</>
+              ) : (
+                <>
+                  Pour le format papier, des frais de livraison de {formatPrice(SHIPPING.priceCents)} s&apos;ajoutent ; ils sont
+                  indiqués avant le paiement.
+                </>
+              )}
             </p>
           ),
         },
@@ -84,7 +90,7 @@ export default function CgvPage() {
               </p>
               <p>
                 <strong>Papier.</strong> Livraison en {SHIPPING.zone} uniquement, à l&apos;adresse indiquée lors du paiement, par{" "}
-                {SHIPPING.name} ({formatPrice(SHIPPING.priceCents)}). {SHIPPING.dispatch} après confirmation du paiement ; délai de
+                {SHIPPING.name} ({FREE_SHIPPING ? "livraison offerte" : formatPrice(SHIPPING.priceCents)}). {SHIPPING.dispatch} après confirmation du paiement ; délai de
                 livraison indicatif de {SHIPPING.estimate.min} à {SHIPPING.estimate.max} jours ouvrés après l&apos;expédition. Un
                 numéro de suivi est envoyé par email. En cas de retard important, de colis perdu ou endommagé, écris-nous à {mail} :
                 les fiches sont renvoyées ou remboursées. La version numérique offerte est envoyée immédiatement, comme pour un achat numérique.
