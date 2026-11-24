@@ -175,13 +175,12 @@ export const packs: Pack[] = [
     // ⚠️ Prix et caractéristiques PROVISOIRES, à valider par La Petite IDE.
     print: {
       // Prix unique, livraison offerte (voir src/content/shipping.ts).
-      priceCents: 1290,
+      priceCents: 799,
       specs: ["Format de poche", "Plastifiées", "Carton épais"],
       // Vraies photos des fiches papier (carrousel de la page de vente, quand la version papier est en vente).
       photos: [
         { src: "/img/packs/papier-glycemie.webp", width: 1200, height: 1200, alt: "Fiche papier Glycémie plastifiée, sur son anneau" },
         { src: "/img/packs/papier-eventail.webp", width: 1200, height: 1200, alt: "Les fiches papier du pack Constantes en éventail sur leur anneau" },
-        { src: "/img/packs/papier-les-7-fiches.webp", width: 1200, height: 1200, alt: "Les 7 fiches papier du pack Constantes et leur anneau" },
       ],
     },
     // Fichiers à déposer dans le bucket R2 « la-petite-ide-pdfs », sous ces clés exactes.

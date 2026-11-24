@@ -42,7 +42,7 @@ export async function sendAllPreviews(env: AppEnv, to: string): Promise<number> 
       sendOrderEmail(env, {
         to,
         packName: pack.name,
-        amountCents: (pack.print?.priceCents ?? 1290) + SHIPPING.priceCents,
+        amountCents: (pack.print?.priceCents ?? 799) + SHIPPING.priceCents,
         reference,
         links,
         imagesUrl,
@@ -57,7 +57,7 @@ export async function sendAllPreviews(env: AppEnv, to: string): Promise<number> 
         to,
         reference,
         packName: pack.name,
-        amountCents: (pack.print?.priceCents ?? 1290) + SHIPPING.priceCents,
+        amountCents: (pack.print?.priceCents ?? 799) + SHIPPING.priceCents,
         customerEmail: to,
         shippingLines: address,
         deliverable: true,
