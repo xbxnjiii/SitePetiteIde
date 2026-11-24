@@ -1344,3 +1344,6 @@ img.bio__avatar { width: 128px; height: 128px; }
 .sale-content .sale-sheets { margin-bottom: 14px; }
 .sale-content .sale-sheets__note { text-align: center; }
 .sale-content .bonus-card { margin: 0; }
+
+/* Carte numérique : prix ramené à la fiche */
+.offer__price .offer__per { color: var(--c-success); }

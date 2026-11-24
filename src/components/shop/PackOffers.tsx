@@ -79,7 +79,9 @@ export function PackOffers({ slug, packName, packCents, packCount, packImage, pr
           <div className="offer__foot">
             <p className="offer__price">
               <span className="price">{formatPrice(packCents)}</span>
-              <small>Accès immédiat</small>
+              <small className="offer__per">
+                soit {formatPrice(Math.round(packCents / packCount))} la fiche
+              </small>
             </p>
             <button type="button" className="btn btn--primary btn--buy offer__btn" onClick={() => setOpen({ format: "pdf", fiches: [] })}>
               Je la veux

@@ -96,6 +96,8 @@ export interface Pack {
    * ⚠️ Images FLOUTÉES dans le fichier lui-même (jamais la fiche complète en clair).
    */
   previews?: { src: string; width: number; height: number }[];
+  /** Image de la carte « Version numérique » (une fiche sur un téléphone, floutée). Sinon : le visuel du pack. */
+  digitalImage?: { src: string; width: number; height: number; alt: string };
   /**
    * Version « images » (une image PNG/JPG par fiche, pratique sur téléphone), livrée avec le PDF.
    * Affichées sur la page /mes-fiches ; une image absente du bucket R2 est simplement masquée.
@@ -123,8 +125,8 @@ export const packs: Pack[] = [
     slug: "pack-des-constantes",
     name: "Pack Mémos : Constantes",
     headline: "Les constantes à mémoriser en 1 clin d'œil 👁️",
-    promise: "7 fiches mémo ultra-visuelles pour réviser l'essentiel, sans rien de superflu.",
-    tagline: "7 fiches mémo pour réviser les paramètres vitaux.",
+    promise: "7 fiches mémo ultra-visuelles + 1 fiche bonus, pour réviser l'essentiel sans rien de superflu.",
+    tagline: "7 fiches mémo + 1 bonus pour réviser les paramètres vitaux.",
     bonus: {
       title: "Fiche spéciale « La Petite IDE »",
       text: "Introuvable ailleurs : des astuces d'étudiants pour mémoriser durablement les valeurs et les retrouver facilement.",
@@ -192,6 +194,7 @@ export const packs: Pack[] = [
       label,
     })),
     // Aperçus des fiches sur la page de vente (floutés sous le bandeau titre ; fiche bonus entièrement floutée).
+    digitalImage: { src: "/img/packs/numerique-telephone.webp", width: 800, height: 800, alt: "Une fiche du pack affichée sur un téléphone" },
     previews: [...CONSTANTES_FICHES.map(([name]) => ({ src: `/img/packs/apercus/${name}.webp`, width: 720, height: 1019 })), { src: "/img/packs/apercus/08-fiche-bonus.webp", width: 720, height: 729 }],
     // Vente à l'unité (activable dans /admin › Réglages).
     unit: {

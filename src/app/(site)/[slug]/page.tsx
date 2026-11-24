@@ -134,7 +134,7 @@ export default async function PackPage({ params }: { params: Params }) {
             packName={pack.name.replace(/^Pack Mémos : /, "Pack ")}
             packCents={pack.priceCents}
             packCount={packCount}
-            packImage={pack.images ? { src: pack.images.card, width: 800, height: 800, alt: pack.images.alt } : null}
+            packImage={pack.digitalImage ?? (pack.images ? { src: pack.images.card, width: 800, height: 800, alt: pack.images.alt } : null)}
             print={
               pack.print
                 ? { priceCents: pack.print.priceCents, specs: pack.print.specs, photo: paperPhotos[0] ?? null, soldOut: Boolean(pack.print.soldOut) }
