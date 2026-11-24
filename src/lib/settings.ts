@@ -20,6 +20,8 @@ export interface Settings {
   bio: Record<BioKey, boolean>;
   /** Boutons ajoutés à la page de liens, dans l'ordre d'affichage. */
   links: BioLink[];
+  /** Adresses qui reçoivent une copie cachée des emails de commande (production uniquement, voir src/lib/email.ts). */
+  orderCopies: string[];
 }
 
 /** Éléments de la page de liens que l'on peut afficher / masquer depuis /admin. */
@@ -56,7 +58,21 @@ export const DEFAULT_SETTINGS: Settings = {
   resetAt: null,
   bio: DEFAULT_BIO,
   links: [],
+  orderCopies: [],
 };
+
+/** Nombre maximum d'adresses en copie des emails de commande. */
+export const MAX_ORDER_COPIES = 5;
+const EMAIL_RE = /^[^\s@,;]{1,64}@[^\s@,;]{1,190}\.[a-z]{2,}$/i;
+
+/**
+ * Liste d'adresses saisie dans /admin (séparées par des virgules, points-virgules, espaces ou retours à la ligne).
+ * Renvoie null si une adresse est invalide ou s'il y en a trop.
+ */
+export function parseEmailList(text: string): string[] | null {
+  const list = [...new Set(text.split(/[\s,;]+/).map((e) => e.trim().toLowerCase()).filter(Boolean))];
+  return list.length <= MAX_ORDER_COPIES && list.every((e) => EMAIL_RE.test(e)) ? list : null;
+}
 
 /** Adresse autorisée pour un bouton : https://…, mailto:… ou une page du site (/…). */
 export function cleanLinkUrl(v: string): string | null {
@@ -104,6 +120,9 @@ export async function getSettings(env: AppEnv): Promise<Settings> {
         resetAt: typeof raw.resetAt === "number" ? raw.resetAt : null,
         bio: Object.fromEntries(BIO_ITEMS.map((i) => [i.key, raw.bio?.[i.key] !== false])) as Record<BioKey, boolean>,
         links: parseLinks(raw.links),
+        orderCopies: Array.isArray(raw.orderCopies)
+          ? raw.orderCopies.filter((e): e is string => typeof e === "string" && EMAIL_RE.test(e)).slice(0, MAX_ORDER_COPIES)
+          : [],
       };
     }
   } catch (err) {

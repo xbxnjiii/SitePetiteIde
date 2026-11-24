@@ -1,8 +1,23 @@
 import "server-only";
 import { SHIPPING } from "@/content/shipping";
-import { SITE, formatPrice } from "./format";
+import { IS_PREPROD, SITE, formatPrice } from "./format";
 import { type AppEnv, requireVar } from "./env";
 import type { DownloadLink } from "./orders";
+import { getSettings } from "./settings";
+
+/**
+ * Copie cachée (Cci) des emails de commande : adresses réglées dans /admin › Réglages.
+ * PRODUCTION UNIQUEMENT : rien n'est copié depuis la préprod.
+ * Les adresses déjà destinataires de l'email sont retirées (pas de doublon).
+ */
+async function orderCopies(env: AppEnv, ...recipients: string[]): Promise<string[]> {
+  if (IS_PREPROD) return [];
+  const already = new Set(recipients.map((r) => r.trim().toLowerCase()));
+  const { orderCopies: list } = await getSettings(env);
+  return list.filter((e) => !already.has(e));
+}
+
+const bccField = (list: string[]) => (list.length ? { bcc: list } : {});
 
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -19,9 +34,11 @@ interface OrderEmail {
   idempotencyKey: string;
   /** Commande papier : adresse de livraison (le PDF est offert). */
   shippingLines?: string[];
+  /** `false` : pas de copie à La Petite IDE (emails d'exemple de l'admin). */
+  copy?: boolean;
 }
 
-export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey">): string {
+export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey" | "copy">): string {
   const until = new Date(o.expiresAt * 1000).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
   const font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
   const buttons = o.links
@@ -83,7 +100,7 @@ export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey">): st
 </body></html>`;
 }
 
-export function orderEmailText(o: Omit<OrderEmail, "to" | "idempotencyKey">): string {
+export function orderEmailText(o: Omit<OrderEmail, "to" | "idempotencyKey" | "copy">): string {
   const print = o.shippingLines
     ? [
         `Tes fiches papier ${o.packName} sont en préparation. ${SHIPPING.dispatch}, en ${SHIPPING.name} : tu recevras le numéro de suivi par email.`,
@@ -113,6 +130,7 @@ export function orderEmailText(o: Omit<OrderEmail, "to" | "idempotencyKey">): st
 
 /** Envoie l'email de livraison via l'API Resend (sans SDK). Lève une erreur en cas d'échec. */
 export async function sendOrderEmail(env: AppEnv, o: OrderEmail): Promise<void> {
+  const bcc = o.copy === false ? [] : await orderCopies(env, o.to);
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -124,6 +142,7 @@ export async function sendOrderEmail(env: AppEnv, o: OrderEmail): Promise<void> 
     body: JSON.stringify({
       from: env.EMAIL_FROM ?? "La Petite IDE <contact@lapetiteide.fr>",
       to: [o.to],
+      ...bccField(bcc),
       reply_to: env.EMAIL_REPLY_TO ?? SITE.contactEmail,
       subject: o.shippingLines ? `Commande confirmée : ${o.packName} (papier) 💙` : `Ton ${o.packName} est prêt 💙`,
       html: orderEmailHtml(o),
@@ -176,7 +195,15 @@ export function recoveryEmailHtml(items: RecoveryItem[], expiresAt: number): str
 </body></html>`;
 }
 
-export async function sendRecoveryEmail(env: AppEnv, to: string, items: RecoveryItem[], expiresAt: number, idempotencyKey: string) {
+export async function sendRecoveryEmail(
+  env: AppEnv,
+  to: string,
+  items: RecoveryItem[],
+  expiresAt: number,
+  idempotencyKey: string,
+  copy = true,
+) {
+  const bcc = copy ? await orderCopies(env, to) : [];
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -187,6 +214,7 @@ export async function sendRecoveryEmail(env: AppEnv, to: string, items: Recovery
     body: JSON.stringify({
       from: env.EMAIL_FROM ?? "La Petite IDE <contact@lapetiteide.fr>",
       to: [to],
+      ...bccField(bcc),
       reply_to: env.EMAIL_REPLY_TO ?? SITE.contactEmail,
       subject: "Tes fiches La Petite IDE 💙",
       html: recoveryEmailHtml(items, expiresAt),
@@ -213,6 +241,8 @@ export interface SendOptions {
   unsubscribeUrl?: string;
   /** Adresse de réponse (par défaut EMAIL_REPLY_TO). */
   replyTo?: string;
+  /** Copie cachée (Cci). */
+  bcc?: string[];
 }
 
 /** Envoie (ou programme) un email ; renvoie son identifiant Resend. */
@@ -227,6 +257,7 @@ export async function sendEmail(env: AppEnv, o: SendOptions): Promise<string | n
     body: JSON.stringify({
       from: env.EMAIL_FROM ?? "La Petite IDE <contact@lapetiteide.fr>",
       to: [o.to],
+      ...bccField(o.bcc ?? []),
       reply_to: o.replyTo ?? env.EMAIL_REPLY_TO ?? SITE.contactEmail,
       subject: o.subject,
       html: o.html,
@@ -284,6 +315,8 @@ export interface PrintOrderNotice {
   sessionId: string;
   /** Destinataire (défaut : ORDERS_NOTIFY_TO). Utilisé pour l'aperçu des emails. */
   to?: string;
+  /** `false` : pas de copie (emails d'exemple de l'admin). */
+  copy?: boolean;
 }
 
 /** Alerte envoyée à La Petite IDE : une commande papier est à préparer. */
@@ -306,8 +339,10 @@ export async function sendPrintOrderNotice(env: AppEnv, n: PrintOrderNotice): Pr
     `Client : ${n.customerEmail}`,
     `Commandes à expédier : ${n.adminUrl}`,
   ].join("\n");
+  const to = n.to ?? env.ORDERS_NOTIFY_TO ?? env.EMAIL_REPLY_TO ?? SITE.contactEmail;
   await sendEmail(env, {
-    to: n.to ?? env.ORDERS_NOTIFY_TO ?? env.EMAIL_REPLY_TO ?? SITE.contactEmail,
+    to,
+    bcc: n.copy === false ? [] : await orderCopies(env, to),
     replyTo: n.customerEmail,
     subject: `${n.deliverable ? "📦" : "⚠️"} Commande papier à préparer · ${n.reference}`,
     html,
@@ -319,7 +354,7 @@ export async function sendPrintOrderNotice(env: AppEnv, n: PrintOrderNotice): Pr
 /** Email au client : ses fiches papier sont parties (avec le numéro de suivi). */
 export async function sendShippedEmail(
   env: AppEnv,
-  s: { to: string; packName: string; reference: string; tracking: string; sessionId: string },
+  s: { to: string; packName: string; reference: string; tracking: string; sessionId: string; copy?: boolean },
 ): Promise<void> {
   const trackUrl = `https://www.laposte.fr/outils/suivre-vos-envois?code=${encodeURIComponent(s.tracking)}`;
   const html = simpleEmailHtml(
@@ -339,6 +374,7 @@ export async function sendShippedEmail(
   ].join("\n");
   await sendEmail(env, {
     to: s.to,
+    bcc: s.copy === false ? [] : await orderCopies(env, s.to),
     subject: `Tes fiches ${s.packName} sont en route 📦`,
     html,
     text,
@@ -386,8 +422,16 @@ function updateEmailText(u: UpdateEmail, message: string): string {
 /**
  * Envoie l'email de mise à jour à chaque acheteur (API « batch » de Resend : 100 emails par requête).
  * `batchKey` identifie l'envoi : un même envoi relancé n'est pas renvoyé (idempotence Resend, 24 h).
+ * Copie à La Petite IDE : une seule par envoi (sur le premier email), pas une par acheteur.
  */
-export async function sendUpdateEmails(env: AppEnv, recipients: UpdateEmail[], message: string, batchKey: string): Promise<number> {
+export async function sendUpdateEmails(
+  env: AppEnv,
+  recipients: UpdateEmail[],
+  message: string,
+  batchKey: string,
+  copy = true,
+): Promise<number> {
+  const bcc = copy && recipients.length ? await orderCopies(env, recipients[0].to) : [];
   let sent = 0;
   for (let i = 0; i < recipients.length; i += 100) {
     const chunk = recipients.slice(i, i + 100);
@@ -399,9 +443,10 @@ export async function sendUpdateEmails(env: AppEnv, recipients: UpdateEmail[], m
         "Idempotency-Key": `${batchKey}-${i / 100}`,
       },
       body: JSON.stringify(
-        chunk.map((u) => ({
+        chunk.map((u, j) => ({
           from: env.EMAIL_FROM ?? "La Petite IDE <contact@lapetiteide.fr>",
           to: [u.to],
+          ...(i === 0 && j === 0 ? bccField(bcc) : {}),
           reply_to: env.EMAIL_REPLY_TO ?? SITE.contactEmail,
           subject: `Mise à jour de ton ${u.packName} ✨`,
           html: updateEmailHtml(u, message),

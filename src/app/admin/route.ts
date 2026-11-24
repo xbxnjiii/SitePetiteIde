@@ -12,7 +12,18 @@ import { type AdminOrder, SHIPPED_AT, TRACKING, listOrders, listOrdersBetween, l
 import { buildDashboard } from "./dashboard";
 import { labelsPage } from "./labels";
 import { lastMonths, monthBounds, ordersCsv } from "./export";
-import { BIO_ITEMS, type BioKey, MAX_LINKS, type Settings, applySettings, cleanLinkUrl, getSettings, saveSettings } from "@/lib/settings";
+import {
+  BIO_ITEMS,
+  type BioKey,
+  MAX_LINKS,
+  MAX_ORDER_COPIES,
+  type Settings,
+  applySettings,
+  cleanLinkUrl,
+  getSettings,
+  parseEmailList,
+  saveSettings,
+} from "@/lib/settings";
 import { cancelEmails, listEmails } from "./emails";
 import { PREVIEW_COUNT, sendAllPreviews } from "./preview-emails";
 import { QUIZ_PERIODS, type QuizPeriod, type QuizStatsView, buildQuizStats } from "./quizstats";
@@ -141,6 +152,7 @@ export async function GET(request: Request) {
               resetAt: settings.resetAt,
               bio: BIO_ITEMS.map((i) => ({ ...i, on: settings.bio[i.key] })),
               links: settings.links,
+              orderCopies: settings.orderCopies,
             }
           : undefined,
       site: siteInfo(env),
@@ -303,7 +315,7 @@ async function sendUpdate(env: AppEnv, form: FormData | null, back: (params: str
     // Clé d'envoi : le même envoi (pack + message, même jour) n'est jamais envoyé deux fois.
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${slug}|${message}|${new Date().toISOString().slice(0, 10)}`));
     const key = Array.from(new Uint8Array(digest).slice(0, 10), (b) => b.toString(16).padStart(2, "0")).join("");
-    const sent = await sendUpdateEmails(env, recipients, message, test ? `maj-test-${key}-${Date.now()}` : `maj-${key}`);
+    const sent = await sendUpdateEmails(env, recipients, message, test ? `maj-test-${key}-${Date.now()}` : `maj-${key}`, !test);
     console.log("admin: mise à jour envoyée", slug, test ? "(test)" : sent);
     return back(test ? "ok=maj-test" : `ok=maj&n=${sent}`);
   } catch (err) {
@@ -329,13 +341,17 @@ async function updateSetting(env: AppEnv, form: FormData | null, back: (params: 
       next.unit[slug] = on;
     } else if (key === "quiz-emails") {
       next.quizEmails = on;
+    } else if (key === "copies-commandes") {
+      const list = parseEmailList(String(form?.get("adresses") ?? "").slice(0, 1000));
+      if (!list) return back("erreur=copies");
+      next.orderCopies = list;
     } else if (key.startsWith("bio:") && BIO_ITEMS.some((i) => `bio:${i.key}` === key)) {
       next.bio = { ...current.bio, [key.slice(4) as BioKey]: on };
     } else if (key.startsWith("lien:") && current.links.some((l) => `lien:${l.id}` === key)) {
       next.links = current.links.map((l) => (`lien:${l.id}` === key ? { ...l, on } : l));
     } else return back("erreur=reglage");
     await saveSettings(env, next);
-    console.log("admin: réglage", key, form?.get("pack") ?? "", on ? "activé" : "désactivé");
+    console.log("admin: réglage", key, form?.get("pack") ?? "", key === "copies-commandes" ? `${next.orderCopies.length} adresse(s)` : on ? "activé" : "désactivé");
     return back("ok=reglage");
   } catch (err) {
     console.error("admin: réglage", err instanceof Error ? err.message : err);
@@ -461,6 +477,7 @@ const errorMessage = (code: string) =>
     annulation: "Resend n'a pas pu annuler l'envoi (déjà parti ?). Actualise la page.",
     reglage: "Le réglage n'a pas pu être enregistré. Réessaie.",
     adresse: "Adresse email invalide.",
+    copies: `Adresse invalide : vérifie l'orthographe (${MAX_ORDER_COPIES} adresses maximum, séparées par une virgule).`,
     apercu: "L'envoi des exemples s'est arrêté (Resend). Les premiers sont peut-être partis : réessaie dans une minute.",
     lien: "Bouton invalide : un texte et une adresse en https://, mailto: ou /page du site.",
     "liens-max": `Maximum ${MAX_LINKS} boutons : supprimes-en un d'abord.`,

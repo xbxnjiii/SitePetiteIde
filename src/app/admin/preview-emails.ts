@@ -36,7 +36,7 @@ export async function sendAllPreviews(env: AppEnv, to: string): Promise<number> 
 
   const steps: (() => Promise<unknown>)[] = [
     // 1. Achat numérique
-    () => sendOrderEmail(env, { to, packName: pack.name, amountCents: pack.priceCents, reference, links, imagesUrl, expiresAt, idempotencyKey: key("commande") }),
+    () => sendOrderEmail(env, { to, packName: pack.name, amountCents: pack.priceCents, reference, links, imagesUrl, expiresAt, idempotencyKey: key("commande"), copy: false }),
     // 2. Achat papier (confirmation + adresse, numérique offert)
     () =>
       sendOrderEmail(env, {
@@ -48,6 +48,7 @@ export async function sendAllPreviews(env: AppEnv, to: string): Promise<number> 
         imagesUrl,
         expiresAt,
         idempotencyKey: key("commande-papier"),
+        copy: false,
         shippingLines: address,
       }),
     // 3. Alerte « commande papier à préparer » (pour La Petite IDE)
@@ -62,11 +63,12 @@ export async function sendAllPreviews(env: AppEnv, to: string): Promise<number> 
         deliverable: true,
         adminUrl: `${base}/admin?vue=a-expedier`,
         sessionId,
+        copy: false,
       }),
     // 4. Colis expédié (numéro de suivi)
-    () => sendShippedEmail(env, { to, packName: pack.name, reference, tracking: "6A12345678901", sessionId }),
+    () => sendShippedEmail(env, { to, packName: pack.name, reference, tracking: "6A12345678901", sessionId, copy: false }),
     // 5. « Retrouver mon achat »
-    () => sendRecoveryEmail(env, to, [{ packName: pack.name, reference, url: `${base}/retrouver-mon-achat` }], expiresAt, key("retrouver")),
+    () => sendRecoveryEmail(env, to, [{ packName: pack.name, reference, url: `${base}/retrouver-mon-achat` }], expiresAt, key("retrouver"), false),
     // 6. Mise à jour d'un pack
     () =>
       sendUpdateEmails(
@@ -74,6 +76,7 @@ export async function sendAllPreviews(env: AppEnv, to: string): Promise<number> 
         [{ to, packName: pack.name, links, imagesUrl, expiresAt }],
         "Exemple de message : nouvelle fiche ajoutée, valeurs précisées.",
         key("maj"),
+        false,
       ),
     // 7 à 10. Emails du quiz (envoyée tout de suite pour l'aperçu, au lieu de J+2 et J+5)
     () =>

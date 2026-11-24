@@ -82,6 +82,8 @@ export interface SettingsView {
   resetAt: number | null;
   bio: { key: string; label: string; help: string; on: boolean }[];
   links: BioLink[];
+  /** Adresses en copie cachée des emails de commande (production uniquement). */
+  orderCopies: string[];
 }
 
 export interface SiteInfo {
@@ -631,6 +633,24 @@ function settingsSection(s: SettingsView, site: SiteInfo): string {
       Avant d'activer : déposer un PDF par fiche dans R2 (dossier « fiches » du pack).</p>
     ${s.unit.length ? s.unit.map((p) => toggle("unite", p.slug, p.on, p.name, p.on ? "En vente à l'unité" : "Pack entier uniquement")).join("") : `<p class="muted">Aucun pack n'est prévu pour la vente à l'unité.</p>`}
   </section>` : ""}
+
+  <section class="card" id="copies">
+    <header class="card__head"><h2>📬 Copie des emails de commande</h2></header>
+    <p class="muted">Ces adresses reçoivent une copie cachée de chaque email lié aux commandes : confirmation d'achat (numérique et papier),
+      commande papier à préparer, colis expédié, « Retrouver mon achat » et mise à jour d'un pack (une seule copie par envoi).
+      Les emails du quiz ne sont pas copiés.</p>
+    ${
+      site.preprod
+        ? `<p class="muted"><strong>Désactivé en préprod</strong> : les copies ne partent que depuis le site de production.</p>`
+        : `<form method="post" class="stack">
+      ${hiddenFields("reglages", "", { action: "reglage", cle: "copies-commandes" })}
+      <label>Adresses <span class="muted">(séparées par une virgule, vide = aucune copie)</span>
+        <textarea name="adresses" rows="2" maxlength="1000" autocomplete="off" spellcheck="false" placeholder="prenom@exemple.fr, autre@exemple.fr">${esc(s.orderCopies.join(", "))}</textarea>
+      </label>
+      <button type="submit" class="btn">Enregistrer</button>
+    </form>`
+    }
+  </section>
 
   <section class="card">
     <header class="card__head"><h2>📩 Emails du quiz</h2></header>
