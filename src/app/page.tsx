@@ -60,7 +60,7 @@ export default async function BioPage() {
                     <SourceLink href={`/${p.slug}`} className="bio-card">
                       {p.images ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.images.card} alt="" width={800} height={800} className="bio-card__thumb" />
+                        <img src={p.images.bio ?? p.images.card} alt="" width={800} height={800} className="bio-card__thumb" />
                       ) : (
                         <PackCover icon={p.icon} tone={p.tone} stacked={false} className="bio-card__cover" />
                       )}

@@ -17,7 +17,7 @@ export interface CatalogImage {
 export interface CatalogPack {
   slug: string;
   name: string;
-  /** Nom court (« Pack Constantes »). */
+  /** Nom court (« Les constantes »). */
   shortName: string;
   tagline: string;
   /** Visuel du pack numérique. */
@@ -55,7 +55,7 @@ export async function shopConfig(env: AppEnv): Promise<ShopConfig> {
     return {
       slug: pack.slug,
       name: pack.name,
-      shortName: pack.name.replace(/^Pack Mémos : /, "Pack "),
+      shortName: pack.name,
       tagline: pack.tagline,
       image: image ? { src: image.src, width: image.width, height: image.height } : null,
       paperImage: photo ? { src: photo.src, width: photo.width, height: photo.height } : image ? { src: image.src, width: image.width, height: image.height } : null,

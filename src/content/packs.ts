@@ -26,8 +26,10 @@ export interface PackFile {
 }
 
 export interface PackImages {
-  /** Visuel carré (page d'accueil « lien en bio »), dans public/. */
+  /** Visuel carré du pack (aperçus, quiz, page « Tous les packs »), dans public/. */
   card: string;
+  /** Visuel de la page de liens (accueil) uniquement. Sinon : `card`. */
+  bio?: string;
   /** Visuel détaillé (page de vente), dans public/. */
   sale: string;
   /** Dimensions du visuel de vente [largeur, hauteur]. */
@@ -148,10 +150,10 @@ const CONSTANTES_FICHES = [
 export const packs: Pack[] = [
   {
     slug: "pack-des-constantes",
-    name: "Pack Mémos : Constantes",
+    name: "Les constantes",
     headline: "Les constantes à mémoriser en 1 clin d'œil 👁️",
     promise: "7 fiches mémo ultra-visuelles + 1 fiche bonus, pour réviser l'essentiel sans rien de superflu.",
-    tagline: "7 fiches mémo + 1 bonus pour réviser les paramètres vitaux.",
+    tagline: "Des supports adaptés pour réviser les paramètres vitaux.",
     bonus: {
       title: "Fiche spéciale « La Petite IDE »",
       text: "Introuvable ailleurs : des astuces d'étudiants pour mémoriser durablement les valeurs et les retrouver facilement.",
@@ -162,7 +164,8 @@ export const packs: Pack[] = [
     icon: "heart",
     tone: "pink",
     images: {
-      card: "/img/packs/pack-constantes-v2-carre.webp",
+      card: "/img/packs/numerique-telephone.webp",
+      bio: "/img/packs/les-constantes-bio.webp",
       sale: "/img/packs/pack-constantes-v3-detail.webp",
       saleSize: [1100, 1100],
       og: "/img/packs/pack-constantes-v2-og.jpg",
@@ -175,7 +178,7 @@ export const packs: Pack[] = [
           label: "Aperçu des fiches numériques.",
         },
       ],
-      alt: "Pack Mémos : Constantes — 8 fiches : fréquence cardiaque, fréquence respiratoire, température, tension artérielle, glycémie, saturation (SpO2), diurèse et une fiche bonus pour mieux apprendre",
+      alt: "Les constantes — 8 fiches : fréquence cardiaque, fréquence respiratoire, température, tension artérielle, glycémie, saturation (SpO2), diurèse et une fiche bonus pour mieux apprendre",
     },
     // Liste des fiches (non affichée sur le site : le visuel détaillé la présente).
     items: [
@@ -196,7 +199,7 @@ export const packs: Pack[] = [
       {
         key: "pack-des-constantes/pack-des-constantes.pdf",
         downloadName: "La-Petite-IDE-Pack-Memos-Constantes.pdf",
-        label: "Pack Mémos : Constantes (PDF)",
+        label: "Les constantes (PDF)",
       },
     ],
     // ⚠️ Prix et caractéristiques PROVISOIRES, à valider par La Petite IDE.

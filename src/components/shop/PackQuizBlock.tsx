@@ -24,7 +24,7 @@ export function PackQuizBlock({
   const href = `/${pack.slug}`;
   const img = pack.images ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={pack.images.card} alt="" width={800} height={800} className="pq__img" fetchPriority="high" />
+    <img src={pack.images.bio ?? pack.images.card} alt="" width={800} height={800} className="pq__img" fetchPriority="high" />
   ) : (
     <PackCover icon={pack.icon} tone={pack.tone} stacked={false} className="pq__img" />
   );

@@ -120,7 +120,6 @@ export default async function PackPage({ params }: { params: Params }) {
               slides={[
                 ...paperPhotos.map((p) => ({ ...p, label: "Fiches de poche" })),
                 ...(pack.revision?.photos ?? []).map((p) => ({ ...p, label: "Fiches de révision" })),
-                { src: pack.images.card, alt: pack.images.alt, width: 800, height: 800 },
                 ...(pack.images.gallery ?? []),
               ]}
             />
@@ -171,7 +170,7 @@ export default async function PackPage({ params }: { params: Params }) {
       </section>
 
       <section className="container sale-content" aria-labelledby="contenu-title">
-        <h2 id="contenu-title">Dans le pack</h2>
+        <h2 id="contenu-title">Dans le format numérique</h2>
         {pack.previews?.length ? (
           <div className="sale-sheets">
             <SheetPreviews
@@ -219,6 +218,50 @@ export default async function PackPage({ params }: { params: Params }) {
             <p>
               <strong>{pack.bonus.title}</strong> {pack.bonus.text}
             </p>
+          </div>
+        ) : null}
+
+        {pack.print || pack.revision ? (
+          <div className="formats">
+            <h3 className="formats__title">Et en papier ?</h3>
+            <ul className="formats__list">
+              {pack.print ? (
+                <li>
+                  <span className="formats__icon" aria-hidden="true">
+                    <Icon name="note" />
+                  </span>
+                  <p>
+                    <strong>Fiches de poche</strong>
+                    Les {pack.items.length} fiches en petit format, plastifiées et réunies sur un anneau : à glisser dans ta blouse
+                    pour les avoir sous la main en stage.
+                  </p>
+                </li>
+              ) : null}
+              {pack.revision ? (
+                <li>
+                  <span className="formats__icon formats__icon--blue" aria-hidden="true">
+                    <Icon name="note" />
+                  </span>
+                  <p>
+                    <strong>Fiches de révision</strong>
+                    Une fiche A4 plastifiée par constante : complète le recto au feutre effaçable, vérifie au verso, efface et
+                    recommence jusqu&apos;à tout savoir.
+                  </p>
+                </li>
+              ) : null}
+              {pack.bundle && pack.print && pack.revision ? (
+                <li>
+                  <span className="formats__icon formats__icon--green" aria-hidden="true">
+                    <Icon name="gift" />
+                  </span>
+                  <p>
+                    <strong>Pack complet</strong>
+                    Le numérique, les fiches de poche et les fiches de révision ensemble, au meilleur prix.
+                  </p>
+                </li>
+              ) : null}
+            </ul>
+            <p className="formats__note">La version numérique est offerte avec chaque format papier.</p>
           </div>
         ) : null}
       </section>

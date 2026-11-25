@@ -1592,3 +1592,19 @@ img.bio__avatar { width: 128px; height: 128px; }
 .pick__cta { gap: 8px; }
 .pick__cta svg { width: 19px; height: 19px; }
 .offer__body .offer__gift + .offer__gift { margin-left: 4px; }
+/* Cartes sans titre : le nom du format plus visible */
+.offer__kicker { font-size: 0.84rem; margin-bottom: 4px; }
+.offer__kicker svg { width: 17px; height: 17px; }
+
+/* « Et en papier ? » : explication courte de chaque format papier */
+.formats { margin-top: 22px; }
+.formats__title { margin: 0 0 10px; font-size: 1.1rem; text-align: center; }
+.formats__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.formats__list li { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; background: #fff; border: 1px solid var(--c-line); border-radius: 18px; }
+.formats__list p { margin: 0; font-size: 0.86rem; line-height: 1.45; color: var(--c-ink-soft); }
+.formats__list strong { display: block; color: var(--c-ink); font-family: var(--font-title); font-size: 0.95rem; }
+.formats__icon { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 12px; background: var(--c-accent-50); color: var(--c-accent-dark); }
+.formats__icon svg { width: 19px; height: 19px; }
+.formats__icon--blue { background: var(--c-primary-50); color: var(--c-primary-dark); }
+.formats__icon--green { background: #e3f5ec; color: #1f6b4f; }
+.formats__note { margin: 10px 0 0; text-align: center; font-size: 0.8rem; color: var(--c-ink-soft); }

@@ -6,7 +6,6 @@ import { formatPrice } from "@/lib/format";
 import { type CartLine, lineKey } from "@/lib/cart";
 import type { CatalogPack, ShopConfig } from "@/lib/catalog";
 import { isPhysical } from "@/content/packs";
-import { IS_PREPROD } from "@/lib/format";
 import { FichePicker } from "./PackCheckout";
 import { FreeShippingBar, SuggestionList, lineDetail } from "./CartView";
 import { BUY_EVENT, type BuyRequest } from "./buy-event";
@@ -46,37 +45,13 @@ export function PackOffers({ slug, config, packImage, paperPhoto, paperSpecs, re
   const lines = useCart();
   const inCart = (f: string) => lines.some((l) => l.pack === slug && l.format === f);
 
-  // Produits proposés, dans l'ordre d'affichage : pack complet, numérique, fiches de poche, fiches de révision.
+  // Produits proposés, dans l'ordre d'affichage : numérique, fiches de poche, fiches de révision, pack complet.
   const products: Product[] = [];
-  if (bundle) {
-    const separate = print && revision ? pack.priceCents + print.priceCents + revision.priceCents : 0;
-    products.push({
-      format: "complet",
-      icon: "gift",
-      kicker: "Pack complet",
-      title: "Tout pour réussir",
-      short: "Numérique + poche + révision",
-      points: ["Numérique + fiches de poche + fiches de révision"],
-      priceCents: bundle.priceCents,
-      note: "+ Livraison",
-      save: separate > bundle.priceCents ? `Tu économises ${formatPrice(separate - bundle.priceCents)}` : undefined,
-      image: bundle.image,
-      badge: "Meilleure offre",
-      badgeCls: "offer__badge--bundle",
-      listBadge: true,
-      cls: "offer--bundle",
-      gift: false,
-      shipped: true,
-      available: !bundle.soldOut,
-    });
-  }
   products.push({
     format: "pdf",
     icon: "phone",
     kicker: "Version numérique",
-    title: "Sur ton téléphone, tout de suite",
-    short: `${pack.packCount} fiches · PDF et images`,
-    points: [`${pack.packCount} fiches en PDF et en images`, "Reçues par email après le paiement"],
+    points: [`${pack.packCount} fiches en image et/ou PDF`],
     priceCents: pack.priceCents,
     note: `soit ${formatPrice(Math.round(pack.priceCents / pack.packCount))} la fiche`,
     noteCls: "offer__per",
@@ -91,8 +66,6 @@ export function PackOffers({ slug, config, packImage, paperPhoto, paperSpecs, re
       format: "papier",
       icon: "note",
       kicker: "Fiches de poche",
-      title: "À glisser dans ta blouse",
-      short: "Plastifiées, pour ta blouse",
       points: [paperSpecs.join(" · ")],
       priceCents: print.priceCents,
       note: "+ Livraison",
@@ -110,8 +83,6 @@ export function PackOffers({ slug, config, packImage, paperPhoto, paperSpecs, re
       format: "revision",
       icon: "note",
       kicker: "Fiches de révision",
-      title: "Complète, corrige, recommence",
-      short: "A4 à compléter, verso corrigé",
       points: [revisionSpecs.join(" · ")],
       priceCents: revision.priceCents,
       note: "+ Livraison",
@@ -122,6 +93,26 @@ export function PackOffers({ slug, config, packImage, paperPhoto, paperSpecs, re
       gift: true,
       shipped: true,
       available: !revision.soldOut,
+    });
+  }
+  if (bundle) {
+    const separate = print && revision ? pack.priceCents + print.priceCents + revision.priceCents : 0;
+    products.push({
+      format: "complet",
+      icon: "gift",
+      kicker: "Pack complet",
+      points: ["Numérique + fiches de poche + fiches de révision"],
+      priceCents: bundle.priceCents,
+      note: "+ Livraison",
+      save: separate > bundle.priceCents ? `Tu économises ${formatPrice(separate - bundle.priceCents)}` : undefined,
+      image: bundle.image,
+      badge: "Meilleure offre",
+      badgeCls: "offer__badge--bundle",
+      listBadge: true,
+      cls: "offer--bundle",
+      gift: false,
+      shipped: true,
+      available: !bundle.soldOut,
     });
   }
 
@@ -145,10 +136,7 @@ export function PackOffers({ slug, config, packImage, paperPhoto, paperSpecs, re
   return (
     <div className="offers" id="acheter" data-buy-anchor="">
       {print || revision ? <h2 className="offers__title">Choisis ta version</h2> : null}
-      {IS_PREPROD ? (
-        <OfferPicker products={products} onAdd={(f) => add({ pack: slug, format: f, qty: 1 })} inCart={inCart} />
-      ) : (
-        <div className="offers__list">
+      <div className="offers__list">
           {products.map((p) => (
             <article key={p.format} className={`offer ${p.cls}${p.available ? "" : " offer--off"}`}>
               {p.badge ? <span className={`offer__badge ${p.badgeCls}`}>{p.badge}</span> : null}
@@ -160,7 +148,6 @@ export function PackOffers({ slug, config, packImage, paperPhoto, paperSpecs, re
                 <p className="offer__kicker">
                   <Icon name={p.icon} /> {p.kicker}
                 </p>
-                <h3 className="offer__title">{p.title}</h3>
                 <ul className="offer__points">
                   {p.points.map((t) => (
                     <li key={t}>{t}</li>
@@ -186,8 +173,7 @@ export function PackOffers({ slug, config, packImage, paperPhoto, paperSpecs, re
               </div>
             </article>
           ))}
-        </div>
-      )}
+      </div>
 
       {unit ? (
         <button type="button" className="offers__unit" onClick={() => setUnitOpen([])}>
@@ -354,9 +340,6 @@ interface Product {
   format: "pdf" | "papier" | "revision" | "complet";
   icon: UiIcon;
   kicker: string;
-  title: string;
-  /** Résumé d'une ligne (version liste). */
-  short: string;
   points: string[];
   priceCents: number;
   note?: string;
@@ -382,63 +365,5 @@ function AddButton({ available, inCart, onClick }: { available: boolean; inCart:
     <button type="button" className={inCart ? "add-btn add-btn--in" : "add-btn"} onClick={onClick} aria-label={inCart ? "Ajouter encore au panier" : "Ajouter au panier"}>
       <Icon name={inCart ? "check" : "cart"} /> {inCart ? "Ajouté" : "Ajouter"}
     </button>
-  );
-}
-
-/**
- * Version « liste » (préprod) : une ligne par produit (vignette, nom, une info, prix), on en choisit une,
- * puis un seul bouton d'ajout. Moins d'informations à lire d'un coup.
- */
-function OfferPicker({ products, onAdd, inCart }: { products: Product[]; onAdd: (f: Product["format"]) => void; inCart: (f: string) => boolean }) {
-  const first = products.find((p) => p.available) ?? products[0];
-  const [sel, setSel] = useState<Product["format"]>(first.format);
-  const cur = products.find((p) => p.format === sel) ?? first;
-  return (
-    <div className="pick">
-      <div className="pick__list" role="radiogroup" aria-label="Choisis ta version">
-        {products.map((p) => (
-          <button
-            key={p.format}
-            type="button"
-            role="radio"
-            aria-checked={sel === p.format}
-            disabled={!p.available}
-            className={`pick__row${sel === p.format ? " pick__row--on" : ""}`}
-            onClick={() => setSel(p.format)}
-          >
-            {p.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={p.image.src} alt="" width={p.image.width} height={p.image.height} loading="lazy" />
-            ) : null}
-            <span className="pick__text">
-              <strong>
-                {p.kicker}
-                {p.badge && p.listBadge ? <em>{p.badge}</em> : null}
-              </strong>
-              <span>{p.short}</span>
-            </span>
-            <span className="pick__price">
-              {formatPrice(p.priceCents)}
-              {p.shipped ? <small>+ Livraison</small> : null}
-            </span>
-          </button>
-        ))}
-      </div>
-      <p className="pick__detail">
-        {cur.gift ? (
-          <span className="offer__gift">
-            <Icon name="phone" /> Numérique offert
-          </span>
-        ) : null}
-        {cur.save ? (
-          <span className="offer__gift">
-            <Icon name="tag" /> {cur.save}
-          </span>
-        ) : null}
-      </p>
-      <button type="button" className="btn btn--primary btn--block btn--buy pick__cta" disabled={!cur.available} onClick={() => onAdd(cur.format)}>
-        <Icon name={inCart(cur.format) ? "check" : "cart"} /> {inCart(cur.format) ? "Ajouter encore" : "Ajouter au panier"} · {formatPrice(cur.priceCents)}
-      </button>
-    </div>
   );
 }

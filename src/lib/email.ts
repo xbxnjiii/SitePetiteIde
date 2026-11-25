@@ -63,7 +63,7 @@ export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey" | "co
 <html lang="fr"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">
-<title>${o.shippingLines || o.items ? "Ta commande est confirmée" : `Ton ${esc(o.packName)} est prêt`}</title>
+<title>${o.shippingLines || o.items ? "Ta commande est confirmée" : `Tes fiches « ${esc(o.packName)} » sont prêtes`}</title>
 </head>
 <body style="margin:0;padding:0;background:#F8F9FC;-webkit-text-size-adjust:100%">
 <div style="display:none;max-height:0;overflow:hidden">${o.shippingLines ? "Tes fiches papier arrivent, et ta version numérique offerte est déjà prête." : "Tes fiches sont prêtes, en PDF et en images."}</div>
@@ -75,13 +75,13 @@ export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey" | "co
       <h1 style="margin:0 0 10px;font-size:22px;line-height:28px;font-weight:800">Merci pour ta commande 💙</h1>
       ${
         o.shippingLines
-          ? `<p style="margin:0 0 16px;font-size:16px;line-height:24px;color:#5B6784">${o.items ? "Tes fiches papier sont en préparation" : `Tes fiches papier <strong style="color:#2D3A5A">${esc(o.packName)}</strong> sont en préparation`}. ${esc(SHIPPING.dispatch)} : tu recevras un email avec le numéro de suivi.</p>
+          ? `<p style="margin:0 0 16px;font-size:16px;line-height:24px;color:#5B6784">${o.items ? "Tes fiches papier sont en préparation" : `Tes fiches papier <strong style="color:#2D3A5A">« ${esc(o.packName)} »</strong> sont en préparation`}. ${esc(SHIPPING.dispatch)} : tu recevras un email avec le numéro de suivi.</p>
       ${itemsHtml}
       <p style="margin:0 0 18px;padding:12px 14px;background:#F8F9FC;border-radius:12px;font-size:14px;line-height:21px;color:#2D3A5A"><strong>Livraison</strong><br>${o.shippingLines.map(esc).join("<br>")}</p>
       <p style="margin:0 0 16px;font-size:16px;line-height:24px;color:#5B6784">En attendant, tes <strong style="color:#2D3A5A">fiches numériques offertes</strong> sont déjà prêtes 🎁</p>`
           : o.items
             ? `<p style="margin:0 0 12px;font-size:16px;line-height:24px;color:#5B6784">Ta commande est prête.</p>${itemsHtml}`
-            : `<p style="margin:0 0 22px;font-size:16px;line-height:24px;color:#5B6784">Ton <strong style="color:#2D3A5A">${esc(o.packName)}</strong> est prêt.</p>`
+            : `<p style="margin:0 0 22px;font-size:16px;line-height:24px;color:#5B6784">Tes fiches <strong style="color:#2D3A5A">« ${esc(o.packName)} »</strong> sont prêtes.</p>`
       }
     </td></tr>
     <tr><td style="padding:0 22px">
@@ -112,7 +112,7 @@ export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey" | "co
 export function orderEmailText(o: Omit<OrderEmail, "to" | "idempotencyKey" | "copy">): string {
   const print = o.shippingLines
     ? [
-        `${o.items ? "Tes fiches papier sont en préparation" : `Tes fiches papier ${o.packName} sont en préparation`}. ${SHIPPING.dispatch} : tu recevras le numéro de suivi par email.`,
+        `${o.items ? "Tes fiches papier sont en préparation" : `Tes fiches papier « ${o.packName} » sont en préparation`}. ${SHIPPING.dispatch} : tu recevras le numéro de suivi par email.`,
         ...(o.items ? ["", "Ta commande :", ...o.items.map((i) => `- ${i}`)] : []),
         "",
         "Livraison :",
@@ -122,7 +122,7 @@ export function orderEmailText(o: Omit<OrderEmail, "to" | "idempotencyKey" | "co
       ]
     : o.items
       ? ["Ta commande est prête :", ...o.items.map((i) => `- ${i}`), "", "Tes fiches :"]
-      : [`Ton ${o.packName} est prêt. Télécharge-le ici :`];
+      : [`Tes fiches « ${o.packName} » sont prêtes. Télécharge-les ici :`];
   return [
     "Merci pour ta commande !",
     "",
@@ -156,7 +156,7 @@ export async function sendOrderEmail(env: AppEnv, o: OrderEmail): Promise<void> 
       to: [o.to],
       ...bccField(bcc),
       reply_to: env.EMAIL_REPLY_TO ?? SITE.contactEmail,
-      subject: o.items ? "Ta commande La Petite IDE est confirmée 💙" : o.shippingLines ? `Commande confirmée : ${o.packName} (papier) 💙` : `Ton ${o.packName} est prêt 💙`,
+      subject: o.items ? "Ta commande La Petite IDE est confirmée 💙" : o.shippingLines ? `Commande confirmée : « ${o.packName} » (papier) 💙` : `Tes fiches « ${o.packName} » sont prêtes 💙`,
       html: orderEmailHtml(o),
       text: orderEmailText(o),
     }),
@@ -405,7 +405,7 @@ export async function sendShippedEmail(
   await sendEmail(env, {
     to: s.to,
     bcc: s.copy === false ? [] : await orderCopies(env, s.to),
-    subject: `Tes fiches ${s.packName} sont en route 📦`,
+    subject: `Tes fiches « ${s.packName} » sont en route 📦`,
     html,
     text,
     idempotencyKey: `shipped-${s.sessionId}-${s.tracking}`,
@@ -430,7 +430,7 @@ function updateEmailHtml(u: UpdateEmail, message: string): string {
     `<a href="${esc(href)}" style="display:block;margin:0 0 10px;background:${primary ? "#4E7AC7" : "#EEF3FB"};color:${primary ? "#ffffff" : "#3A63AB"};text-decoration:none;font-weight:700;text-align:center;padding:15px 18px;border-radius:14px">${esc(label)}</a>`;
   return simpleEmailHtml(
     "Tes fiches ont été mises à jour ✨",
-    `<p style="margin:0 0 14px;color:#5B6784">Bonne nouvelle : ton <strong style="color:#2D3A5A">${esc(u.packName)}</strong> a été amélioré. Voici la nouvelle version, offerte comme promis.</p>
+    `<p style="margin:0 0 14px;color:#5B6784">Bonne nouvelle : tes fiches <strong style="color:#2D3A5A">« ${esc(u.packName)} »</strong> ont été améliorées. Voici la nouvelle version, offerte comme promis.</p>
       ${message ? `<p style="margin:0 0 18px;padding:12px 14px;background:#F8F9FC;border-radius:12px">${esc(message).replace(/\n/g, "<br>")}</p>` : ""}
       ${u.links.map((l) => button(l.url, u.links.length > 1 ? `Nouveau PDF · ${l.label}` : "Télécharger le nouveau PDF", true)).join("")}
       ${u.imagesUrl ? button(u.imagesUrl, "📱 Voir les fiches en images", false) : ""}
@@ -440,7 +440,7 @@ function updateEmailHtml(u: UpdateEmail, message: string): string {
 
 function updateEmailText(u: UpdateEmail, message: string): string {
   return [
-    `Ton ${u.packName} a été mis à jour. Voici la nouvelle version, offerte :`,
+    `Tes fiches « ${u.packName} » ont été mises à jour. Voici la nouvelle version, offerte :`,
     ...(message ? ["", message, ""] : []),
     ...u.links.map((l) => `- PDF : ${l.url}`),
     ...(u.imagesUrl ? [`- En images : ${u.imagesUrl}`] : []),
@@ -478,7 +478,7 @@ export async function sendUpdateEmails(
           to: [u.to],
           ...(i === 0 && j === 0 ? bccField(bcc) : {}),
           reply_to: env.EMAIL_REPLY_TO ?? SITE.contactEmail,
-          subject: `Mise à jour de ton ${u.packName} ✨`,
+          subject: `Mise à jour de tes fiches « ${u.packName} » ✨`,
           html: updateEmailHtml(u, message),
           text: updateEmailText(u, message),
         })),

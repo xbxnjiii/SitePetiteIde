@@ -80,7 +80,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
       {isPrint ? (
         <>
           <p>
-            {several ? <>Tes fiches papier sont en préparation.</> : <>Tes fiches papier <strong>{order.access[0].pack.name}</strong> sont en préparation.</>} {SHIPPING.dispatch}, et tu recevras le
+            {several ? <>Tes fiches papier sont en préparation.</> : <>Tes fiches papier <strong>« {order.access[0].pack.name} »</strong> sont en préparation.</>} {SHIPPING.dispatch}, et tu recevras le
             numéro de suivi par email{order.email ? <> à <strong>{order.email}</strong></> : null}.
           </p>
           {order.shipping ? (
@@ -96,7 +96,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
         </>
       ) : (
         <p>
-          {several ? <>Ta commande est prête.</> : <>Ton <strong>{order.access[0].pack.name}</strong> est prêt.</>}
+          {several ? <>Ta commande est prête.</> : <>Tes fiches <strong>« {order.access[0].pack.name} »</strong> sont prêtes.</>}
           {order.email ? <> Tu vas aussi recevoir ton lien par email à <strong>{order.email}</strong>.</> : null}
         </p>
       )}

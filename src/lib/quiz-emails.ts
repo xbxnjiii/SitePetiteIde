@@ -78,7 +78,7 @@ ${
       : `<p style="margin:0 0 4px;padding:10px 12px;border-radius:12px;background:#F8F9FC;font-size:13px;line-height:19px;color:#5B6784">🎁 Ta fiche gratuite t'a déjà été envoyée avec ta première correction : retrouve-la dans tes emails.</p>`
   }
 ${correction}
-${pack ? `<p style="margin:18px 0 0;font-size:14px;line-height:21px;color:#5B6784">Tout l'essentiel des constantes en ${pack.items.length} fiches : <a href="${esc(o.packUrl)}" style="color:#4E7AC7;font-weight:700">découvrir le ${esc(pack.name)}</a></p>` : ""}`;
+${pack ? `<p style="margin:18px 0 0;font-size:14px;line-height:21px;color:#5B6784">Tout l'essentiel des constantes en ${pack.items.length} fiches : <a href="${esc(o.packUrl)}" style="color:#4E7AC7;font-weight:700">découvrir les fiches « ${esc(pack.name)} »</a></p>` : ""}`;
   return {
     subject: o.freeUrl ? `Ta correction (${score}/${total}) + ta fiche gratuite 🎁` : `Ta correction : ${score}/${total} au quiz « ${o.themeTitle} » 📝`,
     html: layout({
@@ -136,10 +136,10 @@ export function offerEmail(o: { packUrl: string; sendAt: Date; unsubscribeUrl: s
   const body = `${p("Tu as testé tes connaissances, tu as tes astuces… il ne te manque plus que les fiches pour réviser en un clin d'œil.")}
 ${pack ? `<ul style="margin:0 0 14px;padding-left:20px;font-size:14px;line-height:21px;color:#2D3A5A">${items}</ul>` : ""}
 ${offerOn ? `<div style="margin:0 0 14px;padding:12px 14px;border-radius:12px;background:#FCF0F5;font-size:14px;line-height:21px;color:#8f3a5e"><strong>${esc(OFFER.label)}</strong> avec le code <strong>${esc(OFFER.code)}</strong>, jusqu'au ${esc(OFFER.endsLabel)}.</div>` : ""}
-${button(o.packUrl, pack ? `Je découvre le ${pack.name}` : "Découvrir le pack")}
+${button(o.packUrl, pack ? `Je découvre « ${pack.name} »` : "Découvrir les fiches")}
 ${p("PDF reçu immédiatement par email, lisible sur téléphone ou à imprimer.", "font-size:13px")}`;
   return {
-    subject: pack ? `Ton ${pack.name} t'attend 💙` : "Tes fiches t'attendent 💙",
+    subject: pack ? `Tes fiches « ${pack.name} » t'attendent 💙` : "Tes fiches t'attendent 💙",
     html: layout({ preheader: "Toutes les valeurs à connaître, réunies sur des fiches ultra-visuelles.", title: "Prête à tout retenir ? 💙", body, unsubscribeUrl: o.unsubscribeUrl }),
     text: [
       pack ? `${pack.name} : ${pack.items.map((i) => i.title).join(", ")}${pack.bonus ? " + 1 fiche bonus" : ""}.` : "",

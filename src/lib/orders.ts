@@ -48,7 +48,7 @@ export interface Order {
   access: PackAccess[];
   /** Fiches papier à expédier. */
   isPrint: boolean;
-  /** Résumé lisible : « Pack Mémos : Constantes (papier ×2) + … ». */
+  /** Résumé lisible : « Les constantes (papier ×2) + … ». */
   title: string;
   /** Adresse de livraison ou point relais (papier uniquement). */
   shipping: ShippingInfo | null;
@@ -79,7 +79,7 @@ export function sessionLines(session: Stripe.Checkout.Session): CartLine[] {
   return cleanCart(raw, getPack, false);
 }
 
-/** Libellé d'une ligne : « Pack Mémos : Constantes », « … (papier ×2) », « … : Glycémie, Diurèse ». */
+/** Libellé d'une ligne : « Les constantes », « … (papier ×2) », « … : Glycémie, Diurèse ». */
 export function lineLabel(line: CartLine): string {
   const pack = getPack(line.pack);
   const name = pack?.name ?? line.pack;

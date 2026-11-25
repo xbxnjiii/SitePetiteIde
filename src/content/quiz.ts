@@ -1,6 +1,6 @@
 // ============================================================================
 //  QUIZ — un thème par entrée de `quizzes` (en bas du fichier).
-//  Thème « Les constantes » : questions alignées sur les 7 fiches et la fiche bonus du Pack Mémos : Constantes
+//  Thème « Les constantes » : questions alignées sur les 7 fiches et la fiche bonus du pack « Les constantes »
 //  (une question n'est gardée que si sa réponse figure dans les fiches).
 //  Valeurs de référence chez l'adulte, telles qu'enseignées en IFSI.
 //  `answer` = index (à partir de 0) de la bonne réponse dans `choices`.
@@ -19,7 +19,7 @@ export interface QuizQuestion {
 
 export const QUIZ_PACK_SLUG = "pack-des-constantes";
 
-/** Correspondance thème de question → fiche du Pack Mémos : Constantes. */
+/** Correspondance thème de question → fiche du pack « Les constantes ». */
 export const TOPICS = {
   fc: "Fréquence cardiaque",
   fr: "Fréquence respiratoire",
@@ -473,7 +473,7 @@ export const quizzes: QuizTheme[] = [
     status: "available",
     questions: quiz,
     packSlug: QUIZ_PACK_SLUG,
-    packName: "Pack Mémos : Constantes",
+    packName: "Les constantes",
   },
   {
     slug: "arret-cardiaque",
