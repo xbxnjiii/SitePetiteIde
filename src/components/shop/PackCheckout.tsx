@@ -12,7 +12,8 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { formatPrice } from "@/lib/format";
 import { OFFER } from "@/content/offer";
-import type { IconName, PackFormat } from "@/content/packs";
+import type { IconName } from "@/content/packs";
+import type { CartLine } from "@/lib/cart";
 import { type RelayPoint, SHIPPING, type ShippingMethod, cleanPhone, isDeliverable } from "@/content/shipping";
 import { sourceFromLocation } from "@/lib/source";
 import { STRIPE_PUBLISHABLE_KEY } from "@/lib/stripe-public";
@@ -131,18 +132,15 @@ export function FichePicker({
   );
 }
 
-/** Paiement d'un format : crée la session Stripe à l'ouverture, puis affiche Apple Pay / carte. */
+/** Paiement du panier : crée la session Stripe à l'ouverture, puis affiche Apple Pay / carte. */
 export function CheckoutPanel({
-  slug,
-  format,
-  fiches,
+  cart,
   priceCents,
   shipping = null,
 }: {
-  slug: string;
-  format: PackFormat;
-  /** Achat à l'unité : fiches choisies (indices). */
-  fiches: number[] | null;
+  /** Contenu du panier (revalidé et chiffré côté serveur). */
+  cart: CartLine[];
+  /** Total affiché avant le chargement de Stripe. */
   priceCents: number;
   shipping?: CheckoutShipping | null;
 }) {
@@ -157,9 +155,7 @@ export function CheckoutPanel({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        pack: slug,
-        format,
-        fiches,
+        panier: cart,
         source: sourceFromLocation(),
         ...(shipping ? { livraison: shipping.method.id, relais: shipping.relay } : {}),
       }),
@@ -181,9 +177,9 @@ export function CheckoutPanel({
     setClientSecret(promise);
     setStripe(stripeInstance);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug, format]);
+  }, []);
 
-  if (failed) return <HostedFallback slug={slug} format={format} fiches={fiches} priceCents={priceCents} shipping={shipping} />;
+  if (failed) return <HostedFallback cart={cart} priceCents={priceCents} shipping={shipping} />;
   if (!clientSecret || !stripe) return <div className="checkout__loading" aria-label="Chargement du paiement" />;
 
   return (
@@ -198,26 +194,23 @@ export function CheckoutPanel({
         defaultValues: { billingAddress: { address: { country: "FR" } } },
       }}
     >
-      <CheckoutForm slug={slug} format={format} fiches={fiches} priceCents={priceCents} shipping={shipping} clientSecretRef={clientSecretRef} />
+      <CheckoutForm cart={cart} priceCents={priceCents} shipping={shipping} clientSecretRef={clientSecretRef} />
     </CheckoutElementsProvider>
   );
 }
 
 function CheckoutForm({
-  slug,
-  format,
-  fiches,
+  cart,
   priceCents,
   shipping,
   clientSecretRef,
 }: {
-  slug: string;
-  format: PackFormat;
-  fiches: number[] | null;
+  cart: CartLine[];
   priceCents: number;
   shipping: CheckoutShipping | null;
   clientSecretRef: React.RefObject<string | null>;
 }) {
+  const slug = "panier";
   const state = useCheckoutElements();
   const [consent, setConsent] = useState(false);
   const [consentError, setConsentError] = useState(false);
@@ -236,7 +229,8 @@ function CheckoutForm({
   const [contactPhone, setContactPhone] = useState("");
   const [contactError, setContactError] = useState<string | null>(null);
 
-  const isPrint = format === "papier";
+  const isPrint = cart.some((l) => l.format === "papier");
+  const hasDigital = cart.some((l) => l.format !== "papier");
   const isRelay = isPrint && Boolean(shipping?.method.relay);
   const phoneOk = Boolean(cleanPhone(contactPhone, isRelay));
   const nameOk = contactName.trim().length >= 3;
@@ -335,7 +329,7 @@ function CheckoutForm({
     }
   };
 
-  if (state.type === "error") return <HostedFallback slug={slug} format={format} fiches={fiches} priceCents={priceCents} shipping={shipping} />;
+  if (state.type === "error") return <HostedFallback cart={cart} priceCents={priceCents} shipping={shipping} />;
 
   const contactBlock = isPrint ? (
     <div className="checkout__contact">
@@ -395,7 +389,7 @@ function CheckoutForm({
             if (e.target.checked) setConsentError(false);
           }}
         />
-        <ConsentText format={format} />
+        <ConsentText print={isPrint} digital={hasDigital} />
       </label>
       {consentError && !consent ? (
         <p className="checkout__hint" role="alert">
@@ -530,33 +524,21 @@ function CheckoutForm({
 }
 
 /** Secours : bouton classique vers la page de paiement Stripe (fonctionne sans JavaScript). */
-function HostedFallback({
-  slug,
-  format,
-  fiches,
-  priceCents,
-  shipping,
-}: {
-  slug: string;
-  format: PackFormat;
-  fiches: number[] | null;
-  priceCents: number;
-  shipping: CheckoutShipping | null;
-}) {
+function HostedFallback({ cart, priceCents, shipping }: { cart: CartLine[]; priceCents: number; shipping: CheckoutShipping | null }) {
+  const isPrint = cart.some((l) => l.format === "papier");
+  const hasDigital = cart.some((l) => l.format !== "papier");
   return (
     <form method="post" action="/api/checkout" className="buy-form">
-      <input type="hidden" name="pack" value={slug} />
-      <input type="hidden" name="format" value={format} />
-      {fiches ? <input type="hidden" name="fiches" value={fiches.join(",")} /> : null}
+      <input type="hidden" name="panier" value={JSON.stringify(cart)} />
       {shipping ? <input type="hidden" name="livraison" value={shipping.method.id} /> : null}
       {shipping?.relay ? <input type="hidden" name="relais" value={JSON.stringify(shipping.relay)} /> : null}
       <SourceField />
       <label className="consent">
         <input type="checkbox" name="consent" required />
-        <ConsentText format={format} />
+        <ConsentText print={isPrint} digital={hasDigital} />
       </label>
       <button type="submit" className="btn btn--primary btn--block btn--buy">
-        {format === "papier" ? "Commander mes fiches" : "Payer"} · {formatPrice(priceCents)} <Icon name="arrow" />
+        {isPrint ? "Commander" : "Payer"} · {formatPrice(priceCents)} <Icon name="arrow" />
       </button>
     </form>
   );
@@ -583,8 +565,14 @@ function SourceField() {
 }
 
 /** Texte de la case à cocher : renonciation à la rétractation pour le numérique seulement. */
-function ConsentText({ format }: { format: PackFormat }) {
-  return format === "papier" ? (
+/** Texte de la case à cocher : renonciation à la rétractation pour le numérique acheté ; 14 jours pour le papier. */
+function ConsentText({ print, digital }: { print: boolean; digital: boolean }) {
+  return print && digital ? (
+    <span>
+      J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link>, je renonce à mon droit de rétractation pour recevoir mes fiches
+      numériques immédiatement ; 14 jours pour me rétracter après réception du papier.
+    </span>
+  ) : print ? (
     <span>
       J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link>. Numérique envoyé tout de suite ; 14 jours pour te rétracter après réception du papier.
     </span>

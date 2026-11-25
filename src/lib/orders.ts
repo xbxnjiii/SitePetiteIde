@@ -1,6 +1,7 @@
 import "server-only";
 import type Stripe from "stripe";
-import { getPack, parseFiches, parseFormat, type Pack, type PackFormat } from "@/content/packs";
+import { getPack, type Pack } from "@/content/packs";
+import { type CartLine, cleanCart, decodeCart, isFullPack } from "./cart";
 import { type Carrier, type RelayPoint, type ShippingMethod, getShippingMethod, isDeliverable, methodName } from "@/content/shipping";
 import { SITE } from "./format";
 import { type AppEnv, requireVar, siteUrl } from "./env";
@@ -30,15 +31,27 @@ export const shippingSummary = (s: ShippingInfo): string[] => [
   ...(s.phone ? [`Tél. ${s.phone}`] : []),
 ];
 
+/** Accès numérique donné par la commande pour un pack : pack complet (PDF + images) ou certaines fiches. */
+export interface PackAccess {
+  pack: Pack;
+  /** Pack numérique complet : acheté seul ou offert avec les fiches papier. */
+  full: boolean;
+  /** Fiches achetées à l'unité (si le pack n'est pas complet). */
+  fiches: number[];
+}
+
 export interface Order {
   session: Stripe.Checkout.Session;
-  pack: Pack | undefined;
-  /** « papier » : fiches à expédier (PDF offert) ; « pdf » : PDF seul. */
-  format: PackFormat;
-  /** Adresse de livraison (papier uniquement). */
+  /** Contenu du panier (ancienne commande : un seul article). */
+  lines: CartLine[];
+  /** Accès numériques, un par pack. */
+  access: PackAccess[];
+  /** Fiches papier à expédier. */
+  isPrint: boolean;
+  /** Résumé lisible : « Pack Mémos : Constantes (papier ×2) + … ». */
+  title: string;
+  /** Adresse de livraison ou point relais (papier uniquement). */
   shipping: ShippingInfo | null;
-  /** Achat à l'unité : indices des fiches achetées (dans pack.items). null = pack complet. */
-  fiches: number[] | null;
   /** Paiement confirmé par Stripe. */
   paid: boolean;
   /** Remboursé ou contesté : accès aux fichiers coupé. */
@@ -59,17 +72,47 @@ export async function getOrder(stripe: Stripe, sessionId: string): Promise<Order
   return orderFromSession(session);
 }
 
+/** Lignes du panier d'une session (anciennes commandes : un seul article décrit par pack / format / fiches). */
+export function sessionLines(session: Stripe.Checkout.Session): CartLine[] {
+  const m = session.metadata ?? {};
+  const raw = m.panier ? decodeCart(m.panier) : [{ pack: m.pack, format: m.format, qty: 1, fiches: (m.fiches ?? "").split(",").filter(Boolean).map(Number) }];
+  return cleanCart(raw, getPack, false);
+}
+
+/** Libellé d'une ligne : « Pack Mémos : Constantes », « … (papier ×2) », « … : Glycémie, Diurèse ». */
+export function lineLabel(line: CartLine): string {
+  const pack = getPack(line.pack);
+  const name = pack?.name ?? line.pack;
+  if (line.format === "papier") return `${name} (papier${line.qty > 1 ? ` ×${line.qty}` : ""})`;
+  if (line.format === "fiches") return `${name} : ${(line.fiches ?? []).map((i) => pack?.items[i]?.title ?? `fiche ${i + 1}`).join(", ")}`;
+  return name;
+}
+
+/** Accès numériques d'un panier, regroupés par pack. */
+export function packAccess(lines: CartLine[]): PackAccess[] {
+  const out: PackAccess[] = [];
+  for (const line of lines) {
+    const pack = getPack(line.pack);
+    if (!pack) continue;
+    let a = out.find((x) => x.pack.slug === pack.slug);
+    if (!a) out.push((a = { pack, full: false, fiches: [] }));
+    if (isFullPack(line)) a.full = true;
+    else a.fiches = [...new Set([...a.fiches, ...(line.fiches ?? [])])].sort((x, y) => x - y);
+  }
+  return out;
+}
+
 /** Commande à partir d'une session Stripe (avec `payment_intent.latest_charge` développé). */
 export function orderFromSession(session: Stripe.Checkout.Session): Order {
   const pi = session.payment_intent as Stripe.PaymentIntent | null;
   const charge = (pi?.latest_charge ?? null) as Stripe.Charge | null;
-  const pack = getPack(session.metadata?.pack ?? "");
-  const format = parseFormat(session.metadata?.format);
+  const lines = sessionLines(session);
   return {
     session,
-    pack,
-    fiches: format === "fiches" && pack ? parseFiches(pack, session.metadata?.fiches) : null,
-    format,
+    lines,
+    access: packAccess(lines),
+    isPrint: lines.some((l) => l.format === "papier"),
+    title: lines.map(lineLabel).join(" + ") || "Commande",
     shipping: shippingInfo(session),
     paid: session.status === "complete" && (session.payment_status === "paid" || session.payment_status === "no_payment_required"),
     revoked: Boolean(charge?.refunded || charge?.disputed),
@@ -78,30 +121,37 @@ export function orderFromSession(session: Stripe.Checkout.Session): Order {
   };
 }
 
+/** Accès au pack d'un lien (jeton) : le pack nommé, ou le premier (anciens liens). */
+export const accessFor = (order: Order, slug?: string) => (slug ? order.access.find((a) => a.pack.slug === slug) : order.access[0]) ?? null;
+
 export interface DownloadLink {
   label: string;
   url: string;
 }
 
 export async function downloadLinks(env: AppEnv, order: Order, expiresAt: number = order.expiresAt): Promise<DownloadLink[]> {
-  if (!order.pack || !order.paid || order.revoked) return [];
+  if (!order.paid || order.revoked) return [];
   const secret = requireVar(env, "DOWNLOAD_TOKEN_SECRET");
-  // À l'unité : un PDF par fiche achetée.
-  if (order.format === "fiches") {
-    const files = order.pack.unit?.files ?? [];
-    return Promise.all(
-      (order.fiches ?? []).filter((i) => files[i]).map(async (i) => ({
-        label: files[i].label,
-        url: `${siteUrl(env)}/telecharger?t=${await signDownloadToken({ s: order.session.id, f: i, e: expiresAt, t: "fiche" }, secret)}`,
-      })),
-    );
+  const several = order.access.length > 1;
+  const links: DownloadLink[] = [];
+  for (const a of order.access) {
+    const p = a.pack.slug;
+    if (a.full) {
+      for (const [f, file] of a.pack.files.entries()) {
+        links.push({ label: file.label, url: `${siteUrl(env)}/telecharger?t=${await signDownloadToken({ s: order.session.id, f, e: expiresAt, p }, secret)}` });
+      }
+    } else {
+      // À l'unité : un PDF par fiche achetée.
+      const files = a.pack.unit?.files ?? [];
+      for (const f of a.fiches.filter((i) => files[i])) {
+        links.push({
+          label: several ? `${a.pack.name} · ${files[f].label}` : files[f].label,
+          url: `${siteUrl(env)}/telecharger?t=${await signDownloadToken({ s: order.session.id, f, e: expiresAt, t: "fiche", p }, secret)}`,
+        });
+      }
+    }
   }
-  return Promise.all(
-    order.pack.files.map(async (file, index) => ({
-      label: file.label,
-      url: `${siteUrl(env)}/telecharger?t=${await signDownloadToken({ s: order.session.id, f: index, e: expiresAt }, secret)}`,
-    })),
-  );
+  return links;
 }
 
 /** Livraison de la commande : point relais choisi, ou adresse saisie dans le paiement (null pour un achat numérique). */
@@ -147,18 +197,28 @@ export function shippingInfo(session: Stripe.Checkout.Session): ShippingInfo | n
   };
 }
 
-/** Images auxquelles la commande donne droit (indices dans pack.imageFiles) : toutes pour un pack, sinon les fiches achetées. */
-export function allowedImages(order: Order): number[] {
-  const count = order.pack?.imageFiles?.length ?? 0;
-  const all = Array.from({ length: count }, (_, i) => i);
-  return order.format === "fiches" ? all.filter((i) => order.fiches?.includes(i)) : all;
+/** Images auxquelles un accès donne droit (indices dans pack.imageFiles) : toutes pour un pack complet, sinon les fiches achetées. */
+export function allowedImages(a: PackAccess): number[] {
+  const all = Array.from({ length: a.pack.imageFiles?.length ?? 0 }, (_, i) => i);
+  return a.full ? all : all.filter((i) => a.fiches.includes(i));
 }
 
-/** Lien vers la page « Mes fiches en images » (null si le pack n'a pas de version images). */
+/** Liens vers la page « Mes fiches en images », un par pack qui a une version images. */
+export async function imagesLinks(env: AppEnv, order: Order, expiresAt: number = order.expiresAt): Promise<{ pack: Pack; url: string }[]> {
+  if (!order.paid || order.revoked) return [];
+  const secret = requireVar(env, "DOWNLOAD_TOKEN_SECRET");
+  const out: { pack: Pack; url: string }[] = [];
+  for (const a of order.access) {
+    if (!a.pack.imageFiles?.length) continue;
+    const token = await signDownloadToken({ s: order.session.id, f: 0, e: expiresAt, t: "gal", p: a.pack.slug }, secret);
+    out.push({ pack: a.pack, url: `${siteUrl(env)}/mes-fiches?t=${token}` });
+  }
+  return out;
+}
+
+/** Premier lien « Mes fiches en images » (null si aucun pack de la commande n'a de version images). */
 export async function imagesLink(env: AppEnv, order: Order, expiresAt: number = order.expiresAt): Promise<string | null> {
-  if (!order.pack?.imageFiles?.length || !order.paid || order.revoked) return null;
-  const token = await signDownloadToken({ s: order.session.id, f: 0, e: expiresAt, t: "gal" }, requireVar(env, "DOWNLOAD_TOKEN_SECRET"));
-  return `${siteUrl(env)}/mes-fiches?t=${token}`;
+  return (await imagesLinks(env, order, expiresAt))[0]?.url ?? null;
 }
 
 /** Référence lisible pour le client et le support (fin de l'identifiant Stripe). */

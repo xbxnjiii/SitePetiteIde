@@ -14,6 +14,8 @@ export interface DownloadClaims {
    * « img » = une image (pack.imageFiles) ; « gal » = page /mes-fiches.
    */
   t?: "img" | "gal" | "fiche";
+  /** Slug du pack (commande panier) ; absent sur les anciens liens = premier pack de la commande. */
+  p?: string;
 }
 
 const enc = new TextEncoder();
@@ -50,6 +52,7 @@ export async function verifyDownloadToken(token: string, secret: string): Promis
     const claims = JSON.parse(new TextDecoder().decode(fromB64url(payload))) as DownloadClaims;
     if (typeof claims.s !== "string" || typeof claims.f !== "number" || typeof claims.e !== "number") return null;
     if (claims.t !== undefined && claims.t !== "img" && claims.t !== "gal" && claims.t !== "fiche") return null;
+    if (claims.p !== undefined && (typeof claims.p !== "string" || claims.p.length > 80)) return null;
     if (claims.e < Math.floor(Date.now() / 1000)) return null;
     return claims;
   } catch {

@@ -6,7 +6,8 @@ import { Mascot, type MascotPose } from "@/components/ui/Mascot";
 import { SHIPPING } from "@/content/shipping";
 import { getEnvAsync } from "@/lib/env";
 import { SITE } from "@/lib/format";
-import { downloadLinks, getOrder, imagesLink, orderReference, shippingSummary } from "@/lib/orders";
+import { downloadLinks, getOrder, imagesLink, lineLabel, orderReference, shippingSummary } from "@/lib/orders";
+import { ClearCart } from "@/components/shop/CartLink";
 import { stripeClient } from "@/lib/stripe";
 
 export const metadata: Metadata = { title: "Merci pour ta commande", robots: { index: false } };
@@ -22,7 +23,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
   const env = await getEnvAsync();
   const order = sessionId ? await getOrder(stripeClient(env), sessionId) : null;
 
-  if (!order || !order.pack) {
+  if (!order || !order.access.length) {
     return (
       <Layout pose="question">
         <h1>Commande introuvable</h1>
@@ -61,15 +62,25 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
     console.error("merci: liens indisponibles", err instanceof Error ? err.message : err);
   }
 
-  const isPrint = order.format === "papier";
+  const isPrint = order.isPrint;
+  const several = order.lines.length > 1 || order.lines.some((l) => l.qty > 1);
 
   return (
     <Layout pose="bravo">
+      {/* Commande payée : le panier est vidé sur cet appareil. */}
+      <ClearCart />
       <h1>Merci pour ta commande ! 💙</h1>
+      {several ? (
+        <ul className="thanks__items">
+          {order.lines.map((l) => (
+            <li key={`${l.pack}:${l.format}`}>{lineLabel(l)}</li>
+          ))}
+        </ul>
+      ) : null}
       {isPrint ? (
         <>
           <p>
-            Tes fiches papier <strong>{order.pack.name}</strong> sont en préparation. {SHIPPING.dispatch}, et tu recevras le
+            {several ? <>Tes fiches papier sont en préparation.</> : <>Tes fiches papier <strong>{order.access[0].pack.name}</strong> sont en préparation.</>} {SHIPPING.dispatch}, et tu recevras le
             numéro de suivi par email{order.email ? <> à <strong>{order.email}</strong></> : null}.
           </p>
           {order.shipping ? (
@@ -85,7 +96,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
         </>
       ) : (
         <p>
-          Ton <strong>{order.pack.name}</strong> est prêt.
+          {several ? <>Ta commande est prête.</> : <>Ton <strong>{order.access[0].pack.name}</strong> est prêt.</>}
           {order.email ? <> Tu vas aussi recevoir ton lien par email à <strong>{order.email}</strong>.</> : null}
         </p>
       )}
