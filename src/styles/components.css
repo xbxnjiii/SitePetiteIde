@@ -1431,3 +1431,12 @@ img.bio__avatar { width: 128px; height: 128px; }
 .ship-badge svg { width: 12px; height: 12px; flex: none; }
 .ship-badge--cheap { background: #e3f5ec; color: #1f6b4f; }
 .ship-badge--fast { background: #fff1dc; color: #9a5a00; }
+
+/* Fiches de révision et pack complet */
+.offer--revision { border-color: var(--c-primary-light); background: linear-gradient(165deg, #fff 55%, var(--c-primary-50) 100%); }
+.offer--revision .offer__foot { border-top-color: var(--c-primary-light); }
+.offer__badge--revision { background: linear-gradient(135deg, #4E7AC7 0%, #6f95d6 100%); box-shadow: 0 4px 12px rgb(78 122 199 / 35%), 0 0 0 2px #fff; }
+.offer--bundle { border: 2px solid transparent; background: linear-gradient(#fff, #fff) padding-box, linear-gradient(120deg, #E0457B, #4E7AC7) border-box; }
+.offer--bundle .offer__kicker { color: var(--c-accent-dark); }
+.offer--bundle .offer__points strong { color: var(--c-success); }
+.offer__badge--bundle { background: linear-gradient(135deg, #2F8F6B 0%, #4E7AC7 100%); box-shadow: 0 4px 12px rgb(47 143 107 / 35%), 0 0 0 2px #fff; }

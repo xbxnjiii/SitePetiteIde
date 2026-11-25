@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import { getPack, parseFormat, type PackFormat } from "@/content/packs";
+import { getPack, isPhysical, parseFormat, type PackFormat } from "@/content/packs";
 import { type Carrier, methodName, parseCarrier } from "@/content/shipping";
 import { type Order, orderFromSession, orderReference, shippingInfo } from "@/lib/orders";
 
@@ -55,7 +55,7 @@ export type OrderStatus = "todo" | "late" | "shipped" | "refunded" | "pdf";
 
 export function statusOf(o: AdminOrder): OrderStatus {
   if (o.refunded) return "refunded";
-  if (o.format !== "papier") return "pdf";
+  if (!isPhysical(o.format)) return "pdf";
   if (o.shippedAt) return "shipped";
   return o.businessDaysOld > LATE_AFTER_BUSINESS_DAYS ? "late" : "todo";
 }
@@ -103,8 +103,8 @@ function toAdminOrder(s: Stripe.Checkout.Session, now = Date.now()): AdminOrder 
     discountCents: s.total_details?.amount_discount ?? 0,
     email: s.customer_details?.email ?? "",
     name: ship?.name || s.customer_details?.name || "",
-    lines: format === "papier" ? (ship?.lines ?? ["⚠️ Adresse absente : voir Stripe"]) : [],
-    deliverable: format === "papier" ? (ship?.deliverable ?? false) : true,
+    lines: isPhysical(format) ? (ship?.lines ?? ["⚠️ Adresse absente : voir Stripe"]) : [],
+    deliverable: isPhysical(format) ? (ship?.deliverable ?? false) : true,
     method: ship?.method ? methodName(ship.method) : null,
     carrier: ship?.carrier ?? null,
     shippedCarrier: parseCarrier(pi?.metadata?.[SHIPPED_CARRIER]),
@@ -181,7 +181,7 @@ export function computeStats(orders: AdminOrder[], now = new Date()): Stats {
     late: orders.filter((o) => statusOf(o) === "late").length,
     shippedThisMonth: orders.filter((o) => o.shippedAt && monthKey(new Date(o.shippedAt)) === current).length,
     monthOrders: month.length,
-    monthPrint: month.filter((o) => o.format === "papier").length,
+    monthPrint: month.filter((o) => isPhysical(o.format)).length,
     monthRevenueCents: month.reduce((sum, o) => sum + o.amountCents, 0),
     monthLabel: now.toLocaleDateString("fr-FR", { month: "long", timeZone: "Europe/Paris" }),
   };

@@ -1,4 +1,5 @@
 "use client";
+import { isPhysical } from "@/content/packs";
 import { loadStripe, type Appearance, type StripeExpressCheckoutElementConfirmEvent } from "@stripe/stripe-js";
 import {
   CheckoutElementsProvider,
@@ -236,7 +237,7 @@ function CheckoutForm({
   const [contactPhone, setContactPhone] = useState("");
   const [contactError, setContactError] = useState<string | null>(null);
 
-  const isPrint = format === "papier";
+  const isPrint = isPhysical(format);
   const isRelay = isPrint && Boolean(shipping?.method.relay);
   const phoneOk = Boolean(cleanPhone(contactPhone, isRelay));
   const nameOk = contactName.trim().length >= 3;
@@ -556,7 +557,7 @@ function HostedFallback({
         <ConsentText format={format} />
       </label>
       <button type="submit" className="btn btn--primary btn--block btn--buy">
-        {format === "papier" ? "Commander mes fiches" : "Payer"} · {formatPrice(priceCents)} <Icon name="arrow" />
+        {isPhysical(format) ? "Commander mes fiches" : "Payer"} · {formatPrice(priceCents)} <Icon name="arrow" />
       </button>
     </form>
   );
@@ -584,7 +585,7 @@ function SourceField() {
 
 /** Texte de la case à cocher : renonciation à la rétractation pour le numérique seulement. */
 function ConsentText({ format }: { format: PackFormat }) {
-  return format === "papier" ? (
+  return isPhysical(format) ? (
     <span>
       J&apos;accepte les <Link href="/cgv" target="_blank">CGV</Link>. Numérique envoyé tout de suite ; 14 jours pour te rétracter après réception du papier.
     </span>

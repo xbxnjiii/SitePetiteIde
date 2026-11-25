@@ -29,6 +29,16 @@ export interface PaperOffer {
   mondialRelayBrand: string | null;
 }
 
+/** Autre format expédié : fiches de révision A4, ou pack complet (numérique + poche + révision). */
+export interface ExtraOffer {
+  priceCents: number;
+  specs: string[];
+  photo: Photo | null;
+  soldOut: boolean;
+  /** Pack complet : total des formats achetés séparément (pour afficher l'économie). */
+  separateCents?: number;
+}
+
 interface Props {
   slug: string;
   packName: string;
@@ -37,12 +47,16 @@ interface Props {
   packCount: number;
   packImage: Photo | null;
   print: PaperOffer | null;
+  revision: ExtraOffer | null;
+  bundle: ExtraOffer | null;
+  /** Livraison des formats expédiés (commune à tous). */
+  shipping: { methods: ShippingMethod[]; mondialRelayBrand: string | null };
   unit: UnitOffer | null;
 }
 
 type Open = { format: PackFormat; fiches: number[] };
 
-export function PackOffers({ slug, packName, packCents, packCount, packImage, print, unit }: Props) {
+export function PackOffers({ slug, packName, packCents, packCount, packImage, print, revision, bundle, shipping, unit }: Props) {
   const [open, setOpen] = useState<Open | null>(null);
   const paperOn = Boolean(print && !print.soldOut);
 
@@ -52,7 +66,7 @@ export function PackOffers({ slug, packName, packCents, packCount, packImage, pr
       const { fiche } = (e as CustomEvent<BuyRequest>).detail ?? {};
       if (unit && typeof fiche === "number" && fiche >= 0 && fiche < unit.items.length) {
         setOpen({ format: "fiches", fiches: [fiche] });
-      } else if (print) {
+      } else if (print || revision) {
         requestAnimationFrame(() => document.getElementById("acheter")?.scrollIntoView({ behavior: "smooth", block: "start" }));
       } else {
         setOpen({ format: "pdf", fiches: [] });
@@ -60,11 +74,12 @@ export function PackOffers({ slug, packName, packCents, packCount, packImage, pr
     };
     window.addEventListener(BUY_EVENT, onBuy);
     return () => window.removeEventListener(BUY_EVENT, onBuy);
-  }, [unit, print]);
+  }, [unit, print, revision]);
+  const fromShipping = shipping.methods.length ? Math.min(...shipping.methods.map((m) => m.priceCents)) : null;
 
   return (
     <div className="offers" id="acheter" data-buy-anchor="">
-      {print ? <h2 className="offers__title">Choisis ta version</h2> : null}
+      {print || revision ? <h2 className="offers__title">Choisis ta version</h2> : null}
       <div className="offers__list">
         <article className="offer">
           {packImage ? (
@@ -131,6 +146,80 @@ export function PackOffers({ slug, packName, packCents, packCount, packImage, pr
             </div>
           </article>
         ) : null}
+
+        {revision ? (
+          <article className={revision.soldOut ? "offer offer--revision offer--off" : "offer offer--revision"}>
+            <span className="offer__badge offer__badge--revision">Pour réviser</span>
+            {revision.photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="offer__img" src={revision.photo.src} alt="" width={revision.photo.width} height={revision.photo.height} loading="lazy" />
+            ) : null}
+            <div className="offer__body">
+              <p className="offer__kicker">
+                <Icon name="note" /> Fiches de révision
+              </p>
+              <h3 className="offer__title">Complète, corrige, recommence</h3>
+              <ul className="offer__points">
+                <li>{revision.specs.join(" · ")}</li>
+                <li>
+                  <strong>+ version numérique offerte</strong>
+                </li>
+              </ul>
+            </div>
+            <div className="offer__foot">
+              <p className="offer__price">
+                <span className="price">{formatPrice(revision.priceCents)}</span>
+                {fromShipping !== null ? <small>+ livraison dès {formatPrice(fromShipping)}</small> : null}
+              </p>
+              <button
+                type="button"
+                className="btn btn--primary btn--buy offer__btn"
+                disabled={revision.soldOut}
+                onClick={() => setOpen({ format: "revision", fiches: [] })}
+              >
+                {revision.soldOut ? "Bientôt de retour" : "Je les veux"}
+              </button>
+            </div>
+          </article>
+        ) : null}
+
+        {bundle ? (
+          <article className={bundle.soldOut ? "offer offer--bundle offer--off" : "offer offer--bundle"}>
+            <span className="offer__badge offer__badge--bundle">Meilleure offre</span>
+            {bundle.photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="offer__img" src={bundle.photo.src} alt="" width={bundle.photo.width} height={bundle.photo.height} loading="lazy" />
+            ) : null}
+            <div className="offer__body">
+              <p className="offer__kicker">
+                <Icon name="gift" /> Pack complet
+              </p>
+              <h3 className="offer__title">Tout pour réussir</h3>
+              <ul className="offer__points">
+                <li>Numérique + fiches de poche + fiches de révision</li>
+                {bundle.separateCents && bundle.separateCents > bundle.priceCents ? (
+                  <li>
+                    <strong>Tu économises {formatPrice(bundle.separateCents - bundle.priceCents)}</strong>
+                  </li>
+                ) : null}
+              </ul>
+            </div>
+            <div className="offer__foot">
+              <p className="offer__price">
+                <span className="price">{formatPrice(bundle.priceCents)}</span>
+                {fromShipping !== null ? <small>+ livraison dès {formatPrice(fromShipping)}</small> : null}
+              </p>
+              <button
+                type="button"
+                className="btn btn--primary btn--buy offer__btn"
+                disabled={bundle.soldOut}
+                onClick={() => setOpen({ format: "complet", fiches: [] })}
+              >
+                {bundle.soldOut ? "Bientôt de retour" : "Je le veux"}
+              </button>
+            </div>
+          </article>
+        ) : null}
       </div>
 
       {unit ? (
@@ -148,6 +237,9 @@ export function PackOffers({ slug, packName, packCents, packCount, packImage, pr
           packCount={packCount}
           packImage={packImage}
           print={print}
+          revision={revision}
+          bundle={bundle}
+          shipping={shipping}
           unit={unit}
           initial={open}
           onSwitch={(format) => setOpen({ format, fiches: [] })}
@@ -166,6 +258,9 @@ function BuySheet({
   packCount,
   packImage,
   print,
+  revision,
+  bundle,
+  shipping,
   unit,
   initial,
   onSwitch,
@@ -226,19 +321,27 @@ function BuySheet({
   };
 
   const isUnit = format === "fiches" && unit;
-  const thumb = format === "papier" ? (print?.photo ?? packImage) : packImage;
-  const title = format === "papier" ? "Fiches de poche" : isUnit ? "Fiches à l'unité" : "Version numérique";
-  const subtitle =
-    format === "papier"
-      ? `${packName} · ${packCount} fiches plastifiées`
-      : isUnit
-        ? `${packName} · ${formatPrice(unit.priceCents)} la fiche`
-        : `${packName} · ${packCount} fiches · PDF et images`;
-  const isPaper = format === "papier" && print;
+  // Formats expédiés : fiches de poche, fiches de révision, pack complet.
+  const phys =
+    format === "papier" && print
+      ? { priceCents: print.priceCents, photo: print.photo, title: "Fiches de poche", subtitle: `${packName} · ${packCount} fiches plastifiées` }
+      : format === "revision" && revision
+        ? { priceCents: revision.priceCents, photo: revision.photo, title: "Fiches de révision", subtitle: `${packName} · fiches A4 recto à compléter, verso corrigé` }
+        : format === "complet" && bundle
+          ? { priceCents: bundle.priceCents, photo: bundle.photo, title: "Pack complet", subtitle: `${packName} · numérique + poche + révision` }
+          : null;
+  const thumb = phys?.photo ?? packImage;
+  const title = phys ? phys.title : isUnit ? "Fiches à l'unité" : "Version numérique";
+  const subtitle = phys
+    ? phys.subtitle
+    : isUnit
+      ? `${packName} · ${formatPrice(unit.priceCents)} la fiche`
+      : `${packName} · ${packCount} fiches · PDF et images`;
+  const isPaper = phys;
   const shippingCents = isPaper && method ? method.priceCents : 0;
-  const priceCents = (isPaper ? print.priceCents + shippingCents : isUnit ? unit.priceCents * fiches.length : packCents);
+  const priceCents = (isPaper ? isPaper.priceCents + shippingCents : isUnit ? unit.priceCents * fiches.length : packCents);
   const paperReady = Boolean(method && (!method.relay || relay));
-  const badges = methodBadges(print?.shippingMethods ?? []);
+  const badges = methodBadges(shipping.methods);
   const settled = fiches.join() === picked.join();
 
   return (
@@ -267,7 +370,7 @@ function BuySheet({
                 <Icon name="truck" /> Livraison <small>{SHIPPING.dispatch.toLowerCase()}</small>
               </legend>
               <div className="ship-methods">
-                {print.shippingMethods.map((m) => (
+                {shipping.methods.map((m) => (
                   <label key={m.id} className={method?.id === m.id ? "ship-method ship-method--on" : "ship-method"}>
                     <input type="radio" name={`livraison-${slug}`} checked={method?.id === m.id} onChange={() => chooseMethod(m)} />
                     <span className="ship-method__radio" aria-hidden="true" />
@@ -334,7 +437,7 @@ function BuySheet({
             </fieldset>
             <div className="buy-sheet__total">
               <span>
-                Fiches {formatPrice(print.priceCents)} + livraison {method ? formatPrice(shippingCents) : "à choisir"} · numérique offert
+                {format === "complet" ? "Pack" : "Fiches"} {formatPrice(isPaper.priceCents)} + livraison {method ? formatPrice(shippingCents) : "à choisir"} · numérique offert
               </span>
               <strong className="price">{formatPrice(priceCents)}</strong>
             </div>
@@ -354,7 +457,7 @@ function BuySheet({
           picked.length ? <div className="checkout__loading" aria-label="Mise à jour du paiement" /> : null
         ) : (
           <CheckoutPanel
-            key={isUnit ? `fiches-${fiches.join(",")}` : isPaper ? `papier-${method?.id}-${relay?.id ?? ""}` : format}
+            key={isUnit ? `fiches-${fiches.join(",")}` : isPaper ? `${format}-${method?.id}-${relay?.id ?? ""}` : format}
             slug={slug}
             format={format}
             fiches={isUnit ? fiches : null}
@@ -367,7 +470,7 @@ function BuySheet({
           <RelayPicker
             carrier={picker}
             postalCode={postalCode}
-            brand={print?.mondialRelayBrand ?? null}
+            brand={shipping.mondialRelayBrand}
             onClose={() => setPicker(null)}
             onPick={(point) => {
               setRelays((r) => ({ ...r, [picker]: point }));

@@ -2,6 +2,7 @@ import { getEnvAsync, siteUrl } from "@/lib/env";
 import { stripeClient } from "@/lib/stripe";
 import { isAllowedOrigin } from "@/lib/origin";
 import { cleanPhone, getShippingMethod } from "@/content/shipping";
+import { isPhysical } from "@/content/packs";
 
 // POST /api/checkout/consent {clientSecret, contact?: {name?, phone?}}
 // Enregistre sur la Checkout Session (avant paiement) que l'acheteur a coché :
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
     // On n'accepte que le secret exact de cette session (preuve que l'appel vient du navigateur de l'acheteur).
     if (session.client_secret !== secret || session.status !== "open") return Response.json({ error: "session" }, { status: 400 });
     const at = new Date().toISOString();
-    const isPrint = session.metadata?.format === "papier";
+    const isPrint = isPhysical(session.metadata?.format);
     // Papier : téléphone (portable pour un point relais : SMS à l'arrivée du colis) et nom du destinataire (point relais).
     let contact: Record<string, string> = {};
     if (isPrint) {

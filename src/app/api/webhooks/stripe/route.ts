@@ -4,6 +4,7 @@ import { getEnvAsync, requireVar, siteUrl } from "@/lib/env";
 import { methodName } from "@/content/shipping";
 import { downloadLinks, getOrder, imagesLink, orderReference, shippingSummary } from "@/lib/orders";
 import { stripeClient } from "@/lib/stripe";
+import { FORMAT_LABEL, isPhysical } from "@/content/packs";
 
 // Webhook Stripe : SEULE source de confirmation du paiement pour l'envoi des emails
 // (client, et pour le papier : alerte « commande à préparer »).
@@ -63,14 +64,14 @@ export async function POST(request: Request) {
     );
   };
   const reference = orderReference(order.session.id);
-  const isPrint = order.format === "papier";
+  const isPrint = isPhysical(order.format);
 
   // 4. Email au client : PDF (et, pour le papier, confirmation + adresse). Échec ⇒ 500 ⇒ Stripe réessaie.
   if (!pi?.metadata?.[SENT_FLAG]) {
     try {
       await sendOrderEmail(env, {
         to: order.email,
-        packName: order.pack.name,
+        packName: isPrint && order.format !== "papier" ? `${order.pack.name} — ${FORMAT_LABEL[order.format as "revision" | "complet"]}` : order.pack.name,
         amountCents: order.session.amount_total ?? 0,
         reference,
         links: await downloadLinks(env, order),
@@ -91,7 +92,7 @@ export async function POST(request: Request) {
     try {
       await sendPrintOrderNotice(env, {
         reference,
-        packName: order.pack.name,
+        packName: isPrint && order.format !== "papier" ? `${order.pack.name} — ${FORMAT_LABEL[order.format as "revision" | "complet"]}` : order.pack.name,
         amountCents: order.session.amount_total ?? 0,
         customerEmail: order.email,
         shippingLines: order.shipping ? shippingSummary(order.shipping) : ["⚠️ Adresse absente : voir Stripe"],

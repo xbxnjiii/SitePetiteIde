@@ -8,6 +8,7 @@ import { getEnvAsync } from "@/lib/env";
 import { SITE } from "@/lib/format";
 import { downloadLinks, getOrder, imagesLink, orderReference, shippingSummary } from "@/lib/orders";
 import { stripeClient } from "@/lib/stripe";
+import { FORMAT_LABEL, isPhysical } from "@/content/packs";
 
 export const metadata: Metadata = { title: "Merci pour ta commande", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -61,7 +62,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
     console.error("merci: liens indisponibles", err instanceof Error ? err.message : err);
   }
 
-  const isPrint = order.format === "papier";
+  const isPrint = isPhysical(order.format);
 
   return (
     <Layout pose="bravo">
@@ -69,7 +70,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
       {isPrint ? (
         <>
           <p>
-            Tes fiches papier <strong>{order.pack.name}</strong> sont en préparation. {SHIPPING.dispatch}, et tu recevras le
+            Tes {isPhysical(order.format) ? FORMAT_LABEL[order.format].toLowerCase() : "fiches papier"} <strong>{order.pack.name}</strong> {order.format === "complet" ? "(fiches de poche et de révision) sont" : "sont"} en préparation. {SHIPPING.dispatch}, et tu recevras le
             numéro de suivi par email{order.email ? <> à <strong>{order.email}</strong></> : null}.
           </p>
           {order.shipping ? (

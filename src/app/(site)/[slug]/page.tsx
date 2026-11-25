@@ -50,6 +50,14 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 }
 
 const faqFor = (pack: Pack) => [
+  ...(pack.revision
+    ? [
+        {
+          q: "C'est quoi, les fiches de révision ?",
+          a: `Une fiche A4 par constante, en carton plastifié : le recto a des trous à compléter (au feutre effaçable), le verso donne la correction. Tu peux t'entraîner autant de fois que tu veux. Livrées en ${SHIPPING.zone}, avec la version numérique offerte.`,
+        },
+      ]
+    : []),
   pack.print
     ? {
         q: "Comment je reçois mon pack ?",
@@ -110,6 +118,7 @@ export default async function PackPage({ params }: { params: Params }) {
             <PackGallery
               slides={[
                 ...paperPhotos.map((p) => ({ ...p, label: "Fiches de poche" })),
+                ...(pack.revision?.photos ?? []).map((p) => ({ ...p, label: "Fiches de révision" })),
                 { src: pack.images.card, alt: pack.images.alt, width: 800, height: 800 },
                 ...(pack.images.gallery ?? []),
               ]}
@@ -149,6 +158,23 @@ export default async function PackPage({ params }: { params: Params }) {
                   }
                 : null
             }
+            revision={
+              pack.revision
+                ? { priceCents: pack.revision.priceCents, specs: pack.revision.specs, photo: pack.revision.photos?.[0] ?? null, soldOut: Boolean(pack.revision.soldOut) }
+                : null
+            }
+            bundle={
+              pack.bundle && pack.print && pack.revision
+                ? {
+                    priceCents: pack.bundle.priceCents,
+                    specs: [],
+                    photo: pack.bundle.photo ?? paperPhotos[0] ?? null,
+                    soldOut: Boolean(pack.print.soldOut || pack.revision.soldOut),
+                    separateCents: pack.priceCents + pack.print.priceCents + pack.revision.priceCents,
+                  }
+                : null
+            }
+            shipping={{ methods: availableMethods(env), mondialRelayBrand: relayConfig(env).mondialRelayBrand }}
             unit={
               pack.unit
                 ? {

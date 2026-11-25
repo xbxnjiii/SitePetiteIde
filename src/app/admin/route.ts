@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import { getPack } from "@/content/packs";
+import { getPack, isPhysical } from "@/content/packs";
 import { publishedPacks } from "@/content/packs";
 import { sendShippedEmail, sendUpdateEmails } from "@/lib/email";
 import { IS_LIVE, IS_PREPROD, SITE } from "@/lib/format";
@@ -69,7 +69,7 @@ export async function GET(request: Request) {
 
   if (labelIds !== null) {
     const ids = new Set(labelIds.split(","));
-    return html(labelsPage(all.filter((o) => ids.has(o.id) && o.format === "papier")));
+    return html(labelsPage(all.filter((o) => ids.has(o.id) && isPhysical(o.format))));
   }
 
   // Commandes supprimées de l'admin (tests) : hors listes et statistiques, visibles dans la corbeille.
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
   const orders = all.filter((o) => !trashed(o));
   const inTab: Record<OrderTab, (o: AdminOrder) => boolean> = {
     "a-expedier": (o) => ["todo", "late"].includes(statusOf(o)),
-    expediees: (o) => o.format === "papier" && Boolean(o.shippedAt),
+    expediees: (o) => isPhysical(o.format) && Boolean(o.shippedAt),
     ventes: () => true,
     corbeille: () => true,
   };
@@ -144,6 +144,9 @@ export async function GET(request: Request) {
               print: publishedPacks()
                 .filter((p) => p.print)
                 .map((p) => ({ slug: p.slug, name: p.name, on: Boolean(applySettings(p, settings).print) })),
+              revision: publishedPacks()
+                .filter((p) => p.revision)
+                .map((p) => ({ slug: p.slug, name: p.name, on: Boolean(applySettings(p, settings).revision), bundle: Boolean(applySettings(p, settings).bundle) })),
               unit: publishedPacks()
                 .filter((p) => p.unit)
                 .map((p) => ({ slug: p.slug, name: p.name, on: Boolean(applySettings(p, settings).unit) })),
@@ -236,7 +239,7 @@ export async function POST(request: Request) {
     const pi = session.payment_intent as Stripe.PaymentIntent | null;
     const email = session.customer_details?.email;
     const pack = getPack(session.metadata?.pack ?? "");
-    if (session.metadata?.format !== "papier" || session.status !== "complete" || !pi || !email || !pack) return back("erreur=session");
+    if (!isPhysical(session.metadata?.format) || session.status !== "complete" || !pi || !email || !pack) return back("erreur=session");
 
     if (action === "annuler") {
       await stripe.paymentIntents.update(pi.id, { metadata: { [SHIPPED_AT]: "", [TRACKING]: "", [SHIPPED_CARRIER]: "" } });
@@ -346,8 +349,12 @@ async function updateSetting(env: AppEnv, form: FormData | null, back: (params: 
   const on = form?.get("valeur") === "1";
   try {
     const current = await getSettings(env);
-    const next = { ...current, print: { ...current.print }, unit: { ...current.unit } };
-    if (key === "papier") {
+    const next = { ...current, print: { ...current.print }, revision: { ...current.revision }, unit: { ...current.unit } };
+    if (key === "revision") {
+      const slug = String(form?.get("pack") ?? "");
+      if (!publishedPacks().some((p) => p.slug === slug && p.revision)) return back("erreur=pack");
+      next.revision[slug] = on;
+    } else if (key === "papier") {
       const slug = String(form?.get("pack") ?? "");
       if (!publishedPacks().some((p) => p.slug === slug && p.print)) return back("erreur=pack");
       next.print[slug] = on;

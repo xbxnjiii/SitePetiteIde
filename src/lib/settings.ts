@@ -8,6 +8,8 @@ import { type AppEnv, siteUrl } from "./env";
 export interface Settings {
   /** Vente de la version papier, par pack (slug → activée). Absent = désactivée. */
   print: Record<string, boolean>;
+  /** Vente des fiches de révision A4, par pack. Absent = désactivée. */
+  revision: Record<string, boolean>;
   /** Vente des fiches à l'unité, par pack (slug → activée). Absent = désactivée. */
   unit: Record<string, boolean>;
   /** Formulaire « correction + fiche gratuite » en fin de quiz et séquence d'emails. */
@@ -52,6 +54,7 @@ const DEFAULT_BIO = Object.fromEntries(BIO_ITEMS.map((i) => [i.key, true])) as R
 
 export const DEFAULT_SETTINGS: Settings = {
   print: {},
+  revision: {},
   unit: {},
   quizEmails: true,
   hidden: { orders: [], emails: [] },
@@ -114,6 +117,7 @@ export async function getSettings(env: AppEnv): Promise<Settings> {
       const raw = (await new Response(obj.body).json()) as Partial<Settings>;
       value = {
         print: raw.print && typeof raw.print === "object" ? raw.print : {},
+        revision: raw.revision && typeof raw.revision === "object" ? raw.revision : {},
         unit: raw.unit && typeof raw.unit === "object" ? raw.unit : {},
         quizEmails: raw.quizEmails !== false,
         hidden: { orders: ids(raw.hidden?.orders), emails: ids(raw.hidden?.emails) },
@@ -142,6 +146,9 @@ export async function saveSettings(env: AppEnv, value: Settings): Promise<void> 
 export function applySettings(pack: Pack, s: Settings): Pack {
   let p = pack;
   if (p.print && !s.print[p.slug]) p = { ...p, print: undefined };
+  if (p.revision && !s.revision?.[p.slug]) p = { ...p, revision: undefined };
+  // Pack complet : seulement si les fiches de poche ET de révision sont en vente.
+  if (p.bundle && (!p.print || !p.revision)) p = { ...p, bundle: undefined };
   if (p.unit && !s.unit[p.slug]) p = { ...p, unit: undefined };
   return p;
 }

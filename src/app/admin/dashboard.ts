@@ -1,4 +1,5 @@
 import { type AdminOrder, statusOf } from "./data";
+import { isPhysical } from "@/content/packs";
 
 // Chiffres du tableau de bord /admin, calculés à partir des commandes Stripe déjà chargées.
 
@@ -93,7 +94,7 @@ export function buildDashboard(orders: AdminOrder[], now = new Date()): Dashboar
     late: orders.filter((o) => statusOf(o) === "late").length,
     days,
     sources: [...sourceMap.values()].sort((a, b) => b.cents - a.cents || b.count - a.count),
-    formats: { pdf: last30.filter((o) => o.format !== "papier").length, papier: last30.filter((o) => o.format === "papier").length },
+    formats: { pdf: last30.filter((o) => !isPhysical(o.format)).length, papier: last30.filter((o) => isPhysical(o.format)).length },
     promoOrders: inMonth.filter((o) => o.discountCents > 0).length,
     refunds: orders.filter((o) => o.refunded && monthKey.format(new Date(o.createdAt * 1000)) === thisMonth).length,
     recent: [...orders].sort((a, b) => b.createdAt - a.createdAt).slice(0, 5),

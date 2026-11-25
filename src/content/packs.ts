@@ -40,7 +40,20 @@ export interface PackImages {
 }
 
 /** Format choisi à l'achat : pack numérique, fiches numériques à l'unité, ou fiches papier (numérique offert). */
-export type PackFormat = "pdf" | "fiches" | "papier";
+export type PackFormat = "pdf" | "fiches" | "papier" | "revision" | "complet";
+
+/** Formats expédiés (adresse, transporteur, « À expédier » dans /admin). Tous incluent la version numérique. */
+export type PhysicalFormat = "papier" | "revision" | "complet";
+export const isPhysical = (f: PackFormat | string | null | undefined): f is PhysicalFormat => f === "papier" || f === "revision" || f === "complet";
+
+/** Nom affiché de chaque format (admin, emails, Stripe). */
+export const FORMAT_LABEL: Record<PackFormat, string> = {
+  pdf: "Numérique",
+  fiches: "À l'unité",
+  papier: "Fiches de poche",
+  revision: "Fiches de révision",
+  complet: "Pack complet",
+};
 
 /** Vente des fiches numériques à l'unité (la fiche bonus reste réservée au pack). */
 export interface UnitSale {
@@ -48,6 +61,14 @@ export interface UnitSale {
   priceCents: number;
   /** Un PDF par fiche, dans le même ordre que `items`. */
   files: PackFile[];
+}
+
+/** Fiches de révision : une fiche A4 par constante, recto à compléter, verso corrigé. */
+export interface RevisionEdition {
+  priceCents: number;
+  specs: string[];
+  photos?: { src: string; width: number; height: number; alt: string }[];
+  soldOut?: boolean;
 }
 
 /** Version papier d'un pack (expédiée, avec le PDF offert). */
@@ -89,6 +110,10 @@ export interface Pack {
   files: PackFile[];
   /** Version papier. Sans ce champ, le pack n'existe qu'en PDF. */
   print?: PrintEdition;
+  /** Fiches de révision A4 (recto à trous, verso corrigé), expédiées, numérique offert. */
+  revision?: RevisionEdition;
+  /** Pack complet : numérique + fiches de poche + fiches de révision, expédié. Vendu seulement si poche et révision le sont. */
+  bundle?: { priceCents: number; photo?: { src: string; width: number; height: number; alt: string } };
   /** Vente à l'unité. Sans ce champ, le pack ne se vend qu'en entier. */
   unit?: UnitSale;
   /**
@@ -186,6 +211,14 @@ export const packs: Pack[] = [
         //{ src: "/img/packs/papier-eventail.webp", width: 1200, height: 1200, alt: "Les fiches papier du pack Constantes en éventail sur leur anneau" },
       ],
     },
+    // Fiches de révision A4 (activables dans /admin › Réglages).
+    revision: {
+      priceCents: 999,
+      specs: ["Format A4", "Carton plastifié", "Recto à compléter, verso corrigé"],
+      photos: [{ src: "/img/packs/revision-saturation.webp", width: 1200, height: 1200, alt: "Fiche de révision Saturation en oxygène, complétée au feutre effaçable" }],
+    },
+    // Pack complet : numérique + poche + révision (vendu quand les deux formats papier sont activés).
+    bundle: { priceCents: 1499, photo: { src: "/img/packs/pack-complet.webp", width: 1200, height: 1200, alt: "Fiche de révision A4 et fiches de poche du pack Constantes" } },
     // Fichiers à déposer dans le bucket R2 « la-petite-ide-pdfs », sous ces clés exactes.
     // Une image par fiche (même ordre que `items`, puis la fiche bonus).
     imageFiles: [...CONSTANTES_FICHES, ["08-fiche-bonus", "Fiche bonus"]].map(([name, label]) => ({
@@ -214,12 +247,30 @@ export const getPack = (slug: string) => publishedPacks().find((p) => p.slug ===
 
 /** Prix TTC d'un format (hors frais de port pour le papier ; prix d'UNE fiche pour l'unité). */
 export const formatPriceCents = (pack: Pack, format: PackFormat) =>
-  format === "papier" && pack.print ? pack.print.priceCents : format === "fiches" && pack.unit ? pack.unit.priceCents : pack.priceCents;
+  format === "papier" && pack.print
+    ? pack.print.priceCents
+    : format === "revision" && pack.revision
+      ? pack.revision.priceCents
+      : format === "complet" && pack.bundle
+        ? pack.bundle.priceCents
+        : format === "fiches" && pack.unit
+          ? pack.unit.priceCents
+          : pack.priceCents;
 
 /** Le format papier est-il achetable pour ce pack ? */
 export const canBuyPrint = (pack: Pack) => Boolean(pack.print && !pack.print.soldOut);
 
-export const parseFormat = (v: unknown): PackFormat => (v === "papier" ? "papier" : v === "fiches" ? "fiches" : "pdf");
+export const parseFormat = (v: unknown): PackFormat =>
+  v === "papier" || v === "fiches" || v === "revision" || v === "complet" ? v : "pdf";
+
+/** Ce format est-il achetable en ce moment pour ce pack (après les réglages) ? */
+export function canBuyFormat(pack: Pack, format: PackFormat): boolean {
+  if (format === "papier") return canBuyPrint(pack);
+  if (format === "revision") return Boolean(pack.revision && !pack.revision.soldOut);
+  if (format === "complet") return Boolean(pack.bundle && canBuyPrint(pack) && pack.revision && !pack.revision.soldOut);
+  if (format === "fiches") return Boolean(pack.unit);
+  return true;
+}
 
 /**
  * Fiches choisies (indices dans `items`), à partir de « 0,2,5 » ou d'un tableau.

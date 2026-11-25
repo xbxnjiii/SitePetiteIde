@@ -1,4 +1,5 @@
 import type { AdminOrder } from "./data";
+import { FORMAT_LABEL, isPhysical } from "@/content/packs";
 
 // Export comptable (livre des recettes) au format CSV compatible Excel :
 // séparateur « ; », virgule décimale, BOM UTF-8 pour les accents.
@@ -30,7 +31,7 @@ export function ordersCsv(orders: AdminOrder[]): string {
     day(o.createdAt),
     o.reference,
     o.email,
-    o.format === "papier" ? "Vente de marchandises (papier)" : "Contenu numérique",
+    isPhysical(o.format) ? `Vente de marchandises (${FORMAT_LABEL[o.format].toLowerCase()})` : "Contenu numérique",
     o.packName,
     euros(o.amountCents),
     euros(o.shippingCents),
@@ -47,8 +48,8 @@ export function ordersCsv(orders: AdminOrder[]): string {
   const totals = [
     [],
     ["TOTAL", "", "", "", `${orders.length} commande(s)`, sum((o) => o.amountCents), sum((o) => o.shippingCents), sum((o) => o.discountCents), sum((o) => o.refundedCents), sum(net)],
-    ["Dont contenu numérique", "", "", "", "", "", "", "", "", sum(net, (o) => o.format !== "papier")],
-    ["Dont ventes de marchandises", "", "", "", "", "", "", "", "", sum(net, (o) => o.format === "papier")],
+    ["Dont contenu numérique", "", "", "", "", "", "", "", "", sum(net, (o) => !isPhysical(o.format))],
+    ["Dont ventes de marchandises", "", "", "", "", "", "", "", "", sum(net, (o) => isPhysical(o.format))],
   ];
 
   return "﻿" + [HEADER, ...rows, ...totals].map((r) => r.map((v) => cell(String(v))).join(";")).join("\r\n") + "\r\n";

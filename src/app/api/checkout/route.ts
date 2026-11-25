@@ -1,6 +1,6 @@
 import type Stripe from "stripe";
 import { applySettings, getSettings } from "@/lib/settings";
-import { canBuyPrint, formatPriceCents, getPack, parseFiches, parseFormat, type Pack, type PackFormat } from "@/content/packs";
+import { FORMAT_LABEL, canBuyFormat, isPhysical, formatPriceCents, getPack, parseFiches, parseFormat, type Pack, type PackFormat } from "@/content/packs";
 import { type RelayPoint, type ShippingMethod, cleanRelayPoint, getShippingMethod, methodName } from "@/content/shipping";
 import { type AppEnv, getEnvAsync, siteUrl } from "@/lib/env";
 import { isAllowedOrigin } from "@/lib/origin";
@@ -63,13 +63,13 @@ export async function POST(request: Request) {
   if (format === "fiches" && !fiches) {
     return wantsJson ? Response.json({ error: "fiches" }, { status: 400 }) : Response.redirect(`${base}/${pack.slug}?erreur=fiches`, 303);
   }
-  if (format === "papier" && !canBuyPrint(pack)) {
+  if ((isPhysical(format) || format === "fiches") && !canBuyFormat(pack, format)) {
     return wantsJson ? Response.json({ error: "indisponible" }, { status: 409 }) : Response.redirect(`${base}/${pack.slug}?erreur=indisponible`, 303);
   }
 
   // Papier : mode de livraison proposé en ce moment, et point relais choisi sur la carte du transporteur.
   let shipping: { method: ShippingMethod; relay: RelayPoint | null } | null = null;
-  if (format === "papier") {
+  if (isPhysical(format)) {
     const method = getShippingMethod(methodRaw);
     const relay = method?.relay ? cleanRelayPoint(relayRaw) : null;
     if (!method || !availableMethods(env).some((m) => m.id === method.id) || (method.relay && !relay)) {
@@ -170,12 +170,19 @@ async function createSession(
   // Le prix vient de Stripe (jamais du navigateur), et doit correspondre au prix affiché.
   const lookupKey = priceLookupKey(pack.slug, format);
   const price = await syncedPrice(stripe, lookupKey, formatPriceCents(pack, format), {
-    name: format === "fiches" ? `${pack.name} — fiche à l'unité` : format === "papier" ? `${pack.name} — fiches papier` : pack.name,
-    description: format === "fiches" ? "Une fiche numérique (PDF et image) au choix." : pack.tagline,
-    taxCode: format === "papier" ? "txcd_99999999" : "txcd_10000000",
+    name: format === "fiches" ? `${pack.name} — fiche à l'unité` : isPhysical(format) ? `${pack.name} — ${FORMAT_LABEL[format].toLowerCase()}` : pack.name,
+    description:
+      format === "fiches"
+        ? "Une fiche numérique (PDF et image) au choix."
+        : format === "revision"
+          ? `${pack.revision?.specs.join(", ") ?? "Fiches de révision"}. Version numérique offerte.`
+          : format === "complet"
+            ? "Version numérique + fiches de poche + fiches de révision."
+            : pack.tagline,
+    taxCode: isPhysical(format) ? "txcd_99999999" : "txcd_10000000",
     metadata: { slug: pack.slug, format },
   });
-  const isPrint = format === "papier";
+  const isPrint = isPhysical(format);
   // « fiches » : indices des fiches achetées à l'unité (dans pack.items), ex. « 0,2,5 ».
   const relay = shipping?.relay;
   const metadata = {
@@ -197,7 +204,7 @@ async function createSession(
       : {}),
   };
   const description =
-    format === "papier" ? `${pack.name} — papier` : fiches ? `${pack.name} — ${fiches.map((i) => pack.items[i].title).join(", ")}` : pack.name;
+    isPhysical(format) ? `${pack.name} — ${FORMAT_LABEL[format]}` : fiches ? `${pack.name} — ${fiches.map((i) => pack.items[i].title).join(", ")}` : pack.name;
 
   const common = {
     mode: "payment" as const,

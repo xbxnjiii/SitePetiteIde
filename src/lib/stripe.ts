@@ -12,8 +12,8 @@ export function stripeClient(env: AppEnv) {
 }
 
 /** Clé de recherche Stripe du prix : le slug (pack PDF), « slug-papier » ou « slug-fiche » (voir scripts/stripe-sync.mts). */
-export const priceLookupKey = (slug: string, format: "pdf" | "fiches" | "papier" = "pdf") =>
-  format === "papier" ? `${slug}-papier` : format === "fiches" ? `${slug}-fiche` : slug;
+export const priceLookupKey = (slug: string, format: "pdf" | "fiches" | "papier" | "revision" | "complet" = "pdf") =>
+  format === "fiches" ? `${slug}-fiche` : format === "pdf" ? slug : `${slug}-${format}`;
 
 export function isEnabled(v: string | undefined, fallback: boolean) {
   if (v === undefined || v === "") return fallback;

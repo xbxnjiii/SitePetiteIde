@@ -5,6 +5,7 @@ import { QUIZ_PERIODS, type QuizStatsView } from "./quizstats";
 import { type AdminOrder, statusOf } from "./data";
 import type { AdminEmail } from "./emails";
 import type { BioLink } from "@/lib/settings";
+import { FORMAT_LABEL, isPhysical } from "@/content/packs";
 
 // Rendu HTML de la page /admin (pas de React : une page légère, rendue côté serveur).
 // Navigation : barre latérale sur ordinateur, barre d'onglets en bas sur mobile.
@@ -75,6 +76,8 @@ export interface Tools {
 export interface SettingsView {
   /** Packs qui ont une version papier, avec leur état. */
   print: { slug: string; name: string; on: boolean }[];
+  /** Packs avec fiches de révision ; « bundle » = pack complet en vente (poche + révision activées). */
+  revision: { slug: string; name: string; on: boolean; bundle: boolean }[];
   /** Packs vendables à l'unité, avec leur état. */
   unit: { slug: string; name: string; on: boolean }[];
   quizEmails: boolean;
@@ -149,7 +152,7 @@ function orderCard(o: AdminOrder, tab: Tab, q: string, trashed = false): string 
     .filter(Boolean)
     .join(" · ");
 
-  const isPrint = o.format === "papier";
+  const isPrint = isPhysical(o.format);
   const sid = { session_id: o.id };
   // Transporteur proposé à l'expédition : celui de la commande ; Mondial Relay pour les anciennes commandes (Lettre suivie).
   const carrierFor: Carrier = o.shippedCarrier ?? o.carrier ?? "mondial-relay";
@@ -213,7 +216,7 @@ function orderCard(o: AdminOrder, tab: Tab, q: string, trashed = false): string 
       <div><strong class="ref">${esc(o.reference)}</strong> ${STATUS_BADGE[status]}</div>
       <time title="${esc(dateTime(o.createdAt * 1000))}">${esc(ago(o.createdAt * 1000))}</time>
     </header>
-    <p class="pack">${esc(o.packName)}${isPrint ? " · <em>papier</em>" : ""}</p>
+    <p class="pack">${esc(o.packName)}${isPhysical(o.format) ? ` · <em>${esc(FORMAT_LABEL[o.format].toLowerCase())}</em>` : ""}</p>
     <p class="muted">${meta}</p>
     ${address}
     <p class="muted">${esc(o.email)}</p>
@@ -357,7 +360,7 @@ function dashboardSection(d: PageData): string {
     ? `<ul class="rows">${b.recent
         .map(
           (o) => `<li><a href="/admin?vue=ventes&q=${encodeURIComponent(o.reference)}">
-          <span class="rows__main"><strong>${esc(o.packName)}</strong>${o.format === "papier" ? " · papier" : ""}<span class="muted">${esc(o.email)} · ${esc(ago(o.createdAt * 1000))}</span></span>
+          <span class="rows__main"><strong>${esc(o.packName)}</strong>${isPhysical(o.format) ? ` · ${esc(FORMAT_LABEL[o.format].toLowerCase())}` : ""}<span class="muted">${esc(o.email)} · ${esc(ago(o.createdAt * 1000))}</span></span>
           <span class="rows__side">${esc(formatPrice(o.amountCents))}${STATUS_BADGE[statusOf(o)]}</span></a></li>`,
         )
         .join("")}</ul>`
@@ -636,9 +639,10 @@ function settingsSection(s: SettingsView, site: SiteInfo): string {
   return `${bioSection(s, site)}
 
   <section class="card">
-    <header class="card__head"><h2>📦 Version papier</h2></header>
-    <p class="muted">Sur O : le choix « Papier » disparaît de la page du pack et de la FAQ, et le paiement papier est refusé. Effet en moins d'une minute.</p>
-    ${s.print.length ? s.print.map((p) => toggle("papier", p.slug, p.on, p.name, p.on ? "En vente en papier" : "Numérique uniquement")).join("") : `<p class="muted">Aucun pack n'a de version papier.</p>`}
+    <header class="card__head"><h2>📦 Formats papier</h2></header>
+    <p class="muted">Sur O : le format disparaît de la page du pack et son paiement est refusé. Le pack complet (numérique + poche + révision) est en vente quand les deux formats sont sur I. Effet en moins d'une minute.</p>
+    ${s.revision.map((p) => toggle("revision", p.slug, p.on, `${p.name} · fiches de révision`, `${p.on ? "En vente" : "Masquées"} · pack complet ${p.bundle ? "en vente" : "masqué"}`)).join("")}
+    ${s.print.length ? s.print.map((p) => toggle("papier", p.slug, p.on, `${p.name} · fiches de poche`, p.on ? "En vente en papier" : "Numérique uniquement")).join("") : `<p class="muted">Aucun pack n'a de version papier.</p>`}
   </section>
 
   ${s.unit.length ? `<section class="card">
