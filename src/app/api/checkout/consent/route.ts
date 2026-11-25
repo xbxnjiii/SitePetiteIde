@@ -37,10 +37,10 @@ export async function POST(request: Request) {
       if (relay && name.length < 3) return Response.json({ error: "nom" }, { status: 400 });
       contact = { telephone: phone, ...(relay ? { destinataire: name } : {}) };
     }
+    // Renonciation à la rétractation : pour le numérique acheté (le numérique offert avec le papier n'en demande pas).
+    const hasDigital = session.metadata?.numerique === "1" || !isPrint;
     await stripe.checkout.sessions.update(sessionId, {
-      metadata: isPrint
-        ? { ...session.metadata, ...contact, cgv_acceptees_le: at }
-        : { ...session.metadata, cgv_acceptees_le: at, renonciation_retractation_le: at },
+      metadata: { ...session.metadata, ...contact, cgv_acceptees_le: at, ...(hasDigital ? { renonciation_retractation_le: at } : {}) },
     });
     return Response.json({ ok: true });
   } catch (err) {

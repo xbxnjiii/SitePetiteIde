@@ -1440,3 +1440,110 @@ img.bio__avatar { width: 128px; height: 128px; }
 .offer--bundle .offer__kicker { color: var(--c-accent-dark); }
 .offer--bundle .offer__points strong { color: var(--c-success); }
 .offer__badge--bundle { background: linear-gradient(135deg, #2F8F6B 0%, #4E7AC7 100%); box-shadow: 0 4px 12px rgb(47 143 107 / 35%), 0 0 0 2px #fff; }
+
+/* ===== Panier ============================================================ */
+.header__actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.header__actions .header__packs { margin-left: 0; }
+.header__cart {
+  position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%;
+  background: #fff; border: 1.5px solid var(--c-primary-light); color: var(--c-primary); text-decoration: none;
+  transition: transform 0.15s var(--ease), background-color 0.15s;
+}
+.header__cart svg { width: 21px; height: 21px; }
+.header__cart:hover { transform: translateY(-1px); background: var(--c-primary-50); }
+.header__cart--full { background: var(--c-primary); border-color: var(--c-primary); color: #fff; }
+.header__cart--full:hover { background: var(--c-primary-dark); }
+.header__cart-count {
+  position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 99px;
+  display: grid; place-items: center; background: var(--c-accent-dark); color: #fff; font-size: 0.72rem; font-weight: 800;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.cart-page { max-width: 680px; padding-block: 24px 8px; }
+.cart-page h1 { font-size: clamp(1.6rem, 2vw + 1rem, 2.2rem); margin-bottom: 14px; }
+.cart { display: grid; gap: 16px; }
+.cart-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.cart-line {
+  display: grid; grid-template-columns: 72px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+  padding: 10px; background: #fff; border: 1px solid var(--c-line); border-radius: 18px;
+}
+.cart-line__img { width: 72px; height: 72px; object-fit: cover; border-radius: 14px; background: var(--c-bg); }
+.cart-line__text { display: grid; gap: 2px; min-width: 0; line-height: 1.3; }
+.cart-line__text a { color: var(--c-ink); text-decoration: none; }
+.cart-line__text > span { font-size: 0.8rem; color: var(--c-ink-soft); }
+.cart-line__end { display: grid; justify-items: end; gap: 6px; }
+.cart-line__end .price { font-size: 1.02rem; }
+.cart-line__remove { width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--c-bg); color: var(--c-ink-soft); display: grid; place-items: center; cursor: pointer; }
+.cart-line__remove:hover { background: var(--c-accent-50); color: var(--c-accent-dark); }
+.cart-line__remove svg { width: 17px; height: 17px; }
+.qty { display: inline-flex; align-items: center; margin-top: 4px; border: 1.5px solid var(--c-line); border-radius: var(--r-pill); width: max-content; }
+.qty button { width: 32px; height: 30px; border: 0; background: none; font: inherit; font-size: 1.05rem; font-weight: 700; color: var(--c-primary); cursor: pointer; }
+.qty button:disabled { color: var(--c-line); cursor: default; }
+.qty output { min-width: 22px; text-align: center; font-weight: 700; font-size: 0.9rem; }
+.cart-total { margin: 0; padding: 12px 16px; display: grid; gap: 6px; background: #fff; border: 1px solid var(--c-line); border-radius: 18px; }
+.cart-total div { display: flex; justify-content: space-between; gap: 12px; font-size: 0.92rem; }
+.cart-total dt { color: var(--c-ink-soft); }
+.cart-total dd { margin: 0; font-weight: 600; }
+.cart-total__sum { padding-top: 6px; border-top: 1px dashed var(--c-line); }
+.cart-total__sum dt { color: var(--c-ink); font-weight: 800; }
+.cart-total__sum .price { font-size: 1.35rem; }
+.cart-empty { display: grid; justify-items: center; gap: 14px; padding: 24px 0; text-align: center; }
+.cart-empty .suggest { width: 100%; text-align: left; }
+.cart-more h2 { font-size: 1.1rem; margin-bottom: 10px; }
+.cart-continue { justify-self: center; font-weight: 600; color: var(--c-ink-soft); text-decoration: none; }
+.cart-continue:hover { color: var(--c-primary); }
+
+/* Livraison offerte : barre de progression */
+.free-ship { display: grid; gap: 8px; padding: 12px 14px; border-radius: 16px; background: var(--c-primary-50); }
+.free-ship p { margin: 0; display: block; font-size: 0.86rem; line-height: 1.4; }
+.free-ship p svg { width: 18px; height: 18px; vertical-align: -4px; margin-right: 4px; color: var(--c-primary); }
+.free-ship__bar { display: block; height: 7px; border-radius: 99px; background: #fff; overflow: hidden; }
+.free-ship__bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--c-primary-light), var(--c-primary)); transition: width 0.4s var(--ease); }
+.free-ship--done { background: #e3f5ec; color: #1f6b4f; }
+.free-ship--done p svg { color: #1f6b4f; }
+.free-ship--done .free-ship__bar span { background: #2f8f6b; }
+.ship-method__price s { font-weight: 600; font-size: 0.8rem; color: var(--c-ink-soft); }
+.ship-method__free { color: #1f6b4f; }
+
+/* Suggestions « Tu aimeras aussi » */
+.suggest { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.suggest__item { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px; background: #fff; border: 1px solid var(--c-line); border-radius: 16px; }
+.suggest__item img { width: 52px; height: 52px; object-fit: cover; border-radius: 12px; background: var(--c-bg); }
+.suggest__text { display: grid; min-width: 0; line-height: 1.3; color: var(--c-ink); text-decoration: none; }
+.suggest__text strong { font-size: 0.88rem; }
+.suggest__text span { font-size: 0.76rem; color: var(--c-ink-soft); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.suggest__add { white-space: nowrap; padding-inline: 12px; }
+
+/* Confirmation d'ajout au panier */
+.buy-sheet__ok { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: #e3f5ec; color: #1f6b4f; }
+.buy-sheet__ok svg { width: 24px; height: 24px; }
+.added { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: center; }
+.added img { width: 64px; height: 64px; object-fit: cover; border-radius: 14px; background: var(--c-bg); }
+.added p { margin: 0; display: grid; line-height: 1.3; }
+.added p span { font-size: 0.82rem; color: var(--c-ink-soft); }
+.buy-sheet .notice { margin: 0; }
+.added__actions { display: grid; gap: 8px; }
+.added__actions .btn svg { width: 19px; height: 19px; }
+.added__more { display: grid; gap: 8px; padding-top: 4px; }
+.added__more-title { margin: 0; font-weight: 800; font-family: var(--font-title); font-size: 0.95rem; }
+
+/* Voir aussi (bas de la page de vente) */
+.see-also { max-width: 760px; padding-top: 32px; }
+.see-also h2 { font-size: 1.3rem; text-align: center; margin-bottom: 14px; }
+.see-also__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.see-also__card { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px; background: #fff; border: 1px solid var(--c-line); border-radius: 18px; color: var(--c-ink); text-decoration: none; transition: transform 0.15s var(--ease), box-shadow 0.15s; }
+.see-also__card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.see-also__card img { width: 72px; height: 72px; object-fit: cover; border-radius: 14px; }
+.see-also__card span { display: grid; gap: 2px; line-height: 1.3; }
+.see-also__card small { font-size: 0.8rem; color: var(--c-ink-soft); }
+.see-also__card em { font-style: normal; font-weight: 800; color: var(--c-primary-dark); font-size: 0.88rem; }
+.see-also__quiz { max-width: none; margin: 0; }
+.thanks__items { list-style: none; margin: 0 auto 14px; padding: 10px 14px; max-width: 420px; text-align: left; background: #fff; border: 1px solid var(--c-line); border-radius: 14px; font-size: 0.9rem; }
+.thanks__items li + li { margin-top: 4px; }
+.logo__text { white-space: nowrap; }
+/* Téléphone : « Tous les packs » devient une icône ronde, comme le panier. */
+@media (max-width: 520px) {
+  .header__actions .header__packs { width: 44px; height: 44px; padding: 0; justify-content: center; }
+  .header__actions .header__packs span { display: none; }
+  .header__actions .header__packs svg { background: none; padding: 0; }
+}

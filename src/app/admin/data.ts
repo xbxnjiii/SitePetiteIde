@@ -1,7 +1,7 @@
 import type Stripe from "stripe";
 import { getPack, isPhysical, parseFormat, type PackFormat } from "@/content/packs";
 import { type Carrier, methodName, parseCarrier } from "@/content/shipping";
-import { type Order, orderFromSession, orderReference, shippingInfo } from "@/lib/orders";
+import { type Order, lineLabel, orderFromSession, orderReference, sessionLines, shippingInfo } from "@/lib/orders";
 
 // Lecture des commandes pour la page /admin. Tout vient de Stripe (aucune base de données) :
 // l'état « expédiée » et le numéro de suivi sont des métadonnées du PaymentIntent.
@@ -80,11 +80,10 @@ const isPaid = (s: Stripe.Checkout.Session) => s.payment_status === "paid" || s.
 
 /** Nom du pack, avec le détail des fiches pour un achat à l'unité. */
 function packLabel(s: Stripe.Checkout.Session): string {
-  const pack = getPack(s.metadata?.pack ?? "");
-  const name = pack?.name ?? s.metadata?.pack ?? "?";
-  if (s.metadata?.format !== "fiches") return name;
-  const titles = (s.metadata?.fiches ?? "").split(",").map((i) => pack?.items[Number(i)]?.title).filter(Boolean);
-  return `${name} · à l'unité : ${titles.join(", ")}`;
+  // Panier : tous les articles (« Pack … (papier ×2) + … »).
+  const lines = sessionLines(s);
+  if (!lines.length) return getPack(s.metadata?.pack ?? "")?.name ?? s.metadata?.pack ?? "?";
+  return lines.map((l) => (l.format === "fiches" ? lineLabel(l).replace(" : ", " · à l'unité : ") : lineLabel(l))).join(" + ");
 }
 
 function toAdminOrder(s: Stripe.Checkout.Session, now = Date.now()): AdminOrder {
@@ -139,8 +138,8 @@ export async function listOrdersBetween(stripe: Stripe, from: number, to: number
 export async function listPackBuyers(stripe: Stripe, slug: string): Promise<Order[]> {
   const byEmail = new Map<string, Order>();
   for await (const s of stripe.checkout.sessions.list({ status: "complete", limit: 100, expand: ["data.payment_intent.latest_charge"] })) {
-    if (s.metadata?.pack !== slug) continue;
     const order = orderFromSession(s);
+    if (!order.access.some((a) => a.pack.slug === slug)) continue;
     const email = order.email?.toLowerCase();
     if (!email || !order.paid || order.revoked || byEmail.has(email)) continue;
     byEmail.set(email, order); // la liste Stripe va de la plus récente à la plus ancienne

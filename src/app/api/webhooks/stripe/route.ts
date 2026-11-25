@@ -2,9 +2,8 @@ import Stripe from "stripe";
 import { sendOrderEmail, sendPrintOrderNotice } from "@/lib/email";
 import { getEnvAsync, requireVar, siteUrl } from "@/lib/env";
 import { methodName } from "@/content/shipping";
-import { downloadLinks, getOrder, imagesLink, orderReference, shippingSummary } from "@/lib/orders";
+import { downloadLinks, getOrder, imagesLink, lineLabel, orderReference, shippingSummary } from "@/lib/orders";
 import { stripeClient } from "@/lib/stripe";
-import { FORMAT_LABEL, isPhysical } from "@/content/packs";
 
 // Webhook Stripe : SEULE source de confirmation du paiement pour l'envoi des emails
 // (client, et pour le papier : alerte « commande à préparer »).
@@ -46,7 +45,7 @@ export async function POST(request: Request) {
     console.log("webhook: soutien reçu", order.session.amount_total);
     return Response.json({ received: true, status: "soutien" });
   }
-  if (!order.pack) {
+  if (!order.access.length) {
     console.error("webhook: pack inconnu", order.session.metadata);
     return Response.json({ received: true, status: "pack inconnu" });
   }
@@ -64,14 +63,18 @@ export async function POST(request: Request) {
     );
   };
   const reference = orderReference(order.session.id);
-  const isPrint = isPhysical(order.format);
+  const isPrint = order.isPrint;
+  // Plusieurs articles : liste dans l'email ; un seul : son nom dans le texte.
+  const items = order.lines.length > 1 || order.lines.some((l) => l.qty > 1) ? order.lines.map(lineLabel) : undefined;
+  const packName = order.lines.length === 1 ? (order.access[0]?.pack.name ?? order.title) : order.title;
 
   // 4. Email au client : PDF (et, pour le papier, confirmation + adresse). Échec ⇒ 500 ⇒ Stripe réessaie.
   if (!pi?.metadata?.[SENT_FLAG]) {
     try {
       await sendOrderEmail(env, {
         to: order.email,
-        packName: isPrint && order.format !== "papier" ? `${order.pack.name} — ${FORMAT_LABEL[order.format as "revision" | "complet"]}` : order.pack.name,
+        packName,
+        items,
         amountCents: order.session.amount_total ?? 0,
         reference,
         links: await downloadLinks(env, order),
@@ -92,7 +95,7 @@ export async function POST(request: Request) {
     try {
       await sendPrintOrderNotice(env, {
         reference,
-        packName: isPrint && order.format !== "papier" ? `${order.pack.name} — ${FORMAT_LABEL[order.format as "revision" | "complet"]}` : order.pack.name,
+        packName: order.title,
         amountCents: order.session.amount_total ?? 0,
         customerEmail: order.email,
         shippingLines: order.shipping ? shippingSummary(order.shipping) : ["⚠️ Adresse absente : voir Stripe"],
@@ -108,6 +111,6 @@ export async function POST(request: Request) {
     await mark(NOTICE_FLAG);
   }
 
-  console.log("webhook: commande traitée", reference, order.pack.slug, order.format);
+  console.log("webhook: commande traitée", reference, order.session.metadata?.panier ?? order.session.metadata?.format);
   return Response.json({ received: true, status: "emails envoyés" });
 }

@@ -7,6 +7,7 @@ const MESSAGES: Record<string, string> = {
   indisponible: "Les fiches papier sont momentanément indisponibles. La version numérique reste disponible tout de suite.",
   fiches: "Choisis au moins une fiche.",
   livraison: "Choisis ton mode de livraison (et ton point relais) pour continuer.",
+  panier: "Ton panier est vide ou n'est plus à jour : vérifie-le et réessaie.",
   prix: "Ce pack est momentanément indisponible. Réessaie un peu plus tard ou contacte-nous.",
 };
 

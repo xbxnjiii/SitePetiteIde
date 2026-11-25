@@ -75,6 +75,18 @@ export const getShippingMethod = (id: unknown): ShippingMethod | null => SHIPPIN
 /** Nom complet d'un mode, ex. « Mondial Relay · Point relais ». */
 export const methodName = (m: ShippingMethod) => `${m.carrierName} · ${m.label}`;
 
+/** Livraison offerte dès ce montant de panier (tout le panier, numérique compris, avant code promo)… */
+export const FREE_SHIPPING_FROM_CENTS = 2500;
+/** …uniquement avec ces transporteurs (Colissimo reste l'option « premium », toujours payante). */
+export const FREE_SHIPPING_CARRIERS: Carrier[] = ["mondial-relay"];
+
+/** Livraison offerte pour ce mode et ce montant de panier ? */
+export const isShippingFree = (m: ShippingMethod, subtotalCents: number) =>
+  FREE_SHIPPING_CARRIERS.includes(m.carrier) && subtotalCents >= FREE_SHIPPING_FROM_CENTS;
+
+/** Frais de port d'un mode pour ce panier. */
+export const shippingCents = (m: ShippingMethod, subtotalCents: number) => (isShippingFree(m, subtotalCents) ? 0 : m.priceCents);
+
 /** Prix de livraison le plus bas (« livraison dès 4,29 € »). */
 export const SHIPPING_FROM_CENTS = Math.min(...SHIPPING_METHODS.map((m) => m.priceCents));
 

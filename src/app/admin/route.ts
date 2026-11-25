@@ -1,11 +1,11 @@
 import type Stripe from "stripe";
-import { getPack, isPhysical } from "@/content/packs";
+import { isPhysical, getPack } from "@/content/packs";
 import { publishedPacks } from "@/content/packs";
 import { sendShippedEmail, sendUpdateEmails } from "@/lib/email";
 import { IS_LIVE, IS_PREPROD, SITE } from "@/lib/format";
 import { OFFER, isOfferActive } from "@/content/offer";
 import { type AppEnv, getEnvAsync, siteUrl } from "@/lib/env";
-import { downloadLinks, imagesLink, orderReference, shippingInfo } from "@/lib/orders";
+import { downloadLinks, imagesLink, orderReference, sessionLines, shippingInfo } from "@/lib/orders";
 import { isAllowedOrigin } from "@/lib/origin";
 import { stripeClient } from "@/lib/stripe";
 import { type AdminOrder, SHIPPED_AT, SHIPPED_CARRIER, TRACKING, listOrders, listOrdersBetween, listPackBuyers, matches, statusOf } from "./data";
@@ -238,8 +238,12 @@ export async function POST(request: Request) {
     const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ["payment_intent"] });
     const pi = session.payment_intent as Stripe.PaymentIntent | null;
     const email = session.customer_details?.email;
-    const pack = getPack(session.metadata?.pack ?? "");
-    if (!isPhysical(session.metadata?.format) || session.status !== "complete" || !pi || !email || !pack) return back("erreur=session");
+    // Packs papier de la commande (un panier peut en contenir plusieurs).
+    const paperNames = sessionLines(session)
+      .filter((l) => isPhysical(l.format))
+      .map((l) => getPack(l.pack)?.name)
+      .filter((n): n is string => Boolean(n));
+    if (!isPhysical(session.metadata?.format) || session.status !== "complete" || !pi || !email || !paperNames.length) return back("erreur=session");
 
     if (action === "annuler") {
       await stripe.paymentIntents.update(pi.id, { metadata: { [SHIPPED_AT]: "", [TRACKING]: "", [SHIPPED_CARRIER]: "" } });
@@ -252,7 +256,7 @@ export async function POST(request: Request) {
     const carrier = parseCarrier(form?.get("transporteur")) ?? ship?.carrier ?? "mondial-relay";
     await sendShippedEmail(env, {
       to: email,
-      packName: pack.name,
+      packName: paperNames.join(", "),
       reference: orderReference(session.id),
       tracking,
       sessionId: session.id,
@@ -323,13 +327,17 @@ async function sendUpdate(env: AppEnv, form: FormData | null, back: (params: str
     const expiresAt = Math.floor(Date.now() / 1000) + SITE.downloadDays * 24 * 3600;
     const targets = test ? buyers.slice(0, 1) : buyers;
     const recipients = await Promise.all(
-      targets.map(async (o) => ({
-        to: test ? notifyTo(env) : o.email!,
-        packName: o.pack!.name,
-        links: await downloadLinks(env, o, expiresAt),
-        imagesUrl: await imagesLink(env, o, expiresAt),
-        expiresAt,
-      })),
+      targets.map(async (o) => {
+        // Seulement le pack mis à jour (une commande panier peut en contenir plusieurs).
+        const only = { ...o, access: o.access.filter((a) => a.pack.slug === slug) };
+        return {
+          to: test ? notifyTo(env) : o.email!,
+          packName: only.access[0].pack.name,
+          links: await downloadLinks(env, only, expiresAt),
+          imagesUrl: await imagesLink(env, only, expiresAt),
+          expiresAt,
+        };
+      }),
     );
     // Clé d'envoi : le même envoi (pack + message, même jour) n'est jamais envoyé deux fois.
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${slug}|${message}|${new Date().toISOString().slice(0, 10)}`));

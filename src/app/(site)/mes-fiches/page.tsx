@@ -4,7 +4,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Mascot } from "@/components/ui/Mascot";
 import { signDownloadToken, verifyDownloadToken } from "@/lib/download-token";
 import { getEnvAsync, requireVar } from "@/lib/env";
-import { allowedImages, downloadLinks, getOrder } from "@/lib/orders";
+import { accessFor, allowedImages, downloadLinks, getOrder } from "@/lib/orders";
 import { stripeClient } from "@/lib/stripe";
 
 export const metadata: Metadata = { title: "Mes fiches en images", robots: { index: false, follow: false } };
@@ -21,7 +21,8 @@ export default async function MyFichesPage({ searchParams }: { searchParams: Sea
   const claims = typeof raw === "string" ? await verifyDownloadToken(raw, secret) : null;
   const order = claims?.t === "gal" ? await getOrder(stripeClient(env), claims.s) : null;
 
-  if (!claims || !order || !order.paid || order.revoked || !order.pack) {
+  const access = order ? accessFor(order, claims?.p) : null;
+  if (!claims || !order || !order.paid || order.revoked || !access) {
     return (
       <Layout>
         <Mascot pose="question" className="thanks__mascot" />
@@ -35,20 +36,22 @@ export default async function MyFichesPage({ searchParams }: { searchParams: Sea
   }
 
   // Images de la commande (toutes pour un pack, les fiches achetées sinon) réellement présentes dans le bucket.
-  const files = order.pack.imageFiles ?? [];
-  const allowed = new Set(allowedImages(order));
+  const { pack } = access;
+  const files = pack.imageFiles ?? [];
+  const allowed = new Set(allowedImages(access));
   const present = await Promise.all(files.map((f, i) => (allowed.has(i) ? (env.PDF_BUCKET?.head(f.key).catch(() => null) ?? null) : null)));
   const images = await Promise.all(
     files.map(async (file, f) =>
-      present[f] ? { label: file.label, url: `/telecharger?t=${await signDownloadToken({ s: claims.s, f, e: claims.e, t: "img" }, secret)}` } : null,
+      present[f] ? { label: file.label, url: `/telecharger?t=${await signDownloadToken({ s: claims.s, f, e: claims.e, t: "img", p: pack.slug }, secret)}` } : null,
     ),
   );
   const available = images.filter((i): i is { label: string; url: string } => i !== null);
-  const pdfs = await downloadLinks(env, order, claims.e);
+  // PDF de ce pack uniquement.
+  const pdfs = await downloadLinks(env, { ...order, access: [access] }, claims.e);
 
   return (
     <Layout>
-      <h1>{order.pack.name}</h1>
+      <h1>{pack.name}</h1>
       {available.length ? (
         <>
           <p className="fiches__tip">

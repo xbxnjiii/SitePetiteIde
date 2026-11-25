@@ -25,6 +25,8 @@ const esc = (s: string) =>
 interface OrderEmail {
   to: string;
   packName: string;
+  /** Commande de plusieurs articles (panier) : leur liste, affichée dans l'email. */
+  items?: string[];
   amountCents: number;
   reference: string;
   links: DownloadLink[];
@@ -39,6 +41,10 @@ interface OrderEmail {
 }
 
 export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey" | "copy">): string {
+  // Plusieurs articles : liste de la commande.
+  const itemsHtml = o.items
+    ? `<p style="margin:0 0 18px;padding:12px 14px;background:#F8F9FC;border-radius:12px;font-size:14px;line-height:21px;color:#2D3A5A"><strong>Ta commande</strong><br>${o.items.map((i) => esc(i)).join("<br>")}</p>`
+    : "";
   const until = new Date(o.expiresAt * 1000).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
   const font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
   const buttons = o.links
@@ -57,7 +63,7 @@ export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey" | "co
 <html lang="fr"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">
-<title>${o.shippingLines ? "Ta commande est confirmée" : `Ton ${esc(o.packName)} est prêt`}</title>
+<title>${o.shippingLines || o.items ? "Ta commande est confirmée" : `Ton ${esc(o.packName)} est prêt`}</title>
 </head>
 <body style="margin:0;padding:0;background:#F8F9FC;-webkit-text-size-adjust:100%">
 <div style="display:none;max-height:0;overflow:hidden">${o.shippingLines ? "Tes fiches papier arrivent, et ta version numérique offerte est déjà prête." : "Tes fiches sont prêtes, en PDF et en images."}</div>
@@ -69,10 +75,13 @@ export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey" | "co
       <h1 style="margin:0 0 10px;font-size:22px;line-height:28px;font-weight:800">Merci pour ta commande 💙</h1>
       ${
         o.shippingLines
-          ? `<p style="margin:0 0 16px;font-size:16px;line-height:24px;color:#5B6784">Tes fiches papier <strong style="color:#2D3A5A">${esc(o.packName)}</strong> sont en préparation. ${esc(SHIPPING.dispatch)} : tu recevras un email avec le numéro de suivi.</p>
+          ? `<p style="margin:0 0 16px;font-size:16px;line-height:24px;color:#5B6784">${o.items ? "Tes fiches papier sont en préparation" : `Tes fiches papier <strong style="color:#2D3A5A">${esc(o.packName)}</strong> sont en préparation`}. ${esc(SHIPPING.dispatch)} : tu recevras un email avec le numéro de suivi.</p>
+      ${itemsHtml}
       <p style="margin:0 0 18px;padding:12px 14px;background:#F8F9FC;border-radius:12px;font-size:14px;line-height:21px;color:#2D3A5A"><strong>Livraison</strong><br>${o.shippingLines.map(esc).join("<br>")}</p>
       <p style="margin:0 0 16px;font-size:16px;line-height:24px;color:#5B6784">En attendant, tes <strong style="color:#2D3A5A">fiches numériques offertes</strong> sont déjà prêtes 🎁</p>`
-          : `<p style="margin:0 0 22px;font-size:16px;line-height:24px;color:#5B6784">Ton <strong style="color:#2D3A5A">${esc(o.packName)}</strong> est prêt.</p>`
+          : o.items
+            ? `<p style="margin:0 0 12px;font-size:16px;line-height:24px;color:#5B6784">Ta commande est prête.</p>${itemsHtml}`
+            : `<p style="margin:0 0 22px;font-size:16px;line-height:24px;color:#5B6784">Ton <strong style="color:#2D3A5A">${esc(o.packName)}</strong> est prêt.</p>`
       }
     </td></tr>
     <tr><td style="padding:0 22px">
@@ -103,14 +112,17 @@ export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey" | "co
 export function orderEmailText(o: Omit<OrderEmail, "to" | "idempotencyKey" | "copy">): string {
   const print = o.shippingLines
     ? [
-        `Tes fiches papier ${o.packName} sont en préparation. ${SHIPPING.dispatch} : tu recevras le numéro de suivi par email.`,
+        `${o.items ? "Tes fiches papier sont en préparation" : `Tes fiches papier ${o.packName} sont en préparation`}. ${SHIPPING.dispatch} : tu recevras le numéro de suivi par email.`,
+        ...(o.items ? ["", "Ta commande :", ...o.items.map((i) => `- ${i}`)] : []),
         "",
         "Livraison :",
         ...o.shippingLines,
         "",
         "En attendant, tes fiches numériques offertes sont déjà prêtes :",
       ]
-    : [`Ton ${o.packName} est prêt. Télécharge-le ici :`];
+    : o.items
+      ? ["Ta commande est prête :", ...o.items.map((i) => `- ${i}`), "", "Tes fiches :"]
+      : [`Ton ${o.packName} est prêt. Télécharge-le ici :`];
   return [
     "Merci pour ta commande !",
     "",
@@ -144,7 +156,7 @@ export async function sendOrderEmail(env: AppEnv, o: OrderEmail): Promise<void> 
       to: [o.to],
       ...bccField(bcc),
       reply_to: env.EMAIL_REPLY_TO ?? SITE.contactEmail,
-      subject: o.shippingLines ? `Commande confirmée : ${o.packName} (papier) 💙` : `Ton ${o.packName} est prêt 💙`,
+      subject: o.items ? "Ta commande La Petite IDE est confirmée 💙" : o.shippingLines ? `Commande confirmée : ${o.packName} (papier) 💙` : `Ton ${o.packName} est prêt 💙`,
       html: orderEmailHtml(o),
       text: orderEmailText(o),
     }),

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getPack, publishedPacks, type Pack } from "@/content/packs";
 import { SHIPPING, SHIPPING_FROM_CENTS } from "@/content/shipping";
 import { CheckoutError } from "@/components/shop/CheckoutError";
 import { OfferBanner } from "@/components/shop/OfferBanner";
-import { BuyButton } from "@/components/shop/BuyButton";
+import { StickyCartAction } from "@/components/shop/CartLink";
 import { PackOffers } from "@/components/shop/PackOffers";
 import { PackCover } from "@/components/shop/PackCover";
 import { PackGallery } from "@/components/shop/PackGallery";
@@ -14,7 +15,7 @@ import { SheetPreviews } from "@/components/shop/SheetPreviews";
 import { StickyBuyBar } from "@/components/shop/StickyBuyBar";
 import { Icon } from "@/components/ui/Icon";
 import { getEnvAsync } from "@/lib/env";
-import { availableMethods, relayConfig } from "@/lib/relay";
+import { shopConfig } from "@/lib/catalog";
 import { SITE, formatPrice } from "@/lib/format";
 import { applySettings, getSettings } from "@/lib/settings";
 import { jsonLd } from "@/lib/seo";
@@ -81,7 +82,7 @@ const faqFor = (pack: Pack) => [
 
 export default async function PackPage({ params }: { params: Params }) {
   const pack = await livePack((await params).slug);
-  const env = await getEnvAsync();
+  const shop = await shopConfig(await getEnvAsync());
   if (!pack) notFound();
 
   const structured = {
@@ -142,48 +143,11 @@ export default async function PackPage({ params }: { params: Params }) {
           </Suspense>
           <PackOffers
             slug={pack.slug}
-            packName={pack.name.replace(/^Pack Mémos : /, "Pack ")}
-            packCents={pack.priceCents}
-            packCount={packCount}
+            config={shop}
             packImage={pack.digitalImage ?? (pack.images ? { src: pack.images.card, width: 800, height: 800, alt: pack.images.alt } : null)}
-            print={
-              pack.print
-                ? {
-                    priceCents: pack.print.priceCents,
-                    specs: pack.print.specs,
-                    photo: paperPhotos[0] ?? null,
-                    soldOut: Boolean(pack.print.soldOut),
-                    shippingMethods: availableMethods(env),
-                    mondialRelayBrand: relayConfig(env).mondialRelayBrand,
-                  }
-                : null
-            }
-            revision={
-              pack.revision
-                ? { priceCents: pack.revision.priceCents, specs: pack.revision.specs, photo: pack.revision.photos?.[0] ?? null, soldOut: Boolean(pack.revision.soldOut) }
-                : null
-            }
-            bundle={
-              pack.bundle && pack.print && pack.revision
-                ? {
-                    priceCents: pack.bundle.priceCents,
-                    specs: [],
-                    photo: pack.bundle.photo ?? paperPhotos[0] ?? null,
-                    soldOut: Boolean(pack.print.soldOut || pack.revision.soldOut),
-                    separateCents: pack.priceCents + pack.print.priceCents + pack.revision.priceCents,
-                  }
-                : null
-            }
-            shipping={{ methods: availableMethods(env), mondialRelayBrand: relayConfig(env).mondialRelayBrand }}
-            unit={
-              pack.unit
-                ? {
-                    priceCents: pack.unit.priceCents,
-                    items: pack.items.slice(0, pack.unit.files.length).map((i) => ({ title: i.title, icon: i.icon })),
-                    packCount,
-                  }
-                : null
-            }
+            paperPhoto={paperPhotos[0] ?? null}
+            paperSpecs={pack.print?.specs ?? []}
+            revisionSpecs={pack.revision?.specs ?? []}
           />
 
           <ul className="pdp__trust">
@@ -271,14 +235,35 @@ export default async function PackPage({ params }: { params: Params }) {
         </div>
       </section>
 
-      <section className="container sale-quiz" aria-label="Quiz gratuit">
-        <QuizCta />
+      {/* Voir aussi : les autres packs, puis les quiz gratuits. */}
+      <section className="container see-also" aria-labelledby="voir-aussi-title">
+        <h2 id="voir-aussi-title">Voir aussi</h2>
+        <ul className="see-also__list">
+          {shop.catalog
+            .filter((p) => p.slug !== pack.slug)
+            .map((p) => (
+              <li key={p.slug}>
+                <Link href={`/${p.slug}`} className="see-also__card">
+                  {p.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.image.src} alt="" width={p.image.width} height={p.image.height} loading="lazy" />
+                  ) : null}
+                  <span>
+                    <strong>{p.shortName}</strong>
+                    <small>{p.tagline}</small>
+                    <em>dès {formatPrice(Math.min(p.priceCents, p.unit?.priceCents ?? p.priceCents))}</em>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          <li>
+            <QuizCta className="see-also__quiz" />
+          </li>
+        </ul>
       </section>
 
       <StickyBuyBar>
-        <BuyButton className="btn btn--primary btn--buy sticky-buy__btn">
-          {pack.print ? "Choisir ma version" : <>Obtenir · {formatPrice(pack.priceCents)}</>}
-        </BuyButton>
+        <StickyCartAction label={pack.print ? "Choisir ma version" : <>Obtenir · {formatPrice(pack.priceCents)}</>} />
       </StickyBuyBar>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(structured)} />
