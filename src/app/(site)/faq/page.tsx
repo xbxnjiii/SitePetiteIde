@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
-import { FREE_SHIPPING, SHIPPING } from "@/content/shipping";
+import { SHIPPING, SHIPPING_METHODS } from "@/content/shipping";
 import { getEnvAsync } from "@/lib/env";
 import { formatPrice } from "@/lib/format";
 import { getSettings } from "@/lib/settings";
@@ -42,12 +42,12 @@ const FAQ: { q: string; a: string; print?: boolean }[] = [
   {
     print: true,
     q: "Les fiches existent-elles en papier ?",
-    a: `Oui, pour les packs qui l'indiquent : tu choisis « Fiches de poche » sur la page du pack. Les fiches sont livrées chez toi en ${SHIPPING.zone}, et tu reçois la version numérique (PDF et images) tout de suite.`,
+    a: `Oui, pour les packs qui l'indiquent : tu choisis « Fiches de poche » sur la page du pack. Les fiches sont livrées en point relais ou chez toi, en ${SHIPPING.zone}, et tu reçois la version numérique (PDF et images) tout de suite.`,
   },
   {
     print: true,
     q: "Combien coûte la livraison et en combien de temps ?",
-    a: `${FREE_SHIPPING ? "Elle est offerte ! Envoi" : `${formatPrice(SHIPPING.priceCents)} par commande, envoi`} par ${SHIPPING.name}. ${SHIPPING.dispatch}, puis compte ${SHIPPING.estimate.min} à ${SHIPPING.estimate.max} jours ouvrés. Tu reçois le numéro de suivi par email.`,
+    a: `Tu choisis au moment de payer : ${SHIPPING_METHODS.map((m) => `${m.carrierName} ${m.relay ? "en " + m.label.toLowerCase() : m.label.toLowerCase()} ${formatPrice(m.priceCents)} (${m.estimate.min} à ${m.estimate.max} jours)`).join(", ")}. ${SHIPPING.dispatch}, et tu reçois le numéro de suivi par email.`,
   },
   {
     print: true,

@@ -5,7 +5,7 @@ import { sendShippedEmail, sendUpdateEmails } from "@/lib/email";
 import { IS_LIVE, IS_PREPROD, SITE } from "@/lib/format";
 import { OFFER, isOfferActive } from "@/content/offer";
 import { type AppEnv, getEnvAsync, siteUrl } from "@/lib/env";
-import { downloadLinks, imagesLink, orderReference } from "@/lib/orders";
+import { downloadLinks, imagesLink, orderReference, shippingInfo } from "@/lib/orders";
 import { isAllowedOrigin } from "@/lib/origin";
 import { stripeClient } from "@/lib/stripe";
 import { type AdminOrder, SHIPPED_AT, TRACKING, listOrders, listOrdersBetween, listPackBuyers, matches, statusOf } from "./data";
@@ -243,7 +243,18 @@ export async function POST(request: Request) {
       return back("ok=annulee");
     }
 
-    await sendShippedEmail(env, { to: email, packName: pack.name, reference: orderReference(session.id), tracking, sessionId: session.id });
+    const ship = shippingInfo(session);
+    await sendShippedEmail(env, {
+      to: email,
+      packName: pack.name,
+      reference: orderReference(session.id),
+      tracking,
+      sessionId: session.id,
+      carrier: ship?.carrier ?? null,
+      carrierName: ship?.method?.carrierName ?? null,
+      postalCode: ship?.postalCode ?? null,
+      relay: Boolean(ship?.relay),
+    });
     await stripe.paymentIntents.update(pi.id, { metadata: { [SHIPPED_AT]: new Date().toISOString(), [TRACKING]: tracking } });
     console.log("admin: commande expédiée", orderReference(session.id));
     return back("ok=expediee");

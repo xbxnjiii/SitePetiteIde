@@ -1,7 +1,7 @@
 import { FREE_SHEET } from "@/content/lead";
 import { QUIZ_MODES, QUIZ_PACK_SLUG, quizzes } from "@/content/quiz";
 import { getPack } from "@/content/packs";
-import { SHIPPING } from "@/content/shipping";
+import { SHIPPING_METHODS, methodName } from "@/content/shipping";
 import { sendEmail, sendOrderEmail, sendPrintOrderNotice, sendRecoveryEmail, sendShippedEmail, sendUpdateEmails } from "@/lib/email";
 import { type AppEnv, requireVar, siteUrl } from "@/lib/env";
 import { correctionEmail, offerEmail, tipsEmail } from "@/lib/quiz-emails";
@@ -28,7 +28,9 @@ export async function sendAllPreviews(env: AppEnv, to: string): Promise<number> 
   // Liens d'exemple : ils mènent à « Retrouver mon achat » (pas de vrai fichier pour une fausse commande).
   const links = [{ label: `Télécharger · ${pack.name} (PDF)`, url: `${base}/retrouver-mon-achat` }];
   const imagesUrl = `${base}/retrouver-mon-achat`;
-  const address = ["Prénom Nom", "1 rue de l'Exemple", "75000 Paris", "France"];
+  // Exemple : livraison Mondial Relay en point relais.
+  const method = SHIPPING_METHODS.find((m) => m.relay) ?? SHIPPING_METHODS[0];
+  const address = [methodName(method), "Prénom Nom", "Point Relais n° 012345", "TABAC DE LA MAIRIE", "1 rue de l'Exemple", "75000 Paris", "Tél. 06 12 34 56 78"];
   const unsub = `${base}/api/desinscription?t=${await signToken({ ids: [] }, now + 400 * 86_400, secret, "unsub")}`;
   const freeUrl = `${base}/fiche-gratuite?t=${await signToken({ f: 1 }, now + FREE_SHEET.days * 86_400, secret, "free")}`;
   const theme = quizzes.find((q) => q.slug === "constantes") ?? quizzes[0];
@@ -42,7 +44,7 @@ export async function sendAllPreviews(env: AppEnv, to: string): Promise<number> 
       sendOrderEmail(env, {
         to,
         packName: pack.name,
-        amountCents: (pack.print?.priceCents ?? 799) + SHIPPING.priceCents,
+        amountCents: (pack.print?.priceCents ?? 799) + method.priceCents,
         reference,
         links,
         imagesUrl,
@@ -57,8 +59,9 @@ export async function sendAllPreviews(env: AppEnv, to: string): Promise<number> 
         to,
         reference,
         packName: pack.name,
-        amountCents: (pack.print?.priceCents ?? 799) + SHIPPING.priceCents,
+        amountCents: (pack.print?.priceCents ?? 799) + method.priceCents,
         customerEmail: to,
+        method: methodName(method),
         shippingLines: address,
         deliverable: true,
         adminUrl: `${base}/admin?vue=a-expedier`,

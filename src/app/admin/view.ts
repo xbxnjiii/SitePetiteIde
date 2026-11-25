@@ -1,4 +1,5 @@
 import { formatPrice } from "@/lib/format";
+import { trackingUrl } from "@/content/shipping";
 import type { Dashboard } from "./dashboard";
 import { QUIZ_PERIODS, type QuizStatsView } from "./quizstats";
 import { type AdminOrder, statusOf } from "./data";
@@ -151,7 +152,8 @@ function orderCard(o: AdminOrder, tab: Tab, q: string, trashed = false): string 
   const isPrint = o.format === "papier";
   const sid = { session_id: o.id };
   const address = isPrint
-    ? `<div class="addr">${o.lines.map(esc).join("<br>")}</div>
+    ? `${o.method ? `<p class="ship-mode">🚚 <strong>${esc(o.method)}</strong></p>` : ""}
+       <div class="addr">${o.lines.map(esc).join("<br>")}${o.phone ? `<br><span class="muted">Tél. ${esc(o.phone)}</span>` : ""}</div>
        ${o.deliverable ? "" : `<p class="warn">⚠️ Adresse hors France métropolitaine : à vérifier, rembourser si besoin.</p>`}`
     : "";
 
@@ -160,7 +162,7 @@ function orderCard(o: AdminOrder, tab: Tab, q: string, trashed = false): string 
     if (o.shippedAt) {
       action = `<div class="shipped">
           <p>📦 Expédiée le ${esc(day(Date.parse(o.shippedAt)))} · suivi
-            <a href="https://www.laposte.fr/outils/suivre-vos-envois?code=${encodeURIComponent(o.tracking ?? "")}" target="_blank" rel="noreferrer"><strong>${esc(o.tracking ?? "")}</strong></a></p>
+            <a href="${esc(trackingUrl(o.carrier, o.tracking ?? "", o.postalCode))}" target="_blank" rel="noreferrer"><strong>${esc(o.tracking ?? "")}</strong></a></p>
           <details class="fix"><summary>Corriger</summary>
             <form method="post" class="ship">
               ${hiddenFields(tab, q, { ...sid, action: "expedier" })}
@@ -176,7 +178,7 @@ function orderCard(o: AdminOrder, tab: Tab, q: string, trashed = false): string 
     } else {
       action = `<form method="post" class="ship">
           ${hiddenFields(tab, q, { ...sid, action: "expedier" })}
-          <input name="tracking" required minlength="8" maxlength="40" placeholder="N° de suivi La Poste" autocomplete="off" autocapitalize="characters" aria-label="Numéro de suivi">
+          <input name="tracking" required minlength="8" maxlength="40" placeholder="N° de suivi ${o.carrier === "mondial-relay" ? "Mondial Relay" : o.carrier === "colissimo" ? "Colissimo" : "La Poste"}" autocomplete="off" autocapitalize="characters" aria-label="Numéro de suivi">
           <button type="submit" class="btn">Marquer expédiée</button>
         </form>`;
     }
@@ -186,7 +188,7 @@ function orderCard(o: AdminOrder, tab: Tab, q: string, trashed = false): string 
     ? `<form method="post">${hiddenFields(tab, q, { action: "restaurer", type: "commande", id: o.id })}<button type="submit" class="link">${icon("undo")} Restaurer</button></form>`
     : [
         isPrint ? `<button type="button" class="link" data-copy="${esc(o.lines.join("\n"))}">Copier l'adresse</button>` : "",
-        isPrint && !o.refunded ? `<a href="/admin?etiquettes=${encodeURIComponent(o.id)}" target="_blank">Étiquette</a>` : "",
+        isPrint && !o.refunded && !o.relay ? `<a href="/admin?etiquettes=${encodeURIComponent(o.id)}" target="_blank">Étiquette</a>` : "",
         o.email ? `<a href="mailto:${esc(o.email)}?subject=${encodeURIComponent(`Ta commande ${o.reference}`)}">Écrire</a>` : "",
         o.stripeUrl ? `<a href="${esc(o.stripeUrl)}" target="_blank" rel="noreferrer">Stripe ${icon("external", "ico ico--sm")}</a>` : "",
         `<form method="post" class="push" data-confirm="Supprimer la commande ${esc(o.reference)} de l'admin ? (statistiques comprises ; restaurable depuis la corbeille. Le paiement Stripe n'est pas modifié.)">${hiddenFields(tab, q, { action: "masquer", type: "commande", id: o.id })}<button type="submit" class="link link--danger">${icon("trash")} Supprimer</button></form>`,
@@ -1048,7 +1050,8 @@ const CSS = `
   .badge--todo { background:var(--todo50); color:var(--todo); } .badge--late { background:var(--late50); color:var(--late); }
   .badge--ok { background:var(--ok50); color:var(--ok); } .badge--pdf { background:var(--p50); color:var(--p-strong); }
   .badge--muted { background:var(--bg); color:var(--soft); }
-  .addr { margin-top:10px; padding:10px 12px; background:var(--bg); border-radius:12px; font-size:.95rem; line-height:1.45; }
+  .ship-mode { margin:10px 0 0; font-size:.9rem; }
+  .addr { margin-top:6px; padding:10px 12px; background:var(--bg); border-radius:12px; font-size:.95rem; line-height:1.45; }
   .warn { padding:8px 12px; background:var(--late50); color:var(--late); border-radius:10px; font-size:.86rem; }
   .ship { display:flex; gap:8px; margin-top:12px; }
   .ship input { flex:1; min-width:0; padding:10px 12px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface); text-transform:uppercase; }

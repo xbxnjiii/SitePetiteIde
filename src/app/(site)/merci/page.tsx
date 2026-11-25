@@ -6,7 +6,7 @@ import { Mascot, type MascotPose } from "@/components/ui/Mascot";
 import { SHIPPING } from "@/content/shipping";
 import { getEnvAsync } from "@/lib/env";
 import { SITE } from "@/lib/format";
-import { downloadLinks, getOrder, imagesLink, orderReference } from "@/lib/orders";
+import { downloadLinks, getOrder, imagesLink, orderReference, shippingSummary } from "@/lib/orders";
 import { stripeClient } from "@/lib/stripe";
 
 export const metadata: Metadata = { title: "Merci pour ta commande", robots: { index: false } };
@@ -74,7 +74,7 @@ export default async function ThanksPage({ searchParams }: { searchParams: Searc
           </p>
           {order.shipping ? (
             <address className="thanks__address">
-              {order.shipping.lines.map((l) => (
+              {shippingSummary(order.shipping).map((l) => (
                 <span key={l}>{l}</span>
               ))}
             </address>

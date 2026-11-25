@@ -6,6 +6,7 @@ const MESSAGES: Record<string, string> = {
   cgv: "Coche la case d'acceptation des CGV pour continuer.",
   indisponible: "Les fiches papier sont momentanément indisponibles. La version numérique reste disponible tout de suite.",
   fiches: "Choisis au moins une fiche.",
+  livraison: "Choisis ton mode de livraison (et ton point relais) pour continuer.",
   prix: "Ce pack est momentanément indisponible. Réessaie un peu plus tard ou contacte-nous.",
 };
 

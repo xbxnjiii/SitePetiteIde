@@ -1,5 +1,5 @@
 import "server-only";
-import { SHIPPING } from "@/content/shipping";
+import { type Carrier, SHIPPING, trackingUrl } from "@/content/shipping";
 import { IS_PREPROD, SITE, formatPrice } from "./format";
 import { type AppEnv, requireVar } from "./env";
 import type { DownloadLink } from "./orders";
@@ -32,7 +32,7 @@ interface OrderEmail {
   imagesUrl?: string | null;
   expiresAt: number;
   idempotencyKey: string;
-  /** Commande papier : adresse de livraison (le PDF est offert). */
+  /** Commande papier : mode de livraison, adresse ou point relais, téléphone (le PDF est offert). */
   shippingLines?: string[];
   /** `false` : pas de copie à La Petite IDE (emails d'exemple de l'admin). */
   copy?: boolean;
@@ -69,7 +69,7 @@ export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey" | "co
       <h1 style="margin:0 0 10px;font-size:22px;line-height:28px;font-weight:800">Merci pour ta commande 💙</h1>
       ${
         o.shippingLines
-          ? `<p style="margin:0 0 16px;font-size:16px;line-height:24px;color:#5B6784">Tes fiches papier <strong style="color:#2D3A5A">${esc(o.packName)}</strong> sont en préparation. ${esc(SHIPPING.dispatch)}, en ${esc(SHIPPING.name)} : tu recevras un email avec le numéro de suivi.</p>
+          ? `<p style="margin:0 0 16px;font-size:16px;line-height:24px;color:#5B6784">Tes fiches papier <strong style="color:#2D3A5A">${esc(o.packName)}</strong> sont en préparation. ${esc(SHIPPING.dispatch)} : tu recevras un email avec le numéro de suivi.</p>
       <p style="margin:0 0 18px;padding:12px 14px;background:#F8F9FC;border-radius:12px;font-size:14px;line-height:21px;color:#2D3A5A"><strong>Livraison</strong><br>${o.shippingLines.map(esc).join("<br>")}</p>
       <p style="margin:0 0 16px;font-size:16px;line-height:24px;color:#5B6784">En attendant, tes <strong style="color:#2D3A5A">fiches numériques offertes</strong> sont déjà prêtes 🎁</p>`
           : `<p style="margin:0 0 22px;font-size:16px;line-height:24px;color:#5B6784">Ton <strong style="color:#2D3A5A">${esc(o.packName)}</strong> est prêt.</p>`
@@ -103,7 +103,7 @@ export function orderEmailHtml(o: Omit<OrderEmail, "to" | "idempotencyKey" | "co
 export function orderEmailText(o: Omit<OrderEmail, "to" | "idempotencyKey" | "copy">): string {
   const print = o.shippingLines
     ? [
-        `Tes fiches papier ${o.packName} sont en préparation. ${SHIPPING.dispatch}, en ${SHIPPING.name} : tu recevras le numéro de suivi par email.`,
+        `Tes fiches papier ${o.packName} sont en préparation. ${SHIPPING.dispatch} : tu recevras le numéro de suivi par email.`,
         "",
         "Livraison :",
         ...o.shippingLines,
@@ -313,6 +313,8 @@ export interface PrintOrderNotice {
   deliverable: boolean;
   adminUrl: string;
   sessionId: string;
+  /** Mode de livraison (« Mondial Relay · Point Relais ou Locker »…), affiché dans l'objet. */
+  method?: string | null;
   /** Destinataire (défaut : ORDERS_NOTIFY_TO). Utilisé pour l'aperçu des emails. */
   to?: string;
   /** `false` : pas de copie (emails d'exemple de l'admin). */
@@ -344,7 +346,7 @@ export async function sendPrintOrderNotice(env: AppEnv, n: PrintOrderNotice): Pr
     to,
     bcc: n.copy === false ? [] : await orderCopies(env, to),
     replyTo: n.customerEmail,
-    subject: `${n.deliverable ? "📦" : "⚠️"} Commande papier à préparer · ${n.reference}`,
+    subject: `${n.deliverable ? "📦" : "⚠️"} Commande papier à préparer · ${n.method ? `${n.method} · ` : ""}${n.reference}`,
     html,
     text,
     idempotencyKey: `print-notice-${n.sessionId}`,
@@ -354,18 +356,34 @@ export async function sendPrintOrderNotice(env: AppEnv, n: PrintOrderNotice): Pr
 /** Email au client : ses fiches papier sont parties (avec le numéro de suivi). */
 export async function sendShippedEmail(
   env: AppEnv,
-  s: { to: string; packName: string; reference: string; tracking: string; sessionId: string; copy?: boolean },
+  s: {
+    to: string;
+    packName: string;
+    reference: string;
+    tracking: string;
+    sessionId: string;
+    /** Transporteur (null : ancienne commande La Poste). */
+    carrier?: Carrier | null;
+    carrierName?: string | null;
+    /** Code postal de livraison (suivi Mondial Relay). */
+    postalCode?: string | null;
+    /** Livraison en point relais / locker. */
+    relay?: boolean;
+    copy?: boolean;
+  },
 ): Promise<void> {
-  const trackUrl = `https://www.laposte.fr/outils/suivre-vos-envois?code=${encodeURIComponent(s.tracking)}`;
+  const trackUrl = trackingUrl(s.carrier ?? null, s.tracking, s.postalCode);
+  const by = s.carrierName ? ` par ${s.carrierName}` : "";
+  const relayNote = s.relay ? " Tu seras prévenu·e quand ton colis sera disponible à ton point relais (pense à ta pièce d'identité)." : "";
   const html = simpleEmailHtml(
     "Tes fiches sont en route 📦",
-    `<p style="margin:0 0 14px;color:#5B6784">Bonne nouvelle : tes fiches papier <strong style="color:#2D3A5A">${esc(s.packName)}</strong> viennent d'être expédiées.</p>
+    `<p style="margin:0 0 14px;color:#5B6784">Bonne nouvelle : tes fiches papier <strong style="color:#2D3A5A">${esc(s.packName)}</strong> viennent d'être expédiées${esc(by)}.${esc(relayNote)}</p>
       <p style="margin:0 0 18px">Numéro de suivi : <strong>${esc(s.tracking)}</strong></p>
       <a href="${esc(trackUrl)}" style="display:block;background:#4E7AC7;color:#ffffff;text-decoration:none;font-weight:700;text-align:center;padding:14px 18px;border-radius:14px">Suivre mon colis</a>
       <p style="margin:18px 0 0;font-size:13px;line-height:20px;color:#5B6784">Commande ${esc(s.reference)} · Une question ? Réponds simplement à cet email.</p>`,
   );
   const text = [
-    `Tes fiches papier ${s.packName} viennent d'être expédiées.`,
+    `Tes fiches papier ${s.packName} viennent d'être expédiées${by}.${relayNote}`,
     `Numéro de suivi : ${s.tracking}`,
     `Suivre mon colis : ${trackUrl}`,
     "",

@@ -1,14 +1,15 @@
 import type Stripe from "stripe";
 import { applySettings, getSettings } from "@/lib/settings";
 import { canBuyPrint, formatPriceCents, getPack, parseFiches, parseFormat, type Pack, type PackFormat } from "@/content/packs";
-import { SHIPPING } from "@/content/shipping";
+import { type RelayPoint, type ShippingMethod, cleanRelayPoint, getShippingMethod, methodName } from "@/content/shipping";
 import { type AppEnv, getEnvAsync, siteUrl } from "@/lib/env";
 import { isAllowedOrigin } from "@/lib/origin";
+import { availableMethods } from "@/lib/relay";
 import { cleanSource } from "@/lib/source";
 import { isEnabled, priceLookupKey, stripeClient } from "@/lib/stripe";
 
 // POST /api/checkout
-//  - JSON  {pack, format}  → paiement intégré à la page (Checkout Session ui_mode "elements") : renvoie le clientSecret.
+//  - JSON  {pack, format, livraison?, relais?}  → paiement intégré à la page (Checkout Session ui_mode "elements") : renvoie le clientSecret.
 //  - formulaire    → secours sans JavaScript : redirection vers la page de paiement hébergée par Stripe.
 export async function POST(request: Request) {
   const env = await getEnvAsync();
@@ -26,12 +27,23 @@ export async function POST(request: Request) {
   let fichesRaw: unknown = null;
   let consent = false;
   let source: string | null = null;
+  let methodRaw: unknown = null;
+  let relayRaw: unknown = null;
   if (wantsJson) {
-    const body = (await request.json().catch(() => null)) as { pack?: unknown; format?: unknown; fiches?: unknown; source?: unknown } | null;
+    const body = (await request.json().catch(() => null)) as {
+      pack?: unknown;
+      format?: unknown;
+      fiches?: unknown;
+      source?: unknown;
+      livraison?: unknown;
+      relais?: unknown;
+    } | null;
     slug = typeof body?.pack === "string" ? body.pack : "";
     format = parseFormat(body?.format);
     fichesRaw = body?.fiches;
     source = cleanSource(body?.source);
+    methodRaw = body?.livraison;
+    relayRaw = body?.relais;
   } else {
     const form = await request.formData().catch(() => null);
     slug = String(form?.get("pack") ?? "");
@@ -39,6 +51,9 @@ export async function POST(request: Request) {
     fichesRaw = form?.get("fiches");
     consent = form?.get("consent") === "on";
     source = cleanSource(form?.get("source"));
+    methodRaw = form?.get("livraison");
+    const relayJson = form?.get("relais");
+    relayRaw = typeof relayJson === "string" && relayJson ? (() => { try { return JSON.parse(relayJson); } catch { return null; } })() : null;
   }
   const found = getPack(slug);
   const pack = found && applySettings(found, await getSettings(env));
@@ -52,11 +67,22 @@ export async function POST(request: Request) {
     return wantsJson ? Response.json({ error: "indisponible" }, { status: 409 }) : Response.redirect(`${base}/${pack.slug}?erreur=indisponible`, 303);
   }
 
+  // Papier : mode de livraison proposé en ce moment, et point relais choisi sur la carte du transporteur.
+  let shipping: { method: ShippingMethod; relay: RelayPoint | null } | null = null;
+  if (format === "papier") {
+    const method = getShippingMethod(methodRaw);
+    const relay = method?.relay ? cleanRelayPoint(relayRaw) : null;
+    if (!method || !availableMethods(env).some((m) => m.id === method.id) || (method.relay && !relay)) {
+      return wantsJson ? Response.json({ error: "livraison" }, { status: 400 }) : Response.redirect(`${base}/${pack.slug}?erreur=livraison`, 303);
+    }
+    shipping = { method, relay };
+  }
+
   // Formulaire de secours : la case CGV (+ renonciation pour le PDF) est obligatoire.
   if (!wantsJson && !consent) return Response.redirect(`${base}/${pack.slug}?erreur=cgv`, 303);
 
   try {
-    const session = await createSession(env, base, pack, format, fiches, wantsJson ? "elements" : "hosted_page", source);
+    const session = await createSession(env, base, pack, format, fiches, shipping, wantsJson ? "elements" : "hosted_page", source);
     if (wantsJson) return Response.json({ clientSecret: session.client_secret, publishableKey: publishableKey(env) });
     return Response.redirect(session.url!, 303);
   } catch (err) {
@@ -136,6 +162,7 @@ async function createSession(
   pack: Pack,
   format: PackFormat,
   fiches: number[] | null,
+  shipping: { method: ShippingMethod; relay: RelayPoint | null } | null,
   uiMode: "elements" | "hosted_page",
   source: string | null,
 ): Promise<Stripe.Checkout.Session> {
@@ -150,7 +177,25 @@ async function createSession(
   });
   const isPrint = format === "papier";
   // « fiches » : indices des fiches achetées à l'unité (dans pack.items), ex. « 0,2,5 ».
-  const metadata = { pack: pack.slug, format, provenance: source ?? "direct", ...(fiches ? { fiches: fiches.join(",") } : {}) };
+  const relay = shipping?.relay;
+  const metadata = {
+    pack: pack.slug,
+    format,
+    provenance: source ?? "direct",
+    ...(fiches ? { fiches: fiches.join(",") } : {}),
+    // Papier : mode de livraison et point relais (à reporter sur l'étiquette du transporteur).
+    ...(shipping ? { livraison: shipping.method.id } : {}),
+    ...(relay
+      ? {
+          relais_id: relay.id,
+          relais_nom: relay.name,
+          relais_adresse: relay.address,
+          relais_cp: relay.postalCode,
+          relais_ville: relay.city,
+          ...(relay.type ? { relais_type: relay.type } : {}),
+        }
+      : {}),
+  };
   const description =
     format === "papier" ? `${pack.name} — papier` : fiches ? `${pack.name} — ${fiches.map((i) => pack.items[i].title).join(", ")}` : pack.name;
 
@@ -171,20 +216,21 @@ async function createSession(
     // « format » : pdf ou papier (le papier est à expédier, voir /admin).
     metadata,
     payment_intent_data: { metadata, description: description.slice(0, 1000) },
-    // Papier : adresse de livraison (France uniquement) + frais de port fixes.
-    ...(isPrint
+    // Papier : frais de port du mode choisi ; adresse (France uniquement) seulement pour la livraison à domicile.
+    ...(isPrint && shipping
       ? {
-          shipping_address_collection: { allowed_countries: ["FR" as const] },
+          ...(shipping.method.relay ? {} : { shipping_address_collection: { allowed_countries: ["FR" as const] } }),
           shipping_options: [
             {
               shipping_rate_data: {
                 type: "fixed_amount" as const,
-                display_name: SHIPPING.priceCents === 0 ? `Livraison offerte · ${SHIPPING.name}` : SHIPPING.name,
-                fixed_amount: { amount: SHIPPING.priceCents, currency: "eur" },
+                display_name: relay ? `${methodName(shipping.method)} · ${relay.name}`.slice(0, 100) : methodName(shipping.method),
+                fixed_amount: { amount: shipping.method.priceCents, currency: "eur" },
                 tax_behavior: "inclusive" as const,
+                metadata: { livraison: shipping.method.id },
                 delivery_estimate: {
-                  minimum: { unit: "business_day" as const, value: SHIPPING.estimate.min },
-                  maximum: { unit: "business_day" as const, value: SHIPPING.estimate.max },
+                  minimum: { unit: "business_day" as const, value: shipping.method.estimate.min },
+                  maximum: { unit: "business_day" as const, value: shipping.method.estimate.max },
                 },
               },
             },
@@ -208,6 +254,8 @@ async function createSession(
   return stripe.checkout.sessions.create({
     ...common,
     locale: "fr",
+    // Papier : téléphone pour le transporteur (sur notre page, il est demandé avant le paiement).
+    ...(isPrint ? { phone_number_collection: { enabled: true } } : {}),
     metadata: isPrint
       ? { ...common.metadata, cgv_acceptees_le: at }
       : { ...common.metadata, cgv_acceptees_le: at, renonciation_retractation_le: at },

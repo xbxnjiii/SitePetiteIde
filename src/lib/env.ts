@@ -33,6 +33,10 @@ export interface AppEnv {
   PREPROD_PASSWORD?: string;
   /** Clé Resend « Full access » pour lire l'historique des emails dans /admin (sinon RESEND_API_KEY). */
   RESEND_ADMIN_KEY?: string;
+  /** Code enseigne Mondial Relay (carte des Points Relais et Lockers). Préprod : code de test si absent. */
+  MONDIAL_RELAY_BRAND?: string;
+  /** Clé d'API Colissimo Entreprise (secret, espace client Colissimo) : carte des points retrait. */
+  COLISSIMO_API_KEY?: string;
   PDF_BUCKET?: R2BucketLike;
 }
 

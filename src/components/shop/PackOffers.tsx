@@ -3,8 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { formatPrice } from "@/lib/format";
 import type { PackFormat } from "@/content/packs";
-import { FREE_SHIPPING, SHIPPING } from "@/content/shipping";
+import { type Carrier, type RelayPoint, SHIPPING, type ShippingMethod } from "@/content/shipping";
 import { CheckoutPanel, FichePicker, type UnitOffer } from "./PackCheckout";
+import { RelayPicker } from "./RelayPicker";
 import { BUY_EVENT, type BuyRequest } from "./buy-event";
 
 // Choix de la version (page de vente) : deux cartes produit (numérique / fiches de poche),
@@ -22,6 +23,10 @@ export interface PaperOffer {
   specs: string[];
   photo: Photo | null;
   soldOut: boolean;
+  /** Modes de livraison proposés (du moins cher au plus cher). */
+  shippingMethods: ShippingMethod[];
+  /** Code enseigne de la carte Mondial Relay (null : carte indisponible). */
+  mondialRelayBrand: string | null;
 }
 
 interface Props {
@@ -111,13 +116,9 @@ export function PackOffers({ slug, packName, packCents, packCount, packImage, pr
             <div className="offer__foot">
               <p className="offer__price">
                 <span className="price">{formatPrice(print.priceCents)}</span>
-                {FREE_SHIPPING ? (
-                  <small className="offer__free">
-                    <Icon name="check" /> Livraison offerte
-                  </small>
-                ) : (
-                  <small>+ {formatPrice(SHIPPING.priceCents)} de livraison</small>
-                )}
+                {print.shippingMethods.length ? (
+                  <small>+ livraison dès {formatPrice(Math.min(...print.shippingMethods.map((m) => m.priceCents)))}</small>
+                ) : null}
               </p>
               <button
                 type="button"
@@ -183,7 +184,8 @@ function BuySheet({
   }, [picked]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close.current();
+    // Échap : ferme la carte des points relais si elle est ouverte, sinon la fenêtre d'achat.
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && (pickerOpen.current ? setPicker(null) : close.current());
     document.addEventListener("keydown", onKey);
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -194,6 +196,18 @@ function BuySheet({
     };
   }, []);
 
+  // Papier : mode de livraison et point relais choisi (un par transporteur, gardé si l'on change de mode).
+  const [method, setMethod] = useState<ShippingMethod | null>(null);
+  const [relays, setRelays] = useState<Partial<Record<Carrier, RelayPoint>>>({});
+  const [picker, setPicker] = useState<Carrier | null>(null);
+  const pickerOpen = useRef(false);
+  pickerOpen.current = picker !== null;
+  const relay = method?.relay ? (relays[method.carrier] ?? null) : null;
+  const chooseMethod = (m: ShippingMethod) => {
+    setMethod(m);
+    if (m.relay && !relays[m.carrier]) setPicker(m.carrier);
+  };
+
   const isUnit = format === "fiches" && unit;
   const thumb = format === "papier" ? (print?.photo ?? packImage) : packImage;
   const title = format === "papier" ? "Fiches de poche" : isUnit ? "Fiches à l'unité" : "Version numérique";
@@ -203,7 +217,10 @@ function BuySheet({
       : isUnit
         ? `${packName} · ${formatPrice(unit.priceCents)} la fiche`
         : `${packName} · ${packCount} fiches · PDF et images`;
-  const priceCents = format === "papier" && print ? print.priceCents : isUnit ? unit.priceCents * fiches.length : packCents;
+  const isPaper = format === "papier" && print;
+  const shippingCents = isPaper && method ? method.priceCents : 0;
+  const priceCents = (isPaper ? print.priceCents + shippingCents : isUnit ? unit.priceCents * fiches.length : packCents);
+  const paperReady = Boolean(method && (!method.relay || relay));
   const settled = fiches.join() === picked.join();
 
   return (
@@ -225,28 +242,92 @@ function BuySheet({
 
         {isUnit ? (
           <FichePicker unit={unit} packCents={packCents} picked={picked} onChange={setPicked} onPickPack={() => onSwitch("pdf")} />
+        ) : isPaper ? (
+          <>
+            <fieldset className="ship-step">
+              <legend className="ship-step__title">
+                <Icon name="truck" /> Livraison <small>{SHIPPING.dispatch.toLowerCase()}</small>
+              </legend>
+              <div className="ship-methods">
+                {print.shippingMethods.map((m) => (
+                  <label key={m.id} className={method?.id === m.id ? "ship-method ship-method--on" : "ship-method"}>
+                    <input type="radio" name={`livraison-${slug}`} checked={method?.id === m.id} onChange={() => chooseMethod(m)} />
+                    <span className="ship-method__radio" aria-hidden="true" />
+                    <span className="ship-method__text">
+                      <strong>
+                        {m.carrierName} · {m.label}
+                      </strong>
+                      <small>
+                        {m.note} · {m.estimate.min} à {m.estimate.max} jours
+                      </small>
+                    </span>
+                    <span className="ship-method__price">{formatPrice(m.priceCents)}</span>
+                  </label>
+                ))}
+              </div>
+              {method?.relay ? (
+                relay ? (
+                  <div className="relay-chosen">
+                    <Icon name="pin" />
+                    <p>
+                      <strong>{relay.name}</strong>
+                      <span>
+                        {relay.address}, {relay.postalCode} {relay.city}
+                      </span>
+                    </p>
+                    <button type="button" className="link-btn" onClick={() => setPicker(method.carrier)}>
+                      Changer
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button" className="btn btn--secondary btn--block" onClick={() => setPicker(method.carrier)}>
+                    <Icon name="pin" /> Choisir mon {method.carrier === "mondial-relay" ? "Point Relais ou Locker" : "point retrait"}
+                  </button>
+                )
+              ) : null}
+            </fieldset>
+            <div className="buy-sheet__total">
+              <span>
+                Fiches {formatPrice(print.priceCents)} + livraison {method ? formatPrice(shippingCents) : "à choisir"} · numérique offert
+              </span>
+              <strong className="price">{formatPrice(priceCents)}</strong>
+            </div>
+          </>
         ) : (
           <div className="buy-sheet__total">
-            <span>
-              {format === "papier"
-                ? `${FREE_SHIPPING ? "Livraison offerte" : `+ ${formatPrice(SHIPPING.priceCents)} de livraison`} · numérique offert`
-                : "Accès immédiat · mises à jour offertes"}
-            </span>
+            <span>Accès immédiat · mises à jour offertes</span>
             <strong className="price">{formatPrice(priceCents)}</strong>
           </div>
         )}
 
-        {isUnit && (!picked.length || !settled) ? (
+        {isPaper && !paperReady ? (
+          <p className="buy-sheet__hint">
+            {method ? "Choisis ton point relais pour passer au paiement." : "Choisis ton mode de livraison pour passer au paiement."}
+          </p>
+        ) : isUnit && (!picked.length || !settled) ? (
           picked.length ? <div className="checkout__loading" aria-label="Mise à jour du paiement" /> : null
         ) : (
           <CheckoutPanel
-            key={isUnit ? `fiches-${fiches.join(",")}` : format}
+            key={isUnit ? `fiches-${fiches.join(",")}` : isPaper ? `papier-${method?.id}-${relay?.id ?? ""}` : format}
             slug={slug}
             format={format}
             fiches={isUnit ? fiches : null}
             priceCents={priceCents}
+            shipping={isPaper && method ? { method, relay } : null}
           />
         )}
+
+        {picker ? (
+          <RelayPicker
+            carrier={picker}
+            brand={print?.mondialRelayBrand ?? null}
+            onClose={() => setPicker(null)}
+            onPick={(point) => {
+              setRelays((r) => ({ ...r, [picker]: point }));
+              setPicker(null);
+            }}
+          />
+        ) : null}
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ import { Icon } from "@/components/ui/Icon";
 import { formatPrice } from "@/lib/format";
 import { OFFER } from "@/content/offer";
 import type { IconName, PackFormat } from "@/content/packs";
-import { SHIPPING, isDeliverable } from "@/content/shipping";
+import { type RelayPoint, SHIPPING, type ShippingMethod, cleanPhone, isDeliverable } from "@/content/shipping";
 import { sourceFromLocation } from "@/lib/source";
 import { STRIPE_PUBLISHABLE_KEY } from "@/lib/stripe-public";
 
@@ -49,6 +49,12 @@ const appearance: Appearance = {
 };
 
 const NOT_DELIVERABLE = "On livre seulement en France métropolitaine (Corse comprise) pour le moment.";
+
+/** Papier : mode de livraison choisi et, pour un point relais, le point choisi sur la carte. */
+export interface CheckoutShipping {
+  method: ShippingMethod;
+  relay: RelayPoint | null;
+}
 
 /** Vente à l'unité, telle qu'affichée dans la fenêtre d'achat. */
 export interface UnitOffer {
@@ -131,12 +137,14 @@ export function CheckoutPanel({
   format,
   fiches,
   priceCents,
+  shipping = null,
 }: {
   slug: string;
   format: PackFormat;
   /** Achat à l'unité : fiches choisies (indices). */
   fiches: number[] | null;
   priceCents: number;
+  shipping?: CheckoutShipping | null;
 }) {
   const [failed, setFailed] = useState(false);
   const clientSecretRef = useRef<string | null>(null);
@@ -148,7 +156,13 @@ export function CheckoutPanel({
     const response = fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pack: slug, format, fiches, source: sourceFromLocation() }),
+      body: JSON.stringify({
+        pack: slug,
+        format,
+        fiches,
+        source: sourceFromLocation(),
+        ...(shipping ? { livraison: shipping.method.id, relais: shipping.relay } : {}),
+      }),
     })
       .then(async (r) => {
         const data = (await r.json()) as { clientSecret?: string; publishableKey?: string };
@@ -169,7 +183,7 @@ export function CheckoutPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, format]);
 
-  if (failed) return <HostedFallback slug={slug} format={format} fiches={fiches} priceCents={priceCents} />;
+  if (failed) return <HostedFallback slug={slug} format={format} fiches={fiches} priceCents={priceCents} shipping={shipping} />;
   if (!clientSecret || !stripe) return <div className="checkout__loading" aria-label="Chargement du paiement" />;
 
   return (
@@ -184,7 +198,7 @@ export function CheckoutPanel({
         defaultValues: { billingAddress: { address: { country: "FR" } } },
       }}
     >
-      <CheckoutForm slug={slug} format={format} fiches={fiches} priceCents={priceCents} clientSecretRef={clientSecretRef} />
+      <CheckoutForm slug={slug} format={format} fiches={fiches} priceCents={priceCents} shipping={shipping} clientSecretRef={clientSecretRef} />
     </CheckoutElementsProvider>
   );
 }
@@ -194,12 +208,14 @@ function CheckoutForm({
   format,
   fiches,
   priceCents,
+  shipping,
   clientSecretRef,
 }: {
   slug: string;
   format: PackFormat;
   fiches: number[] | null;
   priceCents: number;
+  shipping: CheckoutShipping | null;
   clientSecretRef: React.RefObject<string | null>;
 }) {
   const state = useCheckoutElements();
@@ -215,8 +231,16 @@ function CheckoutForm({
   const [promoCode, setPromoCode] = useState("");
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoBusy, setPromoBusy] = useState(false);
+  // Papier : téléphone pour le transporteur, + nom du destinataire pour un point relais (l'adresse est celle du point).
+  const [contactName, setContactName] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactError, setContactError] = useState<string | null>(null);
 
   const isPrint = format === "papier";
+  const isRelay = isPrint && Boolean(shipping?.method.relay);
+  const phoneOk = Boolean(cleanPhone(contactPhone, isRelay));
+  const nameOk = contactName.trim().length >= 3;
+  const contactOk = !isPrint || (phoneOk && (!isRelay || nameOk));
   const session = state.type === "success" ? state.checkout : null;
   const discount = session?.discountAmounts?.[0] ?? null;
   const totalLabel = session ? session.total.total.amount : formatPrice(priceCents);
@@ -242,12 +266,28 @@ function CheckoutForm({
     const r = await fetch("/api/checkout/consent", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clientSecret: clientSecretRef.current }),
+      body: JSON.stringify({
+        clientSecret: clientSecretRef.current,
+        ...(isPrint ? { contact: { name: contactName, phone: contactPhone } } : {}),
+      }),
     });
     if (!r.ok) throw new Error("consent");
   };
 
   const requireConsent = () => {
+    if (!contactOk) {
+      setContactError(
+        isRelay && !nameOk
+          ? "Indique ton prénom et ton nom (il faudra les montrer pour retirer le colis)."
+          : isRelay
+            ? "Indique un numéro de portable valide : le transporteur t'envoie un SMS quand le colis arrive."
+            : "Indique un numéro de téléphone valide pour le livreur.",
+      );
+      const field = document.getElementById(isRelay && !nameOk ? `contact-name-${slug}` : `contact-phone-${slug}`);
+      field?.focus();
+      field?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return false;
+    }
     if (consent) return true;
     setConsentError(true);
     const box = document.getElementById(`consent-${slug}`);
@@ -258,8 +298,8 @@ function CheckoutForm({
 
   const onExpressConfirm = async (event: StripeExpressCheckoutElementConfirmEvent) => {
     if (state.type !== "success") return event.paymentFailed({ reason: "fail" });
-    // Outre-mer refusé (l'adresse elle-même reste obligatoire côté Stripe).
-    if (isPrint && event.shippingAddress?.address?.postal_code && !isDeliverable(event.shippingAddress.address)) {
+    // Outre-mer refusé (l'adresse elle-même reste obligatoire côté Stripe). Point relais : pas d'adresse à vérifier.
+    if (isPrint && !isRelay && event.shippingAddress?.address?.postal_code && !isDeliverable(event.shippingAddress.address)) {
       setMessage(NOT_DELIVERABLE);
       return event.paymentFailed({ reason: "address_unserviceable", message: NOT_DELIVERABLE });
     }
@@ -277,7 +317,7 @@ function CheckoutForm({
     e.preventDefault();
     if (state.type !== "success" || !requireConsent()) return;
     const shipTo = state.checkout.shippingAddress?.address;
-    if (isPrint && shipTo?.postal_code && !isDeliverable(shipTo)) {
+    if (isPrint && !isRelay && shipTo?.postal_code && !isDeliverable(shipTo)) {
       setMessage(NOT_DELIVERABLE);
       return;
     }
@@ -295,7 +335,53 @@ function CheckoutForm({
     }
   };
 
-  if (state.type === "error") return <HostedFallback slug={slug} format={format} fiches={fiches} priceCents={priceCents} />;
+  if (state.type === "error") return <HostedFallback slug={slug} format={format} fiches={fiches} priceCents={priceCents} shipping={shipping} />;
+
+  const contactBlock = isPrint ? (
+    <div className="checkout__contact">
+      {isRelay ? (
+        <>
+          <label className="checkout__label" htmlFor={`contact-name-${slug}`}>
+            Prénom et nom <span>(pour retirer le colis)</span>
+          </label>
+          <input
+            id={`contact-name-${slug}`}
+            className="input"
+            autoComplete="name"
+            maxLength={80}
+            placeholder="Prénom Nom"
+            value={contactName}
+            onChange={(e) => {
+              setContactName(e.target.value);
+              setContactError(null);
+            }}
+          />
+        </>
+      ) : null}
+      <label className="checkout__label" htmlFor={`contact-phone-${slug}`}>
+        {isRelay ? "Téléphone portable" : "Téléphone"} <span>{isRelay ? "(SMS quand ton colis arrive)" : "(pour le livreur)"}</span>
+      </label>
+      <input
+        id={`contact-phone-${slug}`}
+        className="input"
+        type="tel"
+        autoComplete="tel"
+        inputMode="tel"
+        maxLength={20}
+        placeholder="06 12 34 56 78"
+        value={contactPhone}
+        onChange={(e) => {
+          setContactPhone(e.target.value);
+          setContactError(null);
+        }}
+      />
+      {contactError ? (
+        <p className="checkout__hint" role="alert">
+          {contactError}
+        </p>
+      ) : null}
+    </div>
+  ) : null;
 
   const consentBox = (
     <>
@@ -354,14 +440,15 @@ function CheckoutForm({
 
   return (
     <div className="checkout checkout--sheet">
+      {contactBlock}
       {state.type === "loading" || hasWallet === null ? <div className="checkout__loading" aria-label="Chargement du paiement" /> : null}
 
       {/* Un seul bouton de paiement rapide, adapté à l'appareil : Apple Pay sur iPhone / iPad / Mac, Google Pay sur Android. */}
       <div className={hasWallet === false || isFree ? "checkout__express checkout__express--empty" : "checkout__express"}>
         {/* Tant que la case n'est pas cochée, un calque intercepte le tap et affiche le rappel
             (le mode Stripe utilisé ne permet pas de bloquer le clic autrement). */}
-        {!consent && hasWallet ? (
-          <button type="button" className="checkout__guard" aria-label="Coche d'abord la case pour payer avec Apple Pay ou Google Pay" onClick={requireConsent} />
+        {(!consent || !contactOk) && hasWallet ? (
+          <button type="button" className="checkout__guard" aria-label="Complète d'abord les informations demandées pour payer avec Apple Pay ou Google Pay" onClick={requireConsent} />
         ) : null}
         {platform ? (
           <ExpressCheckoutElement
@@ -413,7 +500,7 @@ function CheckoutForm({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          {isPrint ? (
+          {isPrint && !isRelay ? (
             <div className="checkout__shipping">
               <p className="checkout__label">
                 Adresse de livraison <span>({SHIPPING.zoneShort}, Corse comprise)</span>
@@ -443,12 +530,26 @@ function CheckoutForm({
 }
 
 /** Secours : bouton classique vers la page de paiement Stripe (fonctionne sans JavaScript). */
-function HostedFallback({ slug, format, fiches, priceCents }: { slug: string; format: PackFormat; fiches: number[] | null; priceCents: number }) {
+function HostedFallback({
+  slug,
+  format,
+  fiches,
+  priceCents,
+  shipping,
+}: {
+  slug: string;
+  format: PackFormat;
+  fiches: number[] | null;
+  priceCents: number;
+  shipping: CheckoutShipping | null;
+}) {
   return (
     <form method="post" action="/api/checkout" className="buy-form">
       <input type="hidden" name="pack" value={slug} />
       <input type="hidden" name="format" value={format} />
       {fiches ? <input type="hidden" name="fiches" value={fiches.join(",")} /> : null}
+      {shipping ? <input type="hidden" name="livraison" value={shipping.method.id} /> : null}
+      {shipping?.relay ? <input type="hidden" name="relais" value={JSON.stringify(shipping.relay)} /> : null}
       <SourceField />
       <label className="consent">
         <input type="checkbox" name="consent" required />

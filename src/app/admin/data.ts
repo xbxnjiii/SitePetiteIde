@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 import { getPack, parseFormat, type PackFormat } from "@/content/packs";
+import { type Carrier, methodName } from "@/content/shipping";
 import { type Order, orderFromSession, orderReference, shippingInfo } from "@/lib/orders";
 
 // Lecture des commandes pour la page /admin. Tout vient de Stripe (aucune base de données) :
@@ -24,9 +25,16 @@ export interface AdminOrder {
   email: string;
   /** Nom du destinataire (papier) ou du client. */
   name: string;
-  /** Adresse de livraison (papier) ; vide pour un PDF. */
+  /** Adresse de livraison ou point relais (papier) ; vide pour un PDF. */
   lines: string[];
   deliverable: boolean;
+  /** Mode de livraison (« Mondial Relay · Point Relais ou Locker »…), null pour un PDF ou une ancienne commande. */
+  method: string | null;
+  carrier: Carrier | null;
+  /** Point relais : à choisir sur le site du transporteur au moment de créer l'étiquette. */
+  relay: boolean;
+  phone: string | null;
+  postalCode: string | null;
   shippedAt: string | null;
   tracking: string | null;
   refunded: boolean;
@@ -93,6 +101,11 @@ function toAdminOrder(s: Stripe.Checkout.Session, now = Date.now()): AdminOrder 
     name: ship?.name || s.customer_details?.name || "",
     lines: format === "papier" ? (ship?.lines ?? ["⚠️ Adresse absente : voir Stripe"]) : [],
     deliverable: format === "papier" ? (ship?.deliverable ?? false) : true,
+    method: ship?.method ? methodName(ship.method) : null,
+    carrier: ship?.carrier ?? null,
+    relay: Boolean(ship?.relay),
+    phone: ship?.phone ?? null,
+    postalCode: ship?.postalCode ?? null,
     shippedAt: pi?.metadata?.[SHIPPED_AT] || null,
     tracking: pi?.metadata?.[TRACKING] || null,
     refunded: Boolean(charge?.refunded),

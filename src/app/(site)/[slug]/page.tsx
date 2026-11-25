@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getPack, publishedPacks, type Pack } from "@/content/packs";
-import { SHIPPING } from "@/content/shipping";
+import { SHIPPING, SHIPPING_FROM_CENTS } from "@/content/shipping";
 import { CheckoutError } from "@/components/shop/CheckoutError";
 import { OfferBanner } from "@/components/shop/OfferBanner";
 import { BuyButton } from "@/components/shop/BuyButton";
@@ -14,6 +14,7 @@ import { SheetPreviews } from "@/components/shop/SheetPreviews";
 import { StickyBuyBar } from "@/components/shop/StickyBuyBar";
 import { Icon } from "@/components/ui/Icon";
 import { getEnvAsync } from "@/lib/env";
+import { availableMethods, relayConfig } from "@/lib/relay";
 import { SITE, formatPrice } from "@/lib/format";
 import { applySettings, getSettings } from "@/lib/settings";
 import { jsonLd } from "@/lib/seo";
@@ -52,13 +53,13 @@ const faqFor = (pack: Pack) => [
   pack.print
     ? {
         q: "Comment je reçois mon pack ?",
-        a: `En numérique (PDF et images) : juste après le paiement, bouton de téléchargement immédiat et lien par email (valable 30 jours). En fiches de poche : ${SHIPPING.dispatch.toLowerCase()} par ${SHIPPING.name}, livraison offerte, avec les fiches numériques offertes tout de suite.`,
+        a: `En numérique (PDF et images) : juste après le paiement, bouton de téléchargement immédiat et lien par email (valable 30 jours). En fiches de poche : ${SHIPPING.dispatch.toLowerCase()} par Mondial Relay ou Colissimo, en point relais ou à domicile (livraison dès ${formatPrice(SHIPPING_FROM_CENTS)}), avec les fiches numériques offertes tout de suite.`,
       }
     : { q: "Comment je reçois mon pack ?", a: "Juste après le paiement : bouton de téléchargement immédiat et lien envoyé par email (valable 30 jours)." },
   pack.print
     ? {
         q: "C'est un format papier ?",
-        a: `Les deux au choix ! En numérique (PDF et images), ou en fiches de poche (${pack.print.specs.join(", ").toLowerCase()}) livrées gratuitement en ${SHIPPING.zone}, avec la version numérique offerte.`,
+        a: `Les deux au choix ! En numérique (PDF et images), ou en fiches de poche (${pack.print.specs.join(", ").toLowerCase()}) livrées en ${SHIPPING.zone}, avec la version numérique offerte.`,
       }
     : { q: "C'est un format papier ?", a: "Non, numérique : tu reçois le PDF (idéal pour imprimer) et les fiches en images (idéal sur téléphone)." },
   pack.print
@@ -72,6 +73,7 @@ const faqFor = (pack: Pack) => [
 
 export default async function PackPage({ params }: { params: Params }) {
   const pack = await livePack((await params).slug);
+  const env = await getEnvAsync();
   if (!pack) notFound();
 
   const structured = {
@@ -137,7 +139,14 @@ export default async function PackPage({ params }: { params: Params }) {
             packImage={pack.digitalImage ?? (pack.images ? { src: pack.images.card, width: 800, height: 800, alt: pack.images.alt } : null)}
             print={
               pack.print
-                ? { priceCents: pack.print.priceCents, specs: pack.print.specs, photo: paperPhotos[0] ?? null, soldOut: Boolean(pack.print.soldOut) }
+                ? {
+                    priceCents: pack.print.priceCents,
+                    specs: pack.print.specs,
+                    photo: paperPhotos[0] ?? null,
+                    soldOut: Boolean(pack.print.soldOut),
+                    shippingMethods: availableMethods(env),
+                    mondialRelayBrand: relayConfig(env).mondialRelayBrand,
+                  }
                 : null
             }
             unit={

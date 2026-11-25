@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { InfoList, LegalPage } from "@/components/content/LegalPage";
-import { FREE_SHIPPING, SHIPPING } from "@/content/shipping";
+import { SHIPPING, SHIPPING_FROM_CENTS, SHIPPING_METHODS } from "@/content/shipping";
 import { LEGAL, SITE, formatPrice } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Conditions générales de vente", alternates: { canonical: "/cgv" } };
@@ -55,14 +55,8 @@ export default function CgvPage() {
           content: (
             <p>
               Les prix sont indiqués en euros. {LEGAL.vat}. Le prix applicable est celui affiché au moment de la commande.{" "}
-              {FREE_SHIPPING ? (
-                <>Pour le format papier, la livraison est offerte : le prix affiché est le prix total.</>
-              ) : (
-                <>
-                  Pour le format papier, des frais de livraison de {formatPrice(SHIPPING.priceCents)} s&apos;ajoutent ; ils sont
-                  indiqués avant le paiement.
-                </>
-              )}
+Pour le format papier, des frais de livraison s&apos;ajoutent selon le mode choisi (à partir de{" "}
+              {formatPrice(SHIPPING_FROM_CENTS)}) ; ils sont indiqués avant le paiement.
             </p>
           ),
         },
@@ -89,10 +83,12 @@ export default function CgvPage() {
                 appartient au client d&apos;enregistrer les fichiers sur son appareil.
               </p>
               <p>
-                <strong>Papier.</strong> Livraison en {SHIPPING.zone} uniquement, à l&apos;adresse indiquée lors du paiement, par{" "}
-                {SHIPPING.name} ({FREE_SHIPPING ? "livraison offerte" : formatPrice(SHIPPING.priceCents)}). {SHIPPING.dispatch} après confirmation du paiement ; délai de
-                livraison indicatif de {SHIPPING.estimate.min} à {SHIPPING.estimate.max} jours ouvrés après l&apos;expédition. Un
-                numéro de suivi est envoyé par email. En cas de retard important, de colis perdu ou endommagé, écris-nous à {mail} :
+                <strong>Papier.</strong> Livraison en {SHIPPING.zone} uniquement, au point relais (ou locker, consigne) choisi ou à
+                l&apos;adresse indiquée lors de la commande, selon le mode choisi parmi ceux proposés :{" "}
+                {SHIPPING_METHODS.map((m) => `${m.carrierName} ${m.relay ? "en " + m.label.toLowerCase() : m.label.toLowerCase()} (${formatPrice(m.priceCents)}, ${m.estimate.min} à ${m.estimate.max} jours ouvrés)`).join(", ")}.{" "}
+                {SHIPPING.dispatch} après confirmation du paiement ; les délais de livraison sont indicatifs et courent à partir de
+                l&apos;expédition. Un numéro de suivi est envoyé par email. En point relais, le colis est conservé pendant la durée
+                fixée par le transporteur : passé ce délai, il nous est retourné et peut être renvoyé aux frais du client. En cas de retard important, de colis perdu ou endommagé, écris-nous à {mail} :
                 les fiches sont renvoyées ou remboursées. La version numérique offerte est envoyée immédiatement, comme pour un achat numérique.
               </p>
             </>

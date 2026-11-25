@@ -1,7 +1,8 @@
 import Stripe from "stripe";
 import { sendOrderEmail, sendPrintOrderNotice } from "@/lib/email";
 import { getEnvAsync, requireVar, siteUrl } from "@/lib/env";
-import { downloadLinks, getOrder, imagesLink, orderReference } from "@/lib/orders";
+import { methodName } from "@/content/shipping";
+import { downloadLinks, getOrder, imagesLink, orderReference, shippingSummary } from "@/lib/orders";
 import { stripeClient } from "@/lib/stripe";
 
 // Webhook Stripe : SEULE source de confirmation du paiement pour l'envoi des emails
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
         imagesUrl: await imagesLink(env, order),
         expiresAt: order.expiresAt,
         idempotencyKey: `order-email-${order.session.id}`,
-        shippingLines: isPrint ? (order.shipping?.lines ?? []) : undefined,
+        shippingLines: isPrint ? (order.shipping ? shippingSummary(order.shipping) : []) : undefined,
       });
     } catch (err) {
       console.error("webhook: échec de l'envoi de l'email", err instanceof Error ? err.message : err);
@@ -93,7 +94,8 @@ export async function POST(request: Request) {
         packName: order.pack.name,
         amountCents: order.session.amount_total ?? 0,
         customerEmail: order.email,
-        shippingLines: order.shipping?.lines ?? ["⚠️ Adresse absente : voir Stripe"],
+        shippingLines: order.shipping ? shippingSummary(order.shipping) : ["⚠️ Adresse absente : voir Stripe"],
+        method: order.shipping?.method ? methodName(order.shipping.method) : null,
         deliverable: order.shipping?.deliverable ?? false,
         adminUrl: `${siteUrl(env)}/admin?vue=a-expedier`,
         sessionId: order.session.id,

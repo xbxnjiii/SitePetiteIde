@@ -1,7 +1,7 @@
 import "server-only";
 import type Stripe from "stripe";
 import { getPack, parseFiches, parseFormat, type Pack, type PackFormat } from "@/content/packs";
-import { isDeliverable } from "@/content/shipping";
+import { type Carrier, type RelayPoint, type ShippingMethod, getShippingMethod, isDeliverable, methodName } from "@/content/shipping";
 import { SITE } from "./format";
 import { type AppEnv, requireVar, siteUrl } from "./env";
 import { signDownloadToken } from "./download-token";
@@ -10,11 +10,25 @@ import { signDownloadToken } from "./download-token";
 
 export interface ShippingInfo {
   name: string;
-  /** Adresse sur plusieurs lignes, prête à recopier sur l'enveloppe. */
+  /** Adresse sur plusieurs lignes (domicile), ou point relais avec son identifiant. */
   lines: string[];
   /** `false` si l'adresse est hors France métropolitaine (à vérifier avant l'envoi). */
   deliverable: boolean;
+  /** Mode de livraison choisi (null : ancienne commande « Lettre suivie La Poste »). */
+  method: ShippingMethod | null;
+  carrier: Carrier | null;
+  relay: RelayPoint | null;
+  phone: string | null;
+  /** Code postal de livraison (suivi Mondial Relay). */
+  postalCode: string | null;
 }
+
+/** Livraison complète sur plusieurs lignes (emails, admin) : mode, adresse ou point relais, téléphone. */
+export const shippingSummary = (s: ShippingInfo): string[] => [
+  ...(s.method ? [methodName(s.method)] : []),
+  ...s.lines,
+  ...(s.phone ? [`Tél. ${s.phone}`] : []),
+];
 
 export interface Order {
   session: Stripe.Checkout.Session;
@@ -90,8 +104,33 @@ export async function downloadLinks(env: AppEnv, order: Order, expiresAt: number
   );
 }
 
-/** Adresse de livraison saisie dans le paiement (null pour un achat PDF). */
+/** Livraison de la commande : point relais choisi, ou adresse saisie dans le paiement (null pour un achat numérique). */
 export function shippingInfo(session: Stripe.Checkout.Session): ShippingInfo | null {
+  const m = session.metadata ?? {};
+  const method = getShippingMethod(m.livraison);
+  const phone = m.telephone || session.customer_details?.phone || null;
+  if (method?.relay && m.relais_id) {
+    const relay: RelayPoint = {
+      id: m.relais_id,
+      name: m.relais_nom ?? "",
+      address: m.relais_adresse ?? "",
+      postalCode: m.relais_cp ?? "",
+      city: m.relais_ville ?? "",
+      ...(m.relais_type ? { type: m.relais_type } : {}),
+    };
+    const name = m.destinataire || session.customer_details?.name || "";
+    const kind = relay.type || (method.carrier === "mondial-relay" ? "Point Relais" : "Point retrait");
+    return {
+      name,
+      lines: [name, `${kind} n° ${relay.id}`, relay.name, relay.address, `${relay.postalCode} ${relay.city}`].filter(Boolean),
+      deliverable: isDeliverable({ country: "FR", postal_code: relay.postalCode }),
+      method,
+      carrier: method.carrier,
+      relay,
+      phone,
+      postalCode: relay.postalCode,
+    };
+  }
   const d = session.collected_information?.shipping_details;
   if (!d?.address) return null;
   const a = d.address;
@@ -100,6 +139,11 @@ export function shippingInfo(session: Stripe.Checkout.Session): ShippingInfo | n
     name: d.name ?? "",
     lines: [d.name, a.line1, a.line2, cityLine, a.country === "FR" ? "France" : a.country].filter((l): l is string => Boolean(l)),
     deliverable: isDeliverable(a),
+    method,
+    carrier: method?.carrier ?? null,
+    relay: null,
+    phone,
+    postalCode: a.postal_code ?? null,
   };
 }
 

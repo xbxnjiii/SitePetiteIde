@@ -1,17 +1,19 @@
 import { getEnvAsync, siteUrl } from "@/lib/env";
 import { stripeClient } from "@/lib/stripe";
 import { isAllowedOrigin } from "@/lib/origin";
+import { cleanPhone, getShippingMethod } from "@/content/shipping";
 
-// POST /api/checkout/consent {clientSecret}
+// POST /api/checkout/consent {clientSecret, contact?: {name?, phone?}}
 // Enregistre sur la Checkout Session (avant paiement) que l'acheteur a coché :
 //  - PDF    : « J'accepte les CGV, je demande l'accès immédiat et je renonce à mon droit de rétractation ».
-//  - papier : « J'accepte les CGV » (le droit de rétractation de 14 jours s'applique aux fiches papier).
+//  - papier : « J'accepte les CGV » (le droit de rétractation de 14 jours s'applique aux fiches papier),
+//    + téléphone pour le transporteur, et nom du destinataire pour un point relais.
 export async function POST(request: Request) {
   const env = await getEnvAsync();
   const origin = request.headers.get("origin");
   if (origin && !isAllowedOrigin(origin, siteUrl(env))) return new Response("Origine non autorisée", { status: 403 });
 
-  const body = (await request.json().catch(() => null)) as { clientSecret?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as { clientSecret?: unknown; contact?: { name?: unknown; phone?: unknown } } | null;
   const secret = typeof body?.clientSecret === "string" ? body.clientSecret : "";
   // Le client secret est de la forme cs_xxx_secret_yyy : l'identifiant de session est avant « _secret_ ».
   const sessionId = secret.split("_secret_")[0];
@@ -24,9 +26,19 @@ export async function POST(request: Request) {
     if (session.client_secret !== secret || session.status !== "open") return Response.json({ error: "session" }, { status: 400 });
     const at = new Date().toISOString();
     const isPrint = session.metadata?.format === "papier";
+    // Papier : téléphone (portable pour un point relais : SMS à l'arrivée du colis) et nom du destinataire (point relais).
+    let contact: Record<string, string> = {};
+    if (isPrint) {
+      const relay = Boolean(getShippingMethod(session.metadata?.livraison)?.relay);
+      const phone = cleanPhone(body?.contact?.phone, relay);
+      const name = typeof body?.contact?.name === "string" ? body.contact.name.replace(/\s+/g, " ").trim().slice(0, 80) : "";
+      if (!phone) return Response.json({ error: "telephone" }, { status: 400 });
+      if (relay && name.length < 3) return Response.json({ error: "nom" }, { status: 400 });
+      contact = { telephone: phone, ...(relay ? { destinataire: name } : {}) };
+    }
     await stripe.checkout.sessions.update(sessionId, {
       metadata: isPrint
-        ? { ...session.metadata, cgv_acceptees_le: at }
+        ? { ...session.metadata, ...contact, cgv_acceptees_le: at }
         : { ...session.metadata, cgv_acceptees_le: at, renonciation_retractation_le: at },
     });
     return Response.json({ ok: true });
