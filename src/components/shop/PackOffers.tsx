@@ -1,12 +1,12 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Icon } from "@/components/ui/Icon";
+import { Icon, type UiIcon } from "@/components/ui/Icon";
 import { formatPrice } from "@/lib/format";
 import { type CartLine, lineKey } from "@/lib/cart";
 import type { CatalogPack, ShopConfig } from "@/lib/catalog";
-import { FREE_SHIPPING_FROM_CENTS, SHIPPING_FROM_CENTS } from "@/content/shipping";
 import { isPhysical } from "@/content/packs";
+import { IS_PREPROD } from "@/lib/format";
 import { FichePicker } from "./PackCheckout";
 import { FreeShippingBar, SuggestionList, lineDetail } from "./CartView";
 import { BUY_EVENT, type BuyRequest } from "./buy-event";
@@ -46,6 +46,85 @@ export function PackOffers({ slug, config, packImage, paperPhoto, paperSpecs, re
   const lines = useCart();
   const inCart = (f: string) => lines.some((l) => l.pack === slug && l.format === f);
 
+  // Produits proposés, dans l'ordre d'affichage : pack complet, numérique, fiches de poche, fiches de révision.
+  const products: Product[] = [];
+  if (bundle) {
+    const separate = print && revision ? pack.priceCents + print.priceCents + revision.priceCents : 0;
+    products.push({
+      format: "complet",
+      icon: "gift",
+      kicker: "Pack complet",
+      title: "Tout pour réussir",
+      short: "Numérique + poche + révision",
+      points: ["Numérique + fiches de poche + fiches de révision"],
+      priceCents: bundle.priceCents,
+      note: "+ Livraison",
+      save: separate > bundle.priceCents ? `Tu économises ${formatPrice(separate - bundle.priceCents)}` : undefined,
+      image: bundle.image,
+      badge: "Meilleure offre",
+      badgeCls: "offer__badge--bundle",
+      listBadge: true,
+      cls: "offer--bundle",
+      gift: false,
+      shipped: true,
+      available: !bundle.soldOut,
+    });
+  }
+  products.push({
+    format: "pdf",
+    icon: "phone",
+    kicker: "Version numérique",
+    title: "Sur ton téléphone, tout de suite",
+    short: `${pack.packCount} fiches · PDF et images`,
+    points: [`${pack.packCount} fiches en PDF et en images`, "Reçues par email après le paiement"],
+    priceCents: pack.priceCents,
+    note: `soit ${formatPrice(Math.round(pack.priceCents / pack.packCount))} la fiche`,
+    noteCls: "offer__per",
+    image: packImage,
+    cls: "",
+    gift: false,
+    shipped: false,
+    available: true,
+  });
+  if (print) {
+    products.push({
+      format: "papier",
+      icon: "note",
+      kicker: "Fiches de poche",
+      title: "À glisser dans ta blouse",
+      short: "Plastifiées, pour ta blouse",
+      points: [paperSpecs.join(" · ")],
+      priceCents: print.priceCents,
+      note: "+ Livraison",
+      image: paperPhoto,
+      badge: "Idéal en stage",
+      badgeCls: "",
+      cls: "offer--paper",
+      gift: true,
+      shipped: true,
+      available: paperOn,
+    });
+  }
+  if (revision) {
+    products.push({
+      format: "revision",
+      icon: "note",
+      kicker: "Fiches de révision",
+      title: "Complète, corrige, recommence",
+      short: "A4 à compléter, verso corrigé",
+      points: [revisionSpecs.join(" · ")],
+      priceCents: revision.priceCents,
+      note: "+ Livraison",
+      image: revision.image,
+      badge: "Pour réviser",
+      badgeCls: "offer__badge--revision",
+      cls: "offer--revision",
+      gift: true,
+      shipped: true,
+      available: !revision.soldOut,
+    });
+  }
+
   const add = (line: CartLine) => {
     const r = addToCart(line);
     setUnitOpen(null);
@@ -66,161 +145,49 @@ export function PackOffers({ slug, config, packImage, paperPhoto, paperSpecs, re
   return (
     <div className="offers" id="acheter" data-buy-anchor="">
       {print || revision ? <h2 className="offers__title">Choisis ta version</h2> : null}
-      <div className="offers__list">
-        <article className="offer">
-          {packImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className="offer__img" src={packImage.src} alt="" width={packImage.width} height={packImage.height} loading="lazy" />
-          ) : null}
-          <div className="offer__body">
-            <p className="offer__kicker">
-              <Icon name="phone" /> Version numérique
-            </p>
-            <h3 className="offer__title">Sur ton téléphone, tout de suite</h3>
-            <ul className="offer__points">
-              <li>{pack.packCount} fiches en PDF et en images</li>
-              <li>Reçues par email après le paiement</li>
-            </ul>
-          </div>
-          <div className="offer__foot">
-            <p className="offer__price">
-              <span className="price">{formatPrice(pack.priceCents)}</span>
-              <small className="offer__per">soit {formatPrice(Math.round(pack.priceCents / pack.packCount))} la fiche</small>
-            </p>
-            <button type="button" className="btn btn--primary btn--buy offer__btn" onClick={() => add({ pack: slug, format: "pdf", qty: 1 })}>
-              {inCart("pdf") ? (
-                <>
-                  <Icon name="check" /> Dans le panier
-                </>
-              ) : (
-                "Ajouter au panier"
-              )}
-            </button>
-          </div>
-        </article>
-
-        {print ? (
-          <article className={paperOn ? "offer offer--paper" : "offer offer--paper offer--off"}>
-            <span className="offer__badge">Idéal en stage</span>
-            {paperPhoto ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="offer__img" src={paperPhoto.src} alt="" width={paperPhoto.width} height={paperPhoto.height} loading="lazy" />
-            ) : null}
-            <div className="offer__body">
-              <p className="offer__kicker">
-                <Icon name="note" /> Fiches de poche
-              </p>
-              <h3 className="offer__title">À glisser dans ta blouse</h3>
-              <ul className="offer__points">
-                <li>{paperSpecs.join(" · ")}</li>
-                <li>
-                  <strong>+ version numérique offerte</strong>
-                </li>
-              </ul>
-            </div>
-            <div className="offer__foot">
-              <p className="offer__price">
-                <span className="price">{formatPrice(print.priceCents)}</span>
-                {config.shippingMethods.length ? (
-                  <small>
-                    + livraison dès {formatPrice(SHIPPING_FROM_CENTS)}, offerte dès {formatPrice(FREE_SHIPPING_FROM_CENTS)}
-                  </small>
+      {IS_PREPROD ? (
+        <OfferPicker products={products} onAdd={(f) => add({ pack: slug, format: f, qty: 1 })} inCart={inCart} />
+      ) : (
+        <div className="offers__list">
+          {products.map((p) => (
+            <article key={p.format} className={`offer ${p.cls}${p.available ? "" : " offer--off"}`}>
+              {p.badge ? <span className={`offer__badge ${p.badgeCls}`}>{p.badge}</span> : null}
+              {p.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="offer__img" src={p.image.src} alt="" width={p.image.width} height={p.image.height} loading="lazy" />
+              ) : null}
+              <div className="offer__body">
+                <p className="offer__kicker">
+                  <Icon name={p.icon} /> {p.kicker}
+                </p>
+                <h3 className="offer__title">{p.title}</h3>
+                <ul className="offer__points">
+                  {p.points.map((t) => (
+                    <li key={t}>{t}</li>
+                  ))}
+                </ul>
+                {p.gift ? (
+                  <span className="offer__gift">
+                    <Icon name="phone" /> Numérique offert
+                  </span>
                 ) : null}
-              </p>
-              <button
-                type="button"
-                className="btn btn--primary btn--buy offer__btn"
-                disabled={!paperOn}
-                onClick={() => add({ pack: slug, format: "papier", qty: 1 })}
-              >
-                {paperOn ? "Ajouter au panier" : "Bientôt de retour"}
-              </button>
-            </div>
-          </article>
-        ) : null}
-
-        {revision ? (
-          <article className={revision.soldOut ? "offer offer--revision offer--off" : "offer offer--revision"}>
-            <span className="offer__badge offer__badge--revision">Pour réviser</span>
-            {revision.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="offer__img" src={revision.image.src} alt="" width={revision.image.width} height={revision.image.height} loading="lazy" />
-            ) : null}
-            <div className="offer__body">
-              <p className="offer__kicker">
-                <Icon name="note" /> Fiches de révision
-              </p>
-              <h3 className="offer__title">Complète, corrige, recommence</h3>
-              <ul className="offer__points">
-                <li>{revisionSpecs.join(" · ")}</li>
-                <li>
-                  <strong>+ version numérique offerte</strong>
-                </li>
-              </ul>
-            </div>
-            <div className="offer__foot">
-              <p className="offer__price">
-                <span className="price">{formatPrice(revision.priceCents)}</span>
-                {config.shippingMethods.length ? (
-                  <small>
-                    + livraison dès {formatPrice(SHIPPING_FROM_CENTS)}, offerte dès {formatPrice(FREE_SHIPPING_FROM_CENTS)}
-                  </small>
+                {p.save ? (
+                  <span className="offer__gift">
+                    <Icon name="tag" /> {p.save}
+                  </span>
                 ) : null}
-              </p>
-              <button
-                type="button"
-                className="btn btn--primary btn--buy offer__btn"
-                disabled={!!revision.soldOut}
-                onClick={() => add({ pack: slug, format: "revision", qty: 1 })}
-              >
-                {!revision.soldOut ? "Ajouter au panier" : "Bientôt de retour"}
-              </button>
-            </div>
-          </article>
-        ) : null}
-
-        {bundle ? (
-          <article className={bundle.soldOut ? "offer offer--bundle offer--off" : "offer offer--bundle"}>
-            <span className="offer__badge offer__badge--bundle">Meilleure offre</span>
-            {bundle.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="offer__img" src={bundle.image.src} alt="" width={bundle.image.width} height={bundle.image.height} loading="lazy" />
-            ) : null}
-            <div className="offer__body">
-              <p className="offer__kicker">
-                <Icon name="gift" /> Pack complet
-              </p>
-              <h3 className="offer__title">Tout pour réussir</h3>
-              <ul className="offer__points">
-                <li>Numérique + fiches de poche + fiches de révision</li>
-                {print && revision && pack.priceCents + print.priceCents + revision.priceCents > bundle.priceCents ? (
-                  <li>
-                    <strong>Tu économises {formatPrice(pack.priceCents + print.priceCents + revision.priceCents - bundle.priceCents)}</strong>
-                  </li>
-                ) : null}
-              </ul>
-            </div>
-            <div className="offer__foot">
-              <p className="offer__price">
-                <span className="price">{formatPrice(bundle.priceCents)}</span>
-                {config.shippingMethods.length ? (
-                  <small>
-                    + livraison dès {formatPrice(SHIPPING_FROM_CENTS)}, offerte dès {formatPrice(FREE_SHIPPING_FROM_CENTS)}
-                  </small>
-                ) : null}
-              </p>
-              <button
-                type="button"
-                className="btn btn--primary btn--buy offer__btn"
-                disabled={!!bundle.soldOut}
-                onClick={() => add({ pack: slug, format: "complet", qty: 1 })}
-              >
-                {!bundle.soldOut ? "Ajouter au panier" : "Bientôt de retour"}
-              </button>
-            </div>
-          </article>
-        ) : null}
-      </div>
+              </div>
+              <div className="offer__foot">
+                <p className="offer__price">
+                  <span className="price">{formatPrice(p.priceCents)}</span>
+                  {p.note ? <small className={p.noteCls}>{p.note}</small> : null}
+                </p>
+                <AddButton available={p.available} inCart={inCart(p.format)} onClick={() => add({ pack: slug, format: p.format, qty: 1 })} />
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
 
       {unit ? (
         <button type="button" className="offers__unit" onClick={() => setUnitOpen([])}>
@@ -378,6 +345,100 @@ function Sheet({
         </div>
         {children}
       </div>
+    </div>
+  );
+}
+
+
+interface Product {
+  format: "pdf" | "papier" | "revision" | "complet";
+  icon: UiIcon;
+  kicker: string;
+  title: string;
+  /** Résumé d'une ligne (version liste). */
+  short: string;
+  points: string[];
+  priceCents: number;
+  note?: string;
+  noteCls?: string;
+  /** Économie du pack complet (pastille). */
+  save?: string;
+  /** Badge affiché dans la version liste (sinon : seulement sur les cartes). */
+  listBadge?: boolean;
+  image: { src: string; width: number; height: number } | null;
+  badge?: string;
+  badgeCls?: string;
+  cls: string;
+  /** Version numérique offerte avec ce format. */
+  gift: boolean;
+  shipped: boolean;
+  available: boolean;
+}
+
+/** Bouton d'ajout compact : icône panier + « Ajouter », « Ajouté » une fois dans le panier. */
+function AddButton({ available, inCart, onClick }: { available: boolean; inCart: boolean; onClick: () => void }) {
+  if (!available) return <span className="add-btn add-btn--off">Bientôt</span>;
+  return (
+    <button type="button" className={inCart ? "add-btn add-btn--in" : "add-btn"} onClick={onClick} aria-label={inCart ? "Ajouter encore au panier" : "Ajouter au panier"}>
+      <Icon name={inCart ? "check" : "cart"} /> {inCart ? "Ajouté" : "Ajouter"}
+    </button>
+  );
+}
+
+/**
+ * Version « liste » (préprod) : une ligne par produit (vignette, nom, une info, prix), on en choisit une,
+ * puis un seul bouton d'ajout. Moins d'informations à lire d'un coup.
+ */
+function OfferPicker({ products, onAdd, inCart }: { products: Product[]; onAdd: (f: Product["format"]) => void; inCart: (f: string) => boolean }) {
+  const first = products.find((p) => p.available) ?? products[0];
+  const [sel, setSel] = useState<Product["format"]>(first.format);
+  const cur = products.find((p) => p.format === sel) ?? first;
+  return (
+    <div className="pick">
+      <div className="pick__list" role="radiogroup" aria-label="Choisis ta version">
+        {products.map((p) => (
+          <button
+            key={p.format}
+            type="button"
+            role="radio"
+            aria-checked={sel === p.format}
+            disabled={!p.available}
+            className={`pick__row${sel === p.format ? " pick__row--on" : ""}`}
+            onClick={() => setSel(p.format)}
+          >
+            {p.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={p.image.src} alt="" width={p.image.width} height={p.image.height} loading="lazy" />
+            ) : null}
+            <span className="pick__text">
+              <strong>
+                {p.kicker}
+                {p.badge && p.listBadge ? <em>{p.badge}</em> : null}
+              </strong>
+              <span>{p.short}</span>
+            </span>
+            <span className="pick__price">
+              {formatPrice(p.priceCents)}
+              {p.shipped ? <small>+ Livraison</small> : null}
+            </span>
+          </button>
+        ))}
+      </div>
+      <p className="pick__detail">
+        {cur.gift ? (
+          <span className="offer__gift">
+            <Icon name="phone" /> Numérique offert
+          </span>
+        ) : null}
+        {cur.save ? (
+          <span className="offer__gift">
+            <Icon name="tag" /> {cur.save}
+          </span>
+        ) : null}
+      </p>
+      <button type="button" className="btn btn--primary btn--block btn--buy pick__cta" disabled={!cur.available} onClick={() => onAdd(cur.format)}>
+        <Icon name={inCart(cur.format) ? "check" : "cart"} /> {inCart(cur.format) ? "Ajouter encore" : "Ajouter au panier"} · {formatPrice(cur.priceCents)}
+      </button>
     </div>
   );
 }
