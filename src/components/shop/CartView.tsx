@@ -13,11 +13,11 @@ import { type AddResult, type Suggestion, addToCart, removeLine, resolveCart, se
 
 /** Libellé du format d'une ligne. */
 export function lineDetail(line: CartLine, pack: CatalogPack): string {
-  if (line.format === "papier") return "Fiches de poche · numérique offert";
+  if (line.format === "papier") return `${pack.print?.label ?? "Fiches de poche"} · numérique offert`;
   if (line.format === "revision") return "Fiches de révision A4 · numérique offert";
   if (line.format === "complet") return "Pack complet : numérique + poche + révision";
   if (line.format === "fiches") return `À l'unité : ${(line.fiches ?? []).map((i) => pack.unit?.items[i]?.title ?? `fiche ${i + 1}`).join(", ")}`;
-  return `Version numérique · ${pack.packCount} fiches`;
+  return `Version numérique · ${pack.packCount} ${pack.countWord[1]}`;
 }
 
 /** Barre « Plus que X € pour la livraison offerte ». */

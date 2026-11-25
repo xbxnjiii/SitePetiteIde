@@ -6,7 +6,7 @@
 //  `answer` = index (à partir de 0) de la bonne réponse dans `choices`.
 // ============================================================================
 
-import { arretCardiaque, avc, bpco, embolie, priseDeSang } from "./quiz-urgences";
+import { abreviations, arretCardiaque, avc, bpco, brulures, embolie, priseDeSang } from "./quiz-urgences";
 
 export interface QuizQuestion {
   question: string;
@@ -437,8 +437,14 @@ export const quiz: QuizQuestion[] = [
 ];
 
 /** Message de fin selon le score. */
-export function quizVerdict(score: number, total: number) {
+export function quizVerdict(score: number, total: number, theme?: string) {
   const ratio = score / total;
+  if (theme === "abreviations-medicales") {
+    if (ratio === 1) return { art: "trophy" as const, title: "Sans faute, bravo !", text: "Tu lis les transmissions comme un pro. Garde toutes les abréviations sous la main avec les fiches." };
+    if (ratio >= 0.7) return { art: "flame" as const, title: "Très bien !", text: "Encore quelques abréviations à fixer : les fiches les rangent par spécialité pour les retrouver en un coup d'œil." };
+    if (ratio >= 0.4) return { art: "sparkles" as const, title: "Pas mal, mais…", text: "Plus de 400 abréviations, ça ne s'invente pas ! Les fiches les réunissent toutes, classées par spécialité." };
+    return { art: "brain" as const, title: "Il est temps de réviser", text: "Pas de panique : les fiches te donnent toutes les abréviations à connaître en stage." };
+  }
   if (ratio === 1) return { art: "trophy" as const, title: "Sans faute, bravo !", text: "Tu maîtrises tes constantes. Garde-les sous la main avec le pack pour réviser en un clin d'œil." };
   if (ratio >= 0.7) return { art: "flame" as const, title: "Très bien !", text: "Encore quelques valeurs à consolider : le pack te les remet en tête en un coup d'œil." };
   if (ratio >= 0.4) return { art: "sparkles" as const, title: "Pas mal, mais…", text: "Les constantes, ça se révise ! Le pack réunit toutes les valeurs à retenir sur des fiches ultra-visuelles." };
@@ -446,7 +452,7 @@ export function quizVerdict(score: number, total: number) {
 }
 
 /** Icône du thème (dessinée en SVG, voir src/components/shop/QuizArt.tsx). */
-export type QuizIcon = "heart-pulse" | "defib" | "lungs" | "brain" | "wind" | "tube";
+export type QuizIcon = "heart-pulse" | "defib" | "lungs" | "brain" | "wind" | "tube" | "book" | "flame";
 
 export interface QuizTheme {
   slug: string;
@@ -519,6 +525,26 @@ export const quizzes: QuizTheme[] = [
     icon: "tube",
     status: "available",
     questions: priseDeSang,
+  },
+  {
+    slug: "abreviations-medicales",
+    emoji: "🔤",
+    title: "Les abréviations médicales",
+    description: "Les abréviations les plus utilisées en stage",
+    icon: "book",
+    status: "available",
+    questions: abreviations,
+    packSlug: "abreviations-medicales",
+    packName: "Les abréviations médicales",
+  },
+  {
+    slug: "brulures",
+    emoji: "🔥",
+    title: "Les brûlures",
+    description: "Degrés, règle des 9, premiers gestes",
+    icon: "flame",
+    status: "available",
+    questions: brulures,
   },
 ];
 

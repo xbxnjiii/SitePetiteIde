@@ -83,6 +83,10 @@ export interface PrintEdition {
   photos?: { src: string; width: number; height: number; alt: string }[];
   /** `true` : affiché « Bientôt de retour » et non achetable. */
   soldOut?: boolean;
+  /** Nom du format papier sur la carte (défaut : « Fiches de poche »). */
+  label?: string;
+  /** Explication courte (section « Et en papier ? » de la page de vente). */
+  blurb?: string;
 }
 
 export interface Pack {
@@ -132,6 +136,8 @@ export interface Pack {
   imageFiles?: PackFile[];
   /** Caractéristiques affichées (pages, format…). Laisser vide si inconnu. */
   pageCount?: number;
+  /** Mot pour compter les fiches [singulier, pluriel] (défaut : fiche, fiches). */
+  countWord?: [string, string];
   /** Statut : seuls les packs "published" sont visibles et achetables. */
   status: "published" | "draft";
 }
@@ -241,6 +247,71 @@ export const packs: Pack[] = [
         label,
       })),
     },
+    status: "published",
+  },
+  {
+    slug: "abreviations-medicales",
+    name: "Les abréviations médicales",
+    headline: "Toutes les abréviations médicales, enfin claires 🩺",
+    promise: "Plus de 400 abréviations classées par spécialité, pour lire les transmissions et les dossiers sans bloquer.",
+    tagline: "Plus de 400 abréviations classées par spécialité.",
+    description:
+      "Les abréviations médicales indispensables en stage, classées par spécialité : constantes, biologie, cardiologie, pneumologie, neurologie, urgences, organisation hospitalière…",
+    priceCents: 199,
+    icon: "book",
+    tone: "blue",
+    countWord: ["page", "pages"],
+    images: {
+      card: "/img/packs/abreviations/numerique-telephone.webp",
+      bio: "/img/packs/abreviations/bio.webp",
+      sale: "/img/packs/abreviations/eventail.webp",
+      saleSize: [1200, 1200],
+      gallery: [
+        {
+          src: "/img/packs/abreviations/eventail.webp",
+          width: 1200,
+          height: 1200,
+          alt: "Les pages des abréviations médicales en éventail (définitions floutées)",
+          label: "Aperçu des pages",
+        },
+      ],
+      alt: "Les abréviations médicales — 11 pages d'abréviations classées par spécialité",
+    },
+    // Une entrée par page (titres des aperçus de la page de vente).
+    items: [
+      { title: "Constantes, soins et biologie", icon: "gauge", description: "" },
+      { title: "Biologie et examens", icon: "drop", description: "" },
+      { title: "Examens et cardiologie", icon: "heart", description: "" },
+      { title: "Pneumologie et neurologie", icon: "lungs", description: "" },
+      { title: "Gastro, néphro, endocrino", icon: "note", description: "" },
+      { title: "Infectiologie et hématologie", icon: "syringe", description: "" },
+      { title: "Gynéco-obstétrique et pédiatrie", icon: "heart", description: "" },
+      { title: "Chirurgie, anesthésie, psychiatrie", icon: "note", description: "" },
+      { title: "Rhumato, oncologie, dermato", icon: "note", description: "" },
+      { title: "Urgences, réa et organisation", icon: "heart", description: "" },
+      { title: "Organisation et transmissions", icon: "book", description: "" },
+    ],
+    highlights: ["Plus de 400 abréviations", "Classées par spécialité", "Pour tes stages et tes transmissions"],
+    files: [
+      {
+        key: "abreviations-medicales/abreviations-medicales.pdf",
+        downloadName: "La-Petite-IDE-Abreviations-medicales.pdf",
+        label: "Les abréviations médicales (PDF)",
+      },
+    ],
+    // Version papier A5 (activable dans /admin › Réglages).
+    print: {
+      priceCents: 599,
+      label: "Version papier A5",
+      specs: ["Format A5", "Plastifiée", "Cartonnée"],
+      blurb: "Toutes les abréviations en format A5, cartonné et plastifié : solide, à garder dans ton sac de stage ou à afficher.",
+    },
+    imageFiles: Array.from({ length: 11 }, (_, i) => {
+      const n = String(i + 1).padStart(2, "0");
+      return { key: `abreviations-medicales/images/${n}.png`, downloadName: `La-Petite-IDE-Abreviations-${n}.png`, label: `Page ${i + 1}` };
+    }),
+    digitalImage: { src: "/img/packs/abreviations/numerique-telephone.webp", width: 800, height: 800, alt: "Une page des abréviations sur un téléphone" },
+    previews: Array.from({ length: 11 }, (_, i) => ({ src: `/img/packs/abreviations/apercu-${String(i + 1).padStart(2, "0")}.webp`, width: 720, height: 1018 })),
     status: "published",
   },
 ];

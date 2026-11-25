@@ -8,6 +8,7 @@ export type QuizArtName =
   | "brain"
   | "wind"
   | "tube"
+  | "book"
   | "bolt"
   | "trophy"
   | "flame"
@@ -67,6 +68,13 @@ const ART: Record<QuizArtName, React.ReactNode> = {
       <rect x="16" y="7" width="16" height="8" rx="2" />
       <path d="M19 24h10M23 29v3" />
       <path d="M37 26c0 1.9-1.3 3.4-3 3.4s-3-1.5-3-3.4c0-2.2 3-5.2 3-5.2s3 3 3 5.2z" />
+    </>
+  ),
+  book: (
+    <>
+      <path {...FILL} d="M8 10h12a4 4 0 0 1 4 4v24a3 3 0 0 0-3-3H8z" />
+      <path d="M8 10h12a4 4 0 0 1 4 4v24a3 3 0 0 0-3-3H8zM40 10H28a4 4 0 0 0-4 4v24a3 3 0 0 1 3-3h13z" />
+      <path d="M29 17h6M29 23h6M29 29h4" />
     </>
   ),
   bolt: (

@@ -1608,3 +1608,7 @@ img.bio__avatar { width: 128px; height: 128px; }
 .formats__icon--blue { background: var(--c-primary-50); color: var(--c-primary-dark); }
 .formats__icon--green { background: #e3f5ec; color: #1f6b4f; }
 .formats__note { margin: 10px 0 0; text-align: center; font-size: 0.8rem; color: var(--c-ink-soft); }
+
+/* Page de liens : plusieurs packs à la suite */
+.pq + .pq { margin-top: 10px; }
+@media (min-width: 768px) { .pq + .pq { margin-top: 16px; } }

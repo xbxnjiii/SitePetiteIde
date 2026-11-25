@@ -148,8 +148,8 @@ export function suggestions(lines: CartLine[], catalog: CatalogPack[], max = 3):
       out.push({
         pack: p,
         line: { pack: p.slug, format: "papier", qty: 1 },
-        title: `${p.shortName} · Fiches de poche`,
-        subtitle: "Plastifiées, à glisser dans ta blouse · numérique offert",
+        title: `${p.shortName} · ${p.print.label}`,
+        subtitle: "Version papier · numérique offert",
         cents: p.print.priceCents,
         image: p.paperImage,
       });

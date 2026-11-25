@@ -27,7 +27,9 @@ export interface CatalogPack {
   priceCents: number;
   /** Nombre de fiches du pack complet (fiche bonus comprise). */
   packCount: number;
-  print: { priceCents: number; soldOut: boolean } | null;
+  print: { priceCents: number; soldOut: boolean; label: string } | null;
+  /** Mot pour compter les fiches [singulier, pluriel]. */
+  countWord: [string, string];
   /** Fiches de révision A4 (null : pas en vente). */
   revision: { priceCents: number; soldOut: boolean; image: CatalogImage | null } | null;
   /** Pack complet numérique + poche + révision (null : pas en vente). */
@@ -61,7 +63,8 @@ export async function shopConfig(env: AppEnv): Promise<ShopConfig> {
       paperImage: photo ? { src: photo.src, width: photo.width, height: photo.height } : image ? { src: image.src, width: image.width, height: image.height } : null,
       priceCents: pack.priceCents,
       packCount: pack.items.length + (pack.bonus ? 1 : 0),
-      print: pack.print ? { priceCents: pack.print.priceCents, soldOut: Boolean(pack.print.soldOut) } : null,
+      print: pack.print ? { priceCents: pack.print.priceCents, soldOut: Boolean(pack.print.soldOut), label: pack.print.label ?? "Fiches de poche" } : null,
+      countWord: pack.countWord ?? ["fiche", "fiches"],
       revision: pack.revision
         ? { priceCents: pack.revision.priceCents, soldOut: Boolean(pack.revision.soldOut), image: img(pack.revision.photos?.[0]) }
         : null,

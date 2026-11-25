@@ -320,7 +320,7 @@ function Result({
   const [copied, setCopied] = useState(false);
   const label = QUIZ_MODES[mode].label;
   const ratio = score / total;
-  const verdict = quizVerdict(score, total);
+  const verdict = quizVerdict(score, total, theme.slug);
   const other: QuizMode = mode === "flash" ? "pros" : "flash";
   // Pack du thème, sinon le pack des constantes (utile pour tous les thèmes).
   const pack = getPack(theme.packSlug ?? QUIZ_PACK_SLUG);

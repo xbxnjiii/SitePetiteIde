@@ -1,10 +1,7 @@
 import { publishedPacks } from "@/content/packs";
 import { Footer } from "@/components/layout/Footer";
 import { OfferBanner } from "@/components/shop/OfferBanner";
-import { PackCover } from "@/components/shop/PackCover";
 import { type BlockVariant, PackQuizBlock } from "@/components/shop/PackQuizBlock";
-import { QuizCta } from "@/components/shop/QuizCta";
-import { SourceLink } from "@/components/shop/SourceLink";
 import { TipBlock } from "@/components/shop/TipBlock";
 import { Icon } from "@/components/ui/Icon";
 import { Mascot } from "@/components/ui/Mascot";
@@ -48,33 +45,13 @@ export default async function BioPage() {
 
         <section aria-labelledby="packs-title" className="bio__section">
           <h2 id="packs-title" className="visually-hidden">Nos packs de fiches</h2>
-          {packs.length === 1 || (!packs.length && show.quiz) ? (
-            // Un seul pack : pack + quiz réunis (tout tient sur un écran).
-            <PackQuizBlock pack={packs[0] ?? publishedPacks()[0]} variant={BLOCK_VARIANT} showPack={packs.length > 0} showQuiz={show.quiz} />
-          ) : packs.length > 1 ? (
+          {packs.length >= 1 || show.quiz ? (
+            // Le quiz puis un gros bouton par pack (tout tient sur un écran).
             <>
-              {show.quiz ? <QuizCta className="bio__quiz" /> : null}
-              <ul className="bio__list">
-                {packs.map((p) => (
-                  <li key={p.slug}>
-                    <SourceLink href={`/${p.slug}`} className="bio-card">
-                      {p.images ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.images.bio ?? p.images.card} alt="" width={800} height={800} className="bio-card__thumb" />
-                      ) : (
-                        <PackCover icon={p.icon} tone={p.tone} stacked={false} className="bio-card__cover" />
-                      )}
-                      <span className="bio-card__row">
-                        <span className="bio-card__body">
-                          <span className="bio-card__name">{p.name}</span>
-                          <span className="bio-card__desc">{p.tagline}</span>
-                        </span>
-                        <span className="bio-card__arrow" aria-hidden="true"><Icon name="arrow" /></span>
-                      </span>
-                    </SourceLink>
-                  </li>
-                ))}
-              </ul>
+              <PackQuizBlock pack={packs[0] ?? publishedPacks()[0]} variant={BLOCK_VARIANT} showPack={packs.length > 0} showQuiz={show.quiz} />
+              {packs.slice(1).map((p) => (
+                <PackQuizBlock key={p.slug} pack={p} variant={BLOCK_VARIANT} showPack showQuiz={false} />
+              ))}
             </>
           ) : null}
           {links.length ? (

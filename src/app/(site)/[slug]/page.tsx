@@ -62,13 +62,13 @@ const faqFor = (pack: Pack) => [
   pack.print
     ? {
         q: "Comment je reçois mon pack ?",
-        a: `En numérique (PDF et images) : juste après le paiement, bouton de téléchargement immédiat et lien par email (valable 30 jours). En fiches de poche : ${SHIPPING.dispatch.toLowerCase()} par Mondial Relay ou Colissimo, en point relais ou à domicile (livraison dès ${formatPrice(SHIPPING_FROM_CENTS)}), avec les fiches numériques offertes tout de suite.`,
+        a: `En numérique (PDF et images) : juste après le paiement, bouton de téléchargement immédiat et lien par email (valable 30 jours). En ${(pack.print?.label ?? "fiches de poche").replace(/^./, (c) => c.toLowerCase())} : ${SHIPPING.dispatch.toLowerCase()} par Mondial Relay ou Colissimo, en point relais ou à domicile (livraison dès ${formatPrice(SHIPPING_FROM_CENTS)}), avec les fiches numériques offertes tout de suite.`,
       }
     : { q: "Comment je reçois mon pack ?", a: "Juste après le paiement : bouton de téléchargement immédiat et lien envoyé par email (valable 30 jours)." },
   pack.print
     ? {
         q: "C'est un format papier ?",
-        a: `Les deux au choix ! En numérique (PDF et images), ou en fiches de poche (${pack.print.specs.join(", ").toLowerCase()}) livrées en ${SHIPPING.zone}, avec la version numérique offerte.`,
+        a: `Les deux au choix ! En numérique (PDF et images), ou en ${(pack.print.label ?? "fiches de poche").replace(/^./, (c) => c.toLowerCase())} (${pack.print.specs.join(", ").toLowerCase()}) livrées en ${SHIPPING.zone}, avec la version numérique offerte.`,
       }
     : { q: "C'est un format papier ?", a: "Non, numérique : tu reçois le PDF (idéal pour imprimer) et les fiches en images (idéal sur téléphone)." },
   pack.print
@@ -118,7 +118,7 @@ export default async function PackPage({ params }: { params: Params }) {
             // Carrousel : la vraie photo des fiches papier d'abord (si le papier est en vente), puis le visuel du pack et l'aperçu.
             <PackGallery
               slides={[
-                ...paperPhotos.map((p) => ({ ...p, label: "Fiches de poche" })),
+                ...paperPhotos.map((p) => ({ ...p, label: pack.print?.label ?? "Fiches de poche" })),
                 ...(pack.revision?.photos ?? []).map((p) => ({ ...p, label: "Fiches de révision" })),
                 ...(pack.images.gallery ?? []),
               ]}
@@ -183,7 +183,7 @@ export default async function PackPage({ params }: { params: Params }) {
               unitLabel={pack.unit ? `Cette fiche seule · ${formatPrice(pack.unit.priceCents)}` : null}
             />
             <p className="sale-sheets__note">
-              {packCount} fiches{pack.bonus ? " dont 1 bonus 🎁" : ""} · touche une fiche pour l&apos;agrandir
+              {packCount} {(pack.countWord ?? ["fiche", "fiches"])[1]}{pack.bonus ? " dont 1 bonus 🎁" : ""} · touche une {(pack.countWord ?? ["fiche", "fiches"])[0]} pour l&apos;agrandir
             </p>
           </div>
         ) : (
@@ -231,9 +231,9 @@ export default async function PackPage({ params }: { params: Params }) {
                     <Icon name="note" />
                   </span>
                   <p>
-                    <strong>Fiches de poche</strong>
-                    Les {pack.items.length} fiches en petit format, plastifiées et réunies sur un anneau : à glisser dans ta blouse
-                    pour les avoir sous la main en stage.
+                    <strong>{pack.print.label ?? "Fiches de poche"}</strong>
+                    {pack.print.blurb ??
+                      `Les ${pack.items.length} fiches en petit format, plastifiées et réunies sur un anneau : à glisser dans ta blouse pour les avoir sous la main en stage.`}
                   </p>
                 </li>
               ) : null}
