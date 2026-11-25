@@ -115,6 +115,14 @@ export function cleanPhone(v: unknown, mobileOnly = false): string | null {
   return ok ? digits.replace(/(\d{2})(?=\d)/g, "$1 ") : null;
 }
 
+/** Transporteurs proposés à l'expédition (admin), avec leur nom affiché. */
+export const CARRIERS: { id: Carrier; name: string }[] = [
+  { id: "mondial-relay", name: "Mondial Relay" },
+  { id: "colissimo", name: "Colissimo" },
+];
+export const parseCarrier = (v: unknown): Carrier | null => CARRIERS.find((c) => c.id === v)?.id ?? null;
+export const carrierName = (c: Carrier) => CARRIERS.find((x) => x.id === c)?.name ?? c;
+
 /** Lien de suivi du colis chez le transporteur. */
 export function trackingUrl(carrier: Carrier | null, tracking: string, postalCode?: string | null): string {
   if (carrier === "mondial-relay") {

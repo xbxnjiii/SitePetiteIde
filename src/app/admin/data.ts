@@ -1,6 +1,6 @@
 import type Stripe from "stripe";
 import { getPack, parseFormat, type PackFormat } from "@/content/packs";
-import { type Carrier, methodName } from "@/content/shipping";
+import { type Carrier, methodName, parseCarrier } from "@/content/shipping";
 import { type Order, orderFromSession, orderReference, shippingInfo } from "@/lib/orders";
 
 // Lecture des commandes pour la page /admin. Tout vient de Stripe (aucune base de données) :
@@ -8,6 +8,8 @@ import { type Order, orderFromSession, orderReference, shippingInfo } from "@/li
 
 export const SHIPPED_AT = "lpi_expedie_le";
 export const TRACKING = "lpi_suivi";
+/** Transporteur réellement utilisé à l'expédition (choisi dans /admin). */
+export const SHIPPED_CARRIER = "lpi_transporteur";
 /** Commande papier « en retard » au-delà de ce nombre de jours ouvrés sans expédition. */
 export const LATE_AFTER_BUSINESS_DAYS = 2;
 /** Nombre maximum de commandes lues dans Stripe (les plus récentes). */
@@ -31,6 +33,8 @@ export interface AdminOrder {
   /** Mode de livraison (« Mondial Relay · Point Relais ou Locker »…), null pour un PDF ou une ancienne commande. */
   method: string | null;
   carrier: Carrier | null;
+  /** Transporteur choisi à l'expédition (pour le lien de suivi), sinon celui de la commande. */
+  shippedCarrier: Carrier | null;
   /** Point relais : à choisir sur le site du transporteur au moment de créer l'étiquette. */
   relay: boolean;
   phone: string | null;
@@ -103,6 +107,7 @@ function toAdminOrder(s: Stripe.Checkout.Session, now = Date.now()): AdminOrder 
     deliverable: format === "papier" ? (ship?.deliverable ?? false) : true,
     method: ship?.method ? methodName(ship.method) : null,
     carrier: ship?.carrier ?? null,
+    shippedCarrier: parseCarrier(pi?.metadata?.[SHIPPED_CARRIER]),
     relay: Boolean(ship?.relay),
     phone: ship?.phone ?? null,
     postalCode: ship?.postalCode ?? null,

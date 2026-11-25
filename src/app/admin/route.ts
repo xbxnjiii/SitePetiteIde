@@ -8,7 +8,8 @@ import { type AppEnv, getEnvAsync, siteUrl } from "@/lib/env";
 import { downloadLinks, imagesLink, orderReference, shippingInfo } from "@/lib/orders";
 import { isAllowedOrigin } from "@/lib/origin";
 import { stripeClient } from "@/lib/stripe";
-import { type AdminOrder, SHIPPED_AT, TRACKING, listOrders, listOrdersBetween, listPackBuyers, matches, statusOf } from "./data";
+import { type AdminOrder, SHIPPED_AT, SHIPPED_CARRIER, TRACKING, listOrders, listOrdersBetween, listPackBuyers, matches, statusOf } from "./data";
+import { carrierName, parseCarrier } from "@/content/shipping";
 import { buildDashboard } from "./dashboard";
 import { labelsPage } from "./labels";
 import { lastMonths, monthBounds, ordersCsv } from "./export";
@@ -238,24 +239,28 @@ export async function POST(request: Request) {
     if (session.metadata?.format !== "papier" || session.status !== "complete" || !pi || !email || !pack) return back("erreur=session");
 
     if (action === "annuler") {
-      await stripe.paymentIntents.update(pi.id, { metadata: { [SHIPPED_AT]: "", [TRACKING]: "" } });
+      await stripe.paymentIntents.update(pi.id, { metadata: { [SHIPPED_AT]: "", [TRACKING]: "", [SHIPPED_CARRIER]: "" } });
       console.log("admin: expédition annulée", orderReference(session.id));
       return back("ok=annulee");
     }
 
+    // Transporteur choisi dans l'admin (anciennes commandes « Lettre suivie » : envoyées en Mondial Relay).
     const ship = shippingInfo(session);
+    const carrier = parseCarrier(form?.get("transporteur")) ?? ship?.carrier ?? "mondial-relay";
     await sendShippedEmail(env, {
       to: email,
       packName: pack.name,
       reference: orderReference(session.id),
       tracking,
       sessionId: session.id,
-      carrier: ship?.carrier ?? null,
-      carrierName: ship?.method?.carrierName ?? null,
+      carrier,
+      carrierName: carrierName(carrier),
       postalCode: ship?.postalCode ?? null,
       relay: Boolean(ship?.relay),
     });
-    await stripe.paymentIntents.update(pi.id, { metadata: { [SHIPPED_AT]: new Date().toISOString(), [TRACKING]: tracking } });
+    await stripe.paymentIntents.update(pi.id, {
+      metadata: { [SHIPPED_AT]: new Date().toISOString(), [TRACKING]: tracking, [SHIPPED_CARRIER]: carrier },
+    });
     console.log("admin: commande expédiée", orderReference(session.id));
     return back("ok=expediee");
   } catch (err) {

@@ -1,5 +1,5 @@
 import { formatPrice } from "@/lib/format";
-import { trackingUrl } from "@/content/shipping";
+import { CARRIERS, type Carrier, trackingUrl } from "@/content/shipping";
 import type { Dashboard } from "./dashboard";
 import { QUIZ_PERIODS, type QuizStatsView } from "./quizstats";
 import { type AdminOrder, statusOf } from "./data";
@@ -151,8 +151,17 @@ function orderCard(o: AdminOrder, tab: Tab, q: string, trashed = false): string 
 
   const isPrint = o.format === "papier";
   const sid = { session_id: o.id };
+  // Transporteur proposé à l'expédition : celui de la commande ; Mondial Relay pour les anciennes commandes (Lettre suivie).
+  const carrierFor: Carrier = o.shippedCarrier ?? o.carrier ?? "mondial-relay";
+  const carrierSelect = `<select name="transporteur" aria-label="Transporteur">${CARRIERS.map(
+    (c) => `<option value="${c.id}"${c.id === carrierFor ? " selected" : ""}>${esc(c.name)}</option>`,
+  ).join("")}</select>`;
   const address = isPrint
-    ? `${o.method ? `<p class="ship-mode">🚚 <strong>${esc(o.method)}</strong></p>` : ""}
+    ? `${
+        o.method
+          ? `<p class="ship-mode">🚚 <strong>${esc(o.method)}</strong></p>`
+          : `<p class="ship-mode">🚚 <strong>Ancienne commande (Lettre suivie)</strong> · à envoyer en Mondial Relay à domicile</p>`
+      }
        <div class="addr">${o.lines.map(esc).join("<br>")}${o.phone ? `<br><span class="muted">Tél. ${esc(o.phone)}</span>` : ""}</div>
        ${o.deliverable ? "" : `<p class="warn">⚠️ Adresse hors France métropolitaine : à vérifier, rembourser si besoin.</p>`}`
     : "";
@@ -162,11 +171,13 @@ function orderCard(o: AdminOrder, tab: Tab, q: string, trashed = false): string 
     if (o.shippedAt) {
       action = `<div class="shipped">
           <p>📦 Expédiée le ${esc(day(Date.parse(o.shippedAt)))} · suivi
-            <a href="${esc(trackingUrl(o.carrier, o.tracking ?? "", o.postalCode))}" target="_blank" rel="noreferrer"><strong>${esc(o.tracking ?? "")}</strong></a></p>
+            ${o.shippedCarrier ? esc(CARRIERS.find((c) => c.id === o.shippedCarrier)?.name ?? "") : ""}
+            <a href="${esc(trackingUrl(o.shippedCarrier ?? o.carrier, o.tracking ?? "", o.postalCode))}" target="_blank" rel="noreferrer"><strong>${esc(o.tracking ?? "")}</strong></a></p>
           <details class="fix"><summary>Corriger</summary>
             <form method="post" class="ship">
               ${hiddenFields(tab, q, { ...sid, action: "expedier" })}
               <input name="tracking" required minlength="8" maxlength="40" placeholder="Nouveau n° de suivi" autocomplete="off" aria-label="Nouveau numéro de suivi">
+              ${carrierSelect}
               <button type="submit" class="btn">Renvoyer</button>
             </form>
             <form method="post" data-confirm="Remettre cette commande dans « À expédier » ? (aucun email envoyé)">
@@ -178,7 +189,8 @@ function orderCard(o: AdminOrder, tab: Tab, q: string, trashed = false): string 
     } else {
       action = `<form method="post" class="ship">
           ${hiddenFields(tab, q, { ...sid, action: "expedier" })}
-          <input name="tracking" required minlength="8" maxlength="40" placeholder="N° de suivi ${o.carrier === "mondial-relay" ? "Mondial Relay" : o.carrier === "colissimo" ? "Colissimo" : "La Poste"}" autocomplete="off" autocapitalize="characters" aria-label="Numéro de suivi">
+          <input name="tracking" required minlength="8" maxlength="40" placeholder="N° de suivi" autocomplete="off" autocapitalize="characters" aria-label="Numéro de suivi">
+          ${carrierSelect}
           <button type="submit" class="btn">Marquer expédiée</button>
         </form>`;
     }
@@ -1053,7 +1065,9 @@ const CSS = `
   .ship-mode { margin:10px 0 0; font-size:.9rem; }
   .addr { margin-top:6px; padding:10px 12px; background:var(--bg); border-radius:12px; font-size:.95rem; line-height:1.45; }
   .warn { padding:8px 12px; background:var(--late50); color:var(--late); border-radius:10px; font-size:.86rem; }
-  .ship { display:flex; gap:8px; margin-top:12px; }
+  .ship { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .ship input { flex:1 1 100% !important; }
+  .ship select { flex:1 1 auto; min-width:0; padding:10px 8px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface); font-weight:600; }
   .ship input { flex:1; min-width:0; padding:10px 12px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface); text-transform:uppercase; }
   .shipped { margin-top:10px; padding:8px 12px; background:var(--ok50); border-radius:12px; font-size:.9rem; }
   .shipped p { margin:0; }
