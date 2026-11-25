@@ -1421,3 +1421,13 @@ img.bio__avatar { width: 128px; height: 128px; }
   .relay-picker .modal__head { padding-top: 14px; }
   .relay-picker__confirm { padding-bottom: 14px; }
 }
+
+/* Badges des modes de livraison : le moins cher / le plus rapide */
+.ship-method__text small { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.ship-badge {
+  display: inline-flex; align-items: center; gap: 3px; padding: 1px 8px 1px 6px; border-radius: var(--r-pill);
+  font-size: 0.7rem; font-weight: 700; line-height: 1.5; white-space: nowrap;
+}
+.ship-badge svg { width: 12px; height: 12px; flex: none; }
+.ship-badge--cheap { background: #e3f5ec; color: #1f6b4f; }
+.ship-badge--fast { background: #fff1dc; color: #9a5a00; }

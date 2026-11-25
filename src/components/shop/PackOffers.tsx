@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { formatPrice } from "@/lib/format";
 import type { PackFormat } from "@/content/packs";
-import { type Carrier, type RelayPoint, SHIPPING, type ShippingMethod } from "@/content/shipping";
+import { type Carrier, type RelayPoint, SHIPPING, type ShippingMethod, methodBadges } from "@/content/shipping";
 import { CheckoutPanel, FichePicker, type UnitOffer } from "./PackCheckout";
 import { RelayPicker } from "./RelayPicker";
 import { BUY_EVENT, type BuyRequest } from "./buy-event";
@@ -238,6 +238,7 @@ function BuySheet({
   const shippingCents = isPaper && method ? method.priceCents : 0;
   const priceCents = (isPaper ? print.priceCents + shippingCents : isUnit ? unit.priceCents * fiches.length : packCents);
   const paperReady = Boolean(method && (!method.relay || relay));
+  const badges = methodBadges(print?.shippingMethods ?? []);
   const settled = fiches.join() === picked.join();
 
   return (
@@ -276,6 +277,15 @@ function BuySheet({
                       </strong>
                       <small>
                         {m.estimate.min} à {m.estimate.max} jours
+                        {badges.cheapest === m.id ? (
+                          <span className="ship-badge ship-badge--cheap">
+                            <Icon name="tag" /> Le moins cher
+                          </span>
+                        ) : badges.fastest === m.id ? (
+                          <span className="ship-badge ship-badge--fast">
+                            <Icon name="bolt" /> Le plus rapide
+                          </span>
+                        ) : null}
                       </small>
                     </span>
                     <span className="ship-method__price">{formatPrice(m.priceCents)}</span>

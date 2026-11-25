@@ -38,7 +38,7 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
     carrierName: "Mondial Relay",
     relay: true,
     label: "Point relais",
-    priceCents: 415,
+    priceCents: 429,
     estimate: { min: 3, max: 5 },
   },
   {
@@ -56,7 +56,7 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
     carrierName: "Mondial Relay",
     relay: false,
     label: "À domicile",
-    priceCents: 499,
+    priceCents: 549,
     estimate: { min: 3, max: 5 },
   },
   {
@@ -65,7 +65,7 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
     carrierName: "Colissimo",
     relay: false,
     label: "À domicile",
-    priceCents: 549,
+    priceCents: 629,
     estimate: { min: 2, max: 3 },
   },
 ];
@@ -75,8 +75,19 @@ export const getShippingMethod = (id: unknown): ShippingMethod | null => SHIPPIN
 /** Nom complet d'un mode, ex. « Mondial Relay · Point relais ». */
 export const methodName = (m: ShippingMethod) => `${m.carrierName} · ${m.label}`;
 
-/** Prix de livraison le plus bas (« livraison dès 4,15 € »). */
+/** Prix de livraison le plus bas (« livraison dès 4,29 € »). */
 export const SHIPPING_FROM_CENTS = Math.min(...SHIPPING_METHODS.map((m) => m.priceCents));
+
+/** Badges des modes proposés : le moins cher, et le plus rapide (le moins cher en cas d'égalité). */
+export function methodBadges(methods: ShippingMethod[]): { cheapest: ShippingMethodId | null; fastest: ShippingMethodId | null } {
+  if (!methods.length) return { cheapest: null, fastest: null };
+  const byPrice = [...methods].sort((a, b) => a.priceCents - b.priceCents);
+  const bySpeed = [...byPrice].sort((a, b) => a.estimate.max - b.estimate.max || a.estimate.min - b.estimate.min);
+  const fastest = bySpeed[0];
+  const cheapest = byPrice[0];
+  // Un seul mode, ou le moins cher est aussi le plus rapide : un seul badge.
+  return { cheapest: cheapest.id, fastest: methods.length > 1 && fastest.id !== cheapest.id ? fastest.id : null };
+}
 
 /** Point relais / locker / consigne choisi par le client sur la carte du transporteur. */
 export interface RelayPoint {
