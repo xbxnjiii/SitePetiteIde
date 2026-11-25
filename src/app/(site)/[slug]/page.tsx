@@ -117,11 +117,15 @@ export default async function PackPage({ params }: { params: Params }) {
           {pack.images ? (
             // Carrousel : la vraie photo des fiches papier d'abord (si le papier est en vente), puis le visuel du pack et l'aperçu.
             <PackGallery
-              slides={[
-                ...paperPhotos.map((p) => ({ ...p, label: pack.print?.label ?? "Fiches de poche" })),
-                ...(pack.revision?.photos ?? []).map((p) => ({ ...p, label: "Fiches de révision" })),
-                ...(pack.images.gallery ?? []),
-              ]}
+              slides={(() => {
+                const paper = [
+                  ...paperPhotos.map((p) => ({ ...p, label: pack.print?.label ?? "Fiches de poche" })),
+                  ...(pack.revision?.photos ?? []).map((p) => ({ ...p, label: "Fiches de révision" })),
+                ];
+                const gallery = pack.images.gallery ?? [];
+                // Visuels papier (et non photos) : le visuel de présentation reste en premier.
+                return pack.print?.photosAfterCover ? [...gallery.slice(0, 1), ...paper, ...gallery.slice(1)] : [...paper, ...gallery];
+              })()}
             />
           ) : (
             <PackCover icon={pack.icon} tone={pack.tone} />
@@ -287,7 +291,11 @@ export default async function PackPage({ params }: { params: Params }) {
             .map((p) => (
               <li key={p.slug}>
                 <Link href={`/${p.slug}`} className="see-also__card">
-                  {p.image ? (
+                  {getPack(p.slug)?.images?.bio ? (
+                    // Même visuel que sur la page de liens.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={getPack(p.slug)!.images!.bio} alt="" width={800} height={800} loading="lazy" />
+                  ) : p.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={p.image.src} alt="" width={p.image.width} height={p.image.height} loading="lazy" />
                   ) : null}

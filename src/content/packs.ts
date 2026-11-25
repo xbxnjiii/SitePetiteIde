@@ -87,6 +87,8 @@ export interface PrintEdition {
   label?: string;
   /** Explication courte (section « Et en papier ? » de la page de vente). */
   blurb?: string;
+  /** `true` : les photos papier viennent après le visuel de présentation dans le carrousel. */
+  photosAfterCover?: boolean;
 }
 
 export interface Pack {
@@ -257,7 +259,7 @@ export const packs: Pack[] = [
     tagline: "Plus de 400 abréviations classées par spécialité.",
     description:
       "Les abréviations médicales indispensables en stage, classées par spécialité : constantes, biologie, cardiologie, pneumologie, neurologie, urgences, organisation hospitalière…",
-    priceCents: 199,
+    priceCents: 399,
     icon: "book",
     tone: "blue",
     countWord: ["page", "pages"],
@@ -301,8 +303,13 @@ export const packs: Pack[] = [
     ],
     // Version papier A5 (activable dans /admin › Réglages).
     print: {
-      priceCents: 599,
+      priceCents: 699,
       label: "Version papier A5",
+      photosAfterCover: true,
+      photos: [
+        { src: "/img/packs/abreviations/papier-1.webp", width: 1200, height: 1200, alt: "Visuel de la fiche A5 plastifiée des abréviations médicales" },
+        { src: "/img/packs/abreviations/papier-2.webp", width: 1200, height: 1200, alt: "Visuel des fiches A5 plastifiées des abréviations médicales" },
+      ],
       specs: ["Format A5", "Plastifiée", "Cartonnée"],
       blurb: "Toutes les abréviations en format A5, cartonné et plastifié : solide, à garder dans ton sac de stage ou à afficher.",
     },

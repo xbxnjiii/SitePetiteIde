@@ -63,7 +63,10 @@ export function SuggestionList({ items, onAdd }: { items: Suggestion[]; onAdd?: 
           <button
             type="button"
             className="btn btn--secondary btn--sm suggest__add"
-            onClick={() => onAdd?.(s, addToCart(s.line))}
+            onClick={() => {
+              const r = addToCart(s.line);
+              onAdd?.(s, r);
+            }}
           >
             + {formatPrice(s.cents)}
           </button>
