@@ -22,10 +22,8 @@ export interface ShippingMethod {
   carrierName: string;
   /** Livraison en point relais / locker / consigne (le client choisit le point sur une carte). */
   relay: boolean;
-  /** Libellé court du mode (« Point Relais ou Locker », « À domicile »…). */
+  /** Libellé court du mode (« Point relais », « À domicile »…). */
   label: string;
-  /** Précision affichée sous le libellé. */
-  note: string;
   /** Prix TTC. */
   priceCents: number;
   /** Délai de livraison estimé après expédition (jours ouvrés), affiché par Stripe. */
@@ -39,8 +37,7 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
     carrier: "mondial-relay",
     carrierName: "Mondial Relay",
     relay: true,
-    label: "Point Relais ou Locker",
-    note: "Commerce ou consigne près de chez toi",
+    label: "Point relais",
     priceCents: 415,
     estimate: { min: 3, max: 5 },
   },
@@ -50,7 +47,6 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
     carrierName: "Colissimo",
     relay: true,
     label: "Point retrait",
-    note: "Bureau de poste, relais ou consigne",
     priceCents: 479,
     estimate: { min: 2, max: 3 },
   },
@@ -60,7 +56,6 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
     carrierName: "Mondial Relay",
     relay: false,
     label: "À domicile",
-    note: "Livré chez toi",
     priceCents: 499,
     estimate: { min: 3, max: 5 },
   },
@@ -70,7 +65,6 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
     carrierName: "Colissimo",
     relay: false,
     label: "À domicile",
-    note: "Dans ta boîte aux lettres",
     priceCents: 549,
     estimate: { min: 2, max: 3 },
   },
@@ -78,7 +72,7 @@ export const SHIPPING_METHODS: ShippingMethod[] = [
 
 export const getShippingMethod = (id: unknown): ShippingMethod | null => SHIPPING_METHODS.find((m) => m.id === id) ?? null;
 
-/** Nom complet d'un mode, ex. « Mondial Relay · Point Relais ou Locker ». */
+/** Nom complet d'un mode, ex. « Mondial Relay · Point relais ». */
 export const methodName = (m: ShippingMethod) => `${m.carrierName} · ${m.label}`;
 
 /** Prix de livraison le plus bas (« livraison dès 4,15 € »). */

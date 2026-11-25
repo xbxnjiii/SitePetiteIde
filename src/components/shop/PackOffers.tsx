@@ -200,12 +200,29 @@ function BuySheet({
   const [method, setMethod] = useState<ShippingMethod | null>(null);
   const [relays, setRelays] = useState<Partial<Record<Carrier, RelayPoint>>>({});
   const [picker, setPicker] = useState<Carrier | null>(null);
+  // Code postal de recherche : la carte s'ouvre directement sur les points autour (mémorisé sur l'appareil).
+  const [postalCode, setPostalCode] = useState("");
+  useEffect(() => {
+    try {
+      setPostalCode(localStorage.getItem("lpi:cp") ?? "");
+    } catch {}
+  }, []);
+  const cpOk = /^\d{5}$/.test(postalCode);
+  const openPicker = (carrier: Carrier) => {
+    if (!cpOk) {
+      document.getElementById(`cp-${slug}`)?.focus();
+      return;
+    }
+    try {
+      localStorage.setItem("lpi:cp", postalCode);
+    } catch {}
+    setPicker(carrier);
+  };
   const pickerOpen = useRef(false);
   pickerOpen.current = picker !== null;
   const relay = method?.relay ? (relays[method.carrier] ?? null) : null;
   const chooseMethod = (m: ShippingMethod) => {
     setMethod(m);
-    if (m.relay && !relays[m.carrier]) setPicker(m.carrier);
   };
 
   const isUnit = format === "fiches" && unit;
@@ -258,7 +275,7 @@ function BuySheet({
                         {m.carrierName} · {m.label}
                       </strong>
                       <small>
-                        {m.note} · {m.estimate.min} à {m.estimate.max} jours
+                        {m.estimate.min} à {m.estimate.max} jours
                       </small>
                     </span>
                     <span className="ship-method__price">{formatPrice(m.priceCents)}</span>
@@ -275,14 +292,33 @@ function BuySheet({
                         {relay.address}, {relay.postalCode} {relay.city}
                       </span>
                     </p>
-                    <button type="button" className="link-btn" onClick={() => setPicker(method.carrier)}>
+                    <button type="button" className="link-btn" onClick={() => setRelays((r) => ({ ...r, [method.carrier]: undefined }))}>
                       Changer
                     </button>
                   </div>
                 ) : (
-                  <button type="button" className="btn btn--secondary btn--block" onClick={() => setPicker(method.carrier)}>
-                    <Icon name="pin" /> Choisir mon {method.carrier === "mondial-relay" ? "Point Relais ou Locker" : "point retrait"}
-                  </button>
+                  <form
+                    className="relay-search"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      openPicker(method.carrier);
+                    }}
+                  >
+                    <label htmlFor={`cp-${slug}`}>Ton code postal</label>
+                    <input
+                      id={`cp-${slug}`}
+                      className="input"
+                      inputMode="numeric"
+                      autoComplete="postal-code"
+                      maxLength={5}
+                      placeholder="75001"
+                      value={postalCode}
+                      onChange={(e) => setPostalCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                    />
+                    <button type="submit" className="btn btn--primary" disabled={!cpOk}>
+                      <Icon name="pin" /> Voir les {method.carrier === "mondial-relay" ? "points relais" : "points retrait"}
+                    </button>
+                  </form>
                 )
               ) : null}
             </fieldset>
@@ -320,6 +356,7 @@ function BuySheet({
         {picker ? (
           <RelayPicker
             carrier={picker}
+            postalCode={postalCode}
             brand={print?.mondialRelayBrand ?? null}
             onClose={() => setPicker(null)}
             onPick={(point) => {

@@ -93,11 +93,14 @@ function fromColissimo(p: any): RelayPoint | null {
 
 export function RelayPicker({
   carrier,
+  postalCode,
   brand,
   onPick,
   onClose,
 }: {
   carrier: Carrier;
+  /** Code postal de recherche (les points autour s'affichent tout de suite). */
+  postalCode: string;
   /** Code enseigne Mondial Relay. */
   brand: string | null;
   onPick: (point: RelayPoint) => void;
@@ -123,15 +126,17 @@ export function RelayPicker({
           await loadScript(LEAFLET_JS);
           await loadScript(MR_PLUGIN);
           if (cancelled || !el) return;
+          // Téléphone : la liste seule, en pleine largeur (la carte à côté y est illisible).
+          const wide = window.matchMedia("(min-width: 700px)").matches;
           window.jQuery(el).MR_ParcelShopPicker({
             Target: "#relay-target",
             Brand: brand,
             Country: "FR",
-            PostCode: "",
+            PostCode: postalCode,
             ColLivMod: "24R",
             NbResults: "7",
             Responsive: true,
-            ShowResultsOnMap: true,
+            ShowResultsOnMap: wide,
             OnParcelShopSelected: (data: any) => {
               const point = fromMondialRelay(data);
               setInvalid(!point);
@@ -161,6 +166,7 @@ export function RelayPicker({
             callBackFrame: "lpiColissimoPick",
             ceCountry: "FR",
             ceCountryList: "FR",
+            ceZipCode: postalCode,
             dyPreparationTime: "2",
             origin: "WIDGET",
             filterRelay: "1",
@@ -183,13 +189,13 @@ export function RelayPicker({
         delete window.lpiColissimoPick;
       }
     };
-  }, [carrier, brand]);
+  }, [carrier, brand, postalCode]);
 
   return (
     <div className="modal relay-picker" role="presentation" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__panel" role="dialog" aria-modal="true" aria-labelledby="relay-picker-title">
         <div className="modal__head">
-          <h2 id="relay-picker-title">{carrier === "mondial-relay" ? "Ton Point Relais ou Locker" : "Ton point retrait Colissimo"}</h2>
+          <h2 id="relay-picker-title">{carrier === "mondial-relay" ? "Ton point relais" : "Ton point retrait"}</h2>
           <button type="button" className="modal__close" onClick={onClose} aria-label="Fermer">
             <Icon name="close" />
           </button>
@@ -201,7 +207,9 @@ export function RelayPicker({
           </p>
         ) : null}
         <input type="hidden" id="relay-target" />
-        <div ref={box} className="relay-picker__widget" />
+        <div className="relay-picker__body">
+          <div ref={box} className={`relay-picker__widget relay-picker__widget--${carrier}`} />
+        </div>
         {invalid ? (
           <p className="alert" role="alert">
             Ce point n&apos;est pas utilisable : on livre seulement en France métropolitaine (Corse comprise).
