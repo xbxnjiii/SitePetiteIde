@@ -168,7 +168,7 @@ export const packs: Pack[] = [
     },
     description:
       "Un mémo clair et synthétique pour chaque paramètre vital : valeurs normales, technique de mesure et signes d'alerte. Conçu pour réviser vite et bien, sur téléphone ou imprimé.",
-    priceCents: 299,
+    priceCents: 199,
     icon: "heart",
     tone: "pink",
     images: {
@@ -259,7 +259,7 @@ export const packs: Pack[] = [
     tagline: "Plus de 400 abréviations classées par spécialité.",
     description:
       "Les abréviations médicales indispensables en stage, classées par spécialité : constantes, biologie, cardiologie, pneumologie, neurologie, urgences, organisation hospitalière…",
-    priceCents: 399,
+    priceCents: 199,
     icon: "book",
     tone: "blue",
     countWord: ["page", "pages"],
