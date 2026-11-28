@@ -1,5 +1,5 @@
 import "server-only";
-import type { Pack } from "@/content/packs";
+import type { Pack, PackFormat } from "@/content/packs";
 import { type AppEnv, siteUrl } from "./env";
 
 // Réglages modifiables depuis /admin (interrupteurs), sans base de données :
@@ -24,6 +24,8 @@ export interface Settings {
   links: BioLink[];
   /** Adresses qui reçoivent une copie cachée des emails de commande (production uniquement, voir src/lib/email.ts). */
   orderCopies: string[];
+  /** Prix modifiés depuis /admin, en centimes (clé « slug:format »). Absent = prix par défaut du code. */
+  prices: Record<string, number>;
 }
 
 /** Éléments de la page de liens que l'on peut afficher / masquer depuis /admin. */
@@ -62,7 +64,31 @@ export const DEFAULT_SETTINGS: Settings = {
   bio: DEFAULT_BIO,
   links: [],
   orderCopies: [],
+  prices: {},
 };
+
+/** Prix autorisés depuis /admin : de 0,50 € (minimum Stripe) à 200 €. */
+export const MIN_PRICE_CENTS = 50;
+export const MAX_PRICE_CENTS = 20_000;
+export const priceKey = (slug: string, format: PackFormat) => `${slug}:${format}`;
+const validCents = (v: unknown): v is number => typeof v === "number" && Number.isInteger(v) && v >= MIN_PRICE_CENTS && v <= MAX_PRICE_CENTS;
+
+/** Articles dont le prix est réglable, avec le prix par défaut (code) et le prix actuel. */
+export function priceItems(pack: Pack, s: Settings): { key: string; format: PackFormat; label: string; defaultCents: number; cents: number }[] {
+  const raw: [PackFormat, string, number | undefined][] = [
+    ["pdf", "Numérique", pack.priceCents],
+    ["papier", pack.print?.label ?? "Fiches de poche", pack.print?.priceCents],
+    ["revision", "Fiches de révision", pack.revision?.priceCents],
+    ["complet", "Pack complet", pack.bundle?.priceCents],
+    ["fiches", "Fiche à l'unité", pack.unit?.priceCents],
+  ];
+  return raw
+    .filter((r): r is [PackFormat, string, number] => typeof r[2] === "number")
+    .map(([format, label, defaultCents]) => {
+      const key = priceKey(pack.slug, format);
+      return { key, format, label, defaultCents, cents: s.prices[key] ?? defaultCents };
+    });
+}
 
 /** Nombre maximum d'adresses en copie des emails de commande. */
 export const MAX_ORDER_COPIES = 5;
@@ -127,6 +153,10 @@ export async function getSettings(env: AppEnv): Promise<Settings> {
         orderCopies: Array.isArray(raw.orderCopies)
           ? raw.orderCopies.filter((e): e is string => typeof e === "string" && EMAIL_RE.test(e)).slice(0, MAX_ORDER_COPIES)
           : [],
+        prices:
+          raw.prices && typeof raw.prices === "object"
+            ? Object.fromEntries(Object.entries(raw.prices).filter((e): e is [string, number] => validCents(e[1])))
+            : {},
       };
     }
   } catch (err) {
@@ -144,11 +174,25 @@ export async function saveSettings(env: AppEnv, value: Settings): Promise<void> 
 
 /** Le pack tel qu'il est vendu en ce moment : sans version papier ni vente à l'unité si elles sont désactivées. */
 export function applySettings(pack: Pack, s: Settings): Pack {
-  let p = pack;
+  let p = withPrices(pack, s.prices ?? {});
   if (p.print && !s.print[p.slug]) p = { ...p, print: undefined };
   if (p.revision && !s.revision?.[p.slug]) p = { ...p, revision: undefined };
   // Pack complet : seulement si les fiches de poche ET de révision sont en vente.
   if (p.bundle && (!p.print || !p.revision)) p = { ...p, bundle: undefined };
   if (p.unit && !s.unit[p.slug]) p = { ...p, unit: undefined };
   return p;
+}
+
+/** Applique les prix modifiés depuis /admin. */
+function withPrices(pack: Pack, prices: Record<string, number>): Pack {
+  const get = (f: PackFormat) => prices[priceKey(pack.slug, f)];
+  if (!Object.keys(prices).some((k) => k.startsWith(`${pack.slug}:`))) return pack;
+  return {
+    ...pack,
+    priceCents: get("pdf") ?? pack.priceCents,
+    print: pack.print && { ...pack.print, priceCents: get("papier") ?? pack.print.priceCents },
+    revision: pack.revision && { ...pack.revision, priceCents: get("revision") ?? pack.revision.priceCents },
+    bundle: pack.bundle && { ...pack.bundle, priceCents: get("complet") ?? pack.bundle.priceCents },
+    unit: pack.unit && { ...pack.unit, priceCents: get("fiches") ?? pack.unit.priceCents },
+  };
 }

@@ -80,6 +80,8 @@ export interface SettingsView {
   revision: { slug: string; name: string; on: boolean; bundle: boolean }[];
   /** Packs vendables à l'unité, avec leur état. */
   unit: { slug: string; name: string; on: boolean }[];
+  /** Prix réglables, par pack. */
+  prices: { slug: string; name: string; items: { key: string; label: string; defaultCents: number; cents: number }[] }[];
   quizEmails: boolean;
   hiddenOrders: number;
   hiddenEmails: number;
@@ -634,9 +636,47 @@ function bioSection(s: SettingsView, site: SiteInfo): string {
   </section>`;
 }
 
+function pricesSection(s: SettingsView): string {
+  const options = s.prices
+    .map(
+      (p) => `<optgroup label="${esc(p.name)}">${p.items
+        .map((i) => `<option value="${esc(i.key)}">${esc(`${p.name} · ${i.label} (${formatPrice(i.cents)})`)}</option>`)
+        .join("")}</optgroup>`,
+    )
+    .join("");
+  const rows = s.prices
+    .map(
+      (p) => `<div class="price-pack"><strong>${esc(p.name)}</strong>${p.items
+        .map((i) => {
+          const changed = i.cents !== i.defaultCents;
+          return `<div class="price-row">
+            <span>${esc(i.label)}</span>
+            <span class="price-row__val">${changed ? `<s class="muted">${esc(formatPrice(i.defaultCents))}</s> ` : ""}<strong>${esc(formatPrice(i.cents))}</strong></span>
+            ${changed ? `<form method="post">${hiddenFields("reglages", "", { action: "reglage", cle: "prix-defaut", article: i.key })}<button type="submit" class="link" title="Revenir au prix d'origine">Rétablir</button></form>` : `<span class="muted price-row__tag">d'origine</span>`}
+          </div>`;
+        })
+        .join("")}</div>`,
+    )
+    .join("");
+  return `<section class="card" id="prix">
+    <header class="card__head"><h2>💶 Prix</h2></header>
+    <p class="muted">Choisis l'article puis son nouveau prix. Effet sur le site en moins d'une minute ; le paiement utilise aussitôt le nouveau prix.
+      Les formats désactivés gardent leur prix pour quand tu les rallumeras.</p>
+    <form method="post" class="price-form">
+      ${hiddenFields("reglages", "", { action: "reglage", cle: "prix" })}
+      <label>Article <select name="article" required>${options}</select></label>
+      <label>Nouveau prix <span class="price-input"><input name="prix" required inputmode="decimal" autocomplete="off" placeholder="1,99" pattern="[0-9]{1,3}([,.][0-9]{1,2})?" maxlength="6"> €</span></label>
+      <button type="submit" class="btn">Enregistrer</button>
+    </form>
+    ${rows}
+  </section>`;
+}
+
 function settingsSection(s: SettingsView, site: SiteInfo): string {
   const trash = s.hiddenOrders + s.hiddenEmails;
-  return `${bioSection(s, site)}
+  return `${pricesSection(s)}
+
+  ${bioSection(s, site)}
 
   <section class="card">
     <header class="card__head"><h2>📦 Formats papier</h2></header>
@@ -1154,6 +1194,17 @@ const CSS = `
   .add-link[open] summary { display:none; }
   .add-link__row { display:grid; grid-template-columns:90px minmax(0,1fr); gap:10px; }
   .stack input { padding:10px 12px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface); font-weight:400; min-width:0; }
+  .price-form { display:grid; grid-template-columns:minmax(0,1fr) 140px auto; gap:10px; align-items:end; margin:4px 0 14px; }
+  .price-form label { display:grid; gap:6px; font-weight:600; font-size:.9rem; }
+  .price-form select { width:100%; }
+  .price-input { display:flex; align-items:center; gap:6px; font-weight:600; }
+  .price-input input { width:100%; min-width:0; padding:10px 12px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface); font-weight:400; text-align:right; }
+  @media (max-width:560px) { .price-form { grid-template-columns:1fr 1fr; } .price-form label:first-of-type { grid-column:1 / -1; } }
+  .price-pack { display:grid; padding:10px 0; border-top:1px solid var(--line); }
+  .price-pack > strong { font-size:.92rem; margin-bottom:4px; }
+  .price-row { display:grid; grid-template-columns:minmax(0,1fr) auto 70px; gap:10px; align-items:center; padding:4px 0; font-size:.9rem; }
+  .price-row form { margin:0; justify-self:end; }
+  .price-row__tag { font-size:.78rem; justify-self:end; }
   .danger-zone { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px 16px; padding:12px 0; border-top:1px solid var(--line); }
   .danger-zone > div:first-child { display:grid; gap:2px; flex:1 1 240px; }
 

@@ -18,11 +18,14 @@ import {
   type BioKey,
   MAX_LINKS,
   MAX_ORDER_COPIES,
+  MAX_PRICE_CENTS,
+  MIN_PRICE_CENTS,
   type Settings,
   applySettings,
   cleanLinkUrl,
   getSettings,
   parseEmailList,
+  priceItems,
   saveSettings,
 } from "@/lib/settings";
 import { cancelEmails, listEmails } from "./emails";
@@ -150,6 +153,7 @@ export async function GET(request: Request) {
               unit: publishedPacks()
                 .filter((p) => p.unit)
                 .map((p) => ({ slug: p.slug, name: p.name, on: Boolean(applySettings(p, settings).unit) })),
+              prices: publishedPacks().map((p) => ({ slug: p.slug, name: p.name, items: priceItems(p, settings) })),
               quizEmails: settings.quizEmails,
               hiddenOrders: all.filter(trashed).length,
               hiddenEmails: settings.hidden.emails.length,
@@ -291,6 +295,7 @@ function noticeFor(ok: string | null, n: string | null): string | null {
   if (ok === "reset") return "Compteurs remis à zéro ✅";
   if (ok === "reset-annule") return "Remise à zéro annulée : tout est de retour.";
   if (ok === "tout-restaure") return "Tous les éléments supprimés sont restaurés ✅";
+  if (ok === "prix") return "Prix enregistré ✅ (visible sur le site en moins d'une minute ; Stripe crée le nouveau prix au premier achat)";
   if (ok === "reglage") return "Réglage enregistré ✅ (visible sur le site en moins d'une minute)";
   if (ok === "maj-test") return "Email de test envoyé : vérifie ta boîte avant l'envoi à tous.";
   return null;
@@ -372,6 +377,24 @@ async function updateSetting(env: AppEnv, form: FormData | null, back: (params: 
       next.unit[slug] = on;
     } else if (key === "quiz-emails") {
       next.quizEmails = on;
+    } else if (key === "prix" || key === "prix-defaut") {
+      const article = String(form?.get("article") ?? "");
+      const item = publishedPacks().flatMap((p) => priceItems(p, current)).find((i) => i.key === article);
+      if (!item) return back("erreur=prix");
+      const prices = { ...current.prices };
+      if (key === "prix-defaut") delete prices[article];
+      else {
+        const txt = String(form?.get("prix") ?? "").replace(/\s|€/g, "").replace(",", ".");
+        if (!/^\d{1,3}(\.\d{1,2})?$/.test(txt)) return back("erreur=prix");
+        const cents = Math.round(Number(txt) * 100);
+        if (cents < MIN_PRICE_CENTS || cents > MAX_PRICE_CENTS) return back("erreur=prix");
+        if (cents === item.defaultCents) delete prices[article];
+        else prices[article] = cents;
+      }
+      next.prices = prices;
+      console.log("admin: prix", article, prices[article] ?? "défaut");
+      await saveSettings(env, next);
+      return back("ok=prix");
     } else if (key === "copies-commandes") {
       const list = parseEmailList(String(form?.get("adresses") ?? "").slice(0, 1000));
       if (!list) return back("erreur=copies");
@@ -508,6 +531,7 @@ const errorMessage = (code: string) =>
     annulation: "Resend n'a pas pu annuler l'envoi (déjà parti ?). Actualise la page.",
     reglage: "Le réglage n'a pas pu être enregistré. Réessaie.",
     adresse: "Adresse email invalide.",
+    prix: "Prix invalide : écris-le comme 1,99 (entre 0,50 € et 200 €).",
     copies: `Adresse invalide : vérifie l'orthographe (${MAX_ORDER_COPIES} adresses maximum, séparées par une virgule).`,
     apercu: "L'envoi des exemples s'est arrêté (Resend). Les premiers sont peut-être partis : réessaie dans une minute.",
     lien: "Bouton invalide : un texte et une adresse en https://, mailto: ou /page du site.",
